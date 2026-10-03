@@ -30,7 +30,7 @@ function LanguageSwitcher({ className }: { className?: string }) {
               hrefLang={l}
               lang={l}
               aria-current={l === locale ? "true" : undefined}
-              aria-label={localeNames[l]}
+              aria-label={`${localeLabels[l]} — ${localeNames[l]}`}
               onClick={() => rememberLocale(l)}
               className={cn(
                 "flex min-h-9 min-w-9 items-center justify-center rounded-md px-2 transition-colors",

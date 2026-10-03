@@ -18,16 +18,16 @@ export function Logo({
 }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
-      <img src={icon} alt="" width={256} height={281} className="h-10 w-auto" />
-      <span className="flex flex-col gap-1">
-        <img src={wordmark} alt="MDSign" width={411} height={120} className="h-6 w-auto" />
+      <img src={icon} alt="" width={102} height={112} className="h-10 w-auto" />
+      <span className="flex flex-col items-start gap-1">
+        <img src={wordmark} alt="MDSign" width={192} height={56} className="h-6 w-auto" />
         {showTagline && (
           <img
             src={tagline}
             alt=""
             aria-hidden
-            width={709}
-            height={40}
+            width={354}
+            height={20}
             className="hidden h-[7px] w-auto sm:block"
           />
         )}

@@ -57,8 +57,9 @@ conta só o clique no botão do plano. Para ativar, defina `VITE_GTM_ID`.
 - [ ] Definir `VITE_SITE_URL` (endereço de produção) e as demais URLs do ambiente.
 - [ ] Incluir o domínio de produção em `ALLOWED_ORIGINS` (mantendo os atuais, separados por vírgula).
 - [ ] Links "Quem somos" e "Blog" do rodapé (hoje aparecem como texto, sem link).
-- [ ] Aprovar as versões do slogan e as traduções em EN e ES (PRD 27.5). Propostas atuais:
-      "Go paperless, plant a tree!" e "¡No uses papel, planta un árbol!".
+- [ ] Google Tag Manager: definir `VITE_GTM_ID` (adiado; lembrar).
+- [x] Traduções EN/ES e slogans aprovados em 03/10/2026: "Go paperless, plant a tree!" e
+      "¡No uses papel, planta un árbol!".
 
 ## Banco de dados (Supabase)
 

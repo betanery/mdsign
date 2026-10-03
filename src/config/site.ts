@@ -14,8 +14,11 @@ function optional(value: string | undefined): string | undefined {
 export const siteConfig = {
   name: "MDSign",
   company: "Mundo Digital Tech",
-  /** URL pública canônica, ex.: https://mdsign.com.br (sem barra final). */
-  siteUrl: optional(env.VITE_SITE_URL)?.replace(/\/$/, ""),
+  /**
+   * URL pública canônica, sem barra final. Até existir o domínio de produção,
+   * usa o endereço provisório publicado no Lovable.
+   */
+  siteUrl: (optional(env.VITE_SITE_URL) ?? "https://mdsign.lovable.app").replace(/\/$/, ""),
 
   /** Aplicação MDSign (Fase 2). Sem valor, "Entrar" leva ao contato. */
   appUrl: optional(env.VITE_APP_URL),

@@ -4,11 +4,17 @@
  * Não altere preços, limites ou nomenclaturas sem aprovação da MDTech.
  */
 import cedro from "@/assets/plans/cedro.webp";
+import cedroSmall from "@/assets/plans/cedro-320.webp";
 import jacaranda from "@/assets/plans/jacaranda.webp";
+import jacarandaSmall from "@/assets/plans/jacaranda-320.webp";
 import angico from "@/assets/plans/angico.webp";
+import angicoSmall from "@/assets/plans/angico-320.webp";
 import aroeira from "@/assets/plans/aroeira.webp";
+import aroeiraSmall from "@/assets/plans/aroeira-320.webp";
 import ipe from "@/assets/plans/ipe.webp";
+import ipeSmall from "@/assets/plans/ipe-320.webp";
 import mogno from "@/assets/plans/mogno.webp";
+import mognoSmall from "@/assets/plans/mogno-320.webp";
 import magicColors from "@/assets/clients/magic-colors.webp";
 import abrace from "@/assets/clients/abrace.webp";
 
@@ -84,6 +90,8 @@ export type Plan = {
   /** Nome da espécie: não é traduzido (PRD 27.4). */
   name: string;
   image: string;
+  /** Versão de 320 px para telas pequenas (srcset). */
+  imageSmall: string;
   /** Preço em reais; sem conversão de moeda nesta fase (PRD 27.4). */
   price?: string;
   cta: "free" | "subscribe" | "specialist";
@@ -91,12 +99,40 @@ export type Plan = {
 
 /** Ordem fixa definida no PRD. Cada plano usa a foto real da espécie. */
 export const plans: Plan[] = [
-  { id: "cedro", name: "Cedro", image: cedro, cta: "free" },
-  { id: "jacaranda", name: "Jacarandá", image: jacaranda, price: "R$ 39,90", cta: "subscribe" },
-  { id: "angico", name: "Angico", image: angico, price: "R$ 99,97", cta: "subscribe" },
-  { id: "aroeira", name: "Aroeira", image: aroeira, price: "R$ 149,97", cta: "subscribe" },
-  { id: "ipe", name: "Ipê", image: ipe, price: "R$ 199,97", cta: "subscribe" },
-  { id: "mogno", name: "Mogno", image: mogno, cta: "specialist" },
+  { id: "cedro", name: "Cedro", image: cedro, imageSmall: cedroSmall, cta: "free" },
+  {
+    id: "jacaranda",
+    name: "Jacarandá",
+    image: jacaranda,
+    imageSmall: jacarandaSmall,
+    price: "R$ 39,90",
+    cta: "subscribe",
+  },
+  {
+    id: "angico",
+    name: "Angico",
+    image: angico,
+    imageSmall: angicoSmall,
+    price: "R$ 99,97",
+    cta: "subscribe",
+  },
+  {
+    id: "aroeira",
+    name: "Aroeira",
+    image: aroeira,
+    imageSmall: aroeiraSmall,
+    price: "R$ 149,97",
+    cta: "subscribe",
+  },
+  {
+    id: "ipe",
+    name: "Ipê",
+    image: ipe,
+    imageSmall: ipeSmall,
+    price: "R$ 199,97",
+    cta: "subscribe",
+  },
+  { id: "mogno", name: "Mogno", image: mogno, imageSmall: mognoSmall, cta: "specialist" },
 ];
 
 /** Depoimentos reais (mockup aprovado), sem foto. Cargo e fala vêm de messages. */

@@ -21,6 +21,10 @@ function PlanCard({ plan }: { plan: Plan }) {
       <div className="aspect-[4/3] overflow-hidden bg-muted">
         <img
           src={plan.image}
+          srcSet={`${plan.imageSmall} 320w, ${plan.image} 640w`}
+          sizes="(min-width: 1280px) 190px, (min-width: 768px) 30vw, (min-width: 640px) 45vw, 78vw"
+          width={640}
+          height={480}
           alt={`${t.plans.photoOf} ${plan.name}`}
           loading="lazy"
           decoding="async"
