@@ -35,8 +35,9 @@ chave). No modelo A, todos os tenants compartilham a mesma conexão.
 - Chave admin (`Sys Admin`): só se e quando o modelo B for automatizado; nunca na mesma função
   que atende usuários.
 - Chaves só em segredos do Supabase (`SIGNDOC_API_KEY`), nunca no navegador nem no repositório.
-- A aplicação "MDSIGN Landing" (organização Admin) tem papéis amplos: substituir por uma
-  aplicação dedicada e bloquear a antiga se não for usada.
+- A aplicação "MDSIGN Landing" (organização Admin) tem papéis amplos e a chave "MDSign_Lovable"
+  expira só em 2126: usar apenas para configuração/administração (segredo separado,
+  `SIGNDOC_ADMIN_API_KEY`), nunca como chave do dia a dia; definir validade menor ao renovar.
 
 ## 2. Assinatura embutida (sem frontend legado)
 
@@ -134,15 +135,20 @@ Assinatura em lote existe e recebeu correções para HSM/nuvem na 2.22.0.
   (2026-09-10). Itens úteis para a Fase 2 depois da 2.9: idioma da notificação por destinatário,
   WhatsApp + Selfie, correções de lote com HSM/nuvem. ❓ Confirmar versão e planejar atualização.
 
-## 10. Pendências para a Lacuna / infraestrutura
+## 10. Pendências de infraestrutura (instância operada pela MDTech)
 
-1. Existe API para criar aplicações e chaves (para automatizar o modelo B)?
-2. Incluir os domínios do MDSign na licença do Web PKI.
-3. Quais métodos de autenticação estão contratados e ativos na instância.
+A instância é on-premises e operada pela própria MDTech: configurações, marca, versão e
+autenticações são ajustadas internamente. Só a licença do Web PKI é produto da Lacuna.
+
+1. Existe API para criar aplicações e chaves (para automatizar o modelo B)? Verificar no Swagger
+   administrativo da instância.
+2. Incluir os domínios do MDSign na licença do Web PKI (licença emitida pela Lacuna).
+3. Quais métodos de autenticação estão contratados e ativos (seção Electronic Signature e
+   integrações das configurações).
 4. Marca da instância (SiteName, logos, e-mails, domínio, SMTP).
-5. Limites de requisição (throttling) para envio em massa.
+5. Limites de requisição (`Throttling`) para envio em massa.
 6. Versão atual da instância e atualização para a 2.22.
-7. Ambiente de homologação.
+7. Ambiente de homologação (segunda instância ou organização de testes).
 
 ## 11. Próximos passos técnicos
 
