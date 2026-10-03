@@ -19,6 +19,16 @@ instância ou com a Lacuna.
 - ⚠️ **Não há API documentada para criar aplicações nem chaves.** Uma organização nova pode ser
   criada por API, mas a chave dela precisa ser gerada no painel.
 
+### Testado na instância (03/10/2026, somente leitura)
+
+- ✅ A chave administrativa (aplicação na organização Admin/Sys Admin) lista as organizações:
+  `GET /api/admin/organizations` → 32 organizações, com os campos `id`, `name`, `identifier`
+  e `owner`.
+- ✅ A mesma chave **não opera documentos**: `/api/documents`, `/api/folders`,
+  `/api/document-flows` e `/api/organizations/users` respondem `422 SubscriptionRequired`.
+  A organização Sys Admin não tem assinatura. Para documentos é preciso uma aplicação dentro de
+  uma organização com assinatura, o que confirma o modelo abaixo.
+
 ### Decisão proposta
 
 | Modelo | Uso | Como funciona |
