@@ -35,15 +35,15 @@ mensagem preenchida.
 `cta_assinar_plano`, `cta_fale_especialista`, `cta_documentacao_api`, `cta_entrar`,
 `form_submit`, `faq_open`. Todos levam as UTMs da sessão. Para ativar, defina `VITE_GTM_ID`.
 
-## Pendências antes de publicar (marcadas com `VALIDAR` no código)
+## Pendências antes de publicar
 
-- [ ] Logo oficial da Mundo Digital Tech (o rodapé usa o nome em texto até lá).
-- [ ] Endpoint e campos do exemplo da API: confirmar com a documentação real do SignDoc.
-- [ ] Texto final dos depoimentos (Magic Colors e Abrace) e se os cargos podem aparecer.
-- [ ] Respostas do FAQ: revisão da MDTech.
-- [ ] Formas de autenticação do signatário efetivamente habilitadas (seção Segurança).
-- [ ] Links "Quem somos" e "Blog" do rodapé.
-- [ ] Definir `VITE_SITE_URL` e as demais URLs no ambiente de produção.
+- [ ] Definir `VITE_SITE_URL` (endereço de produção) e as demais URLs do ambiente.
+- [ ] Links "Quem somos" e "Blog" do rodapé (hoje aparecem como texto, sem link).
+
+## Fonte da API
+
+O exemplo de código, os eventos de webhook e a página `/desenvolvedores` seguem a documentação
+oficial: https://sign.signdocmd.com.br/swagger/index.html (SignDoc MD v2.9.0).
 
 ## Preparação para as Fases 2 e 3
 

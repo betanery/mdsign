@@ -11,6 +11,7 @@ import {
   PenLine,
   Radio,
   Route,
+  Search,
   Scale,
   Settings,
   ShieldCheck,
@@ -40,4 +41,5 @@ export const icons = {
   badge: BadgeCheck,
   route: Route,
   lock: Lock,
+  search: Search,
 } satisfies Record<string, LucideIcon>;

@@ -72,7 +72,9 @@ export function Testimonials() {
                   <blockquote className="mt-1 text-base text-foreground/90">“{t.quote}”</blockquote>
                   <figcaption className="mt-4 text-sm">
                     <span className="font-semibold">{t.author}</span>
-                    <span className="text-muted-foreground"> — {t.company}</span>
+                    <span className="block text-muted-foreground">
+                      {t.role} · {t.company}
+                    </span>
                   </figcaption>
                 </div>
               </figure>

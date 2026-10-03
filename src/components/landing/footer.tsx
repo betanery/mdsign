@@ -2,21 +2,8 @@ import { Mail, MapPin, Phone } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { footerLinks } from "@/content/landing";
+import mundoDigitalTechLogo from "@/assets/brand/mundo-digital-tech.svg";
 import { Container } from "./section";
-
-/**
- * VALIDAR: a logo oficial da Mundo Digital Tech ainda não foi enviada. Até lá
- * o nome aparece em texto; troque pelo arquivo oficial sem recriá-lo.
- */
-function MundoDigitalTechMark() {
-  return (
-    <span className="font-display text-xl leading-tight font-bold tracking-wide">
-      MUNDO
-      <br />
-      <span className="text-pink-300">DIGITAL TECH</span>
-    </span>
-  );
-}
 
 export function Footer() {
   const { contact } = siteConfig;
@@ -24,7 +11,17 @@ export function Footer() {
     <footer id="rodape" className="bg-navy text-white">
       <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1.5fr]">
         <div>
-          <MundoDigitalTechMark />
+          {/* Logo oficial com texto escuro: fica sobre fundo branco, sem recolorir. */}
+          <span className="inline-block rounded-xl bg-white px-4 py-3">
+            <img
+              src={mundoDigitalTechLogo}
+              alt="Mundo Digital Tech"
+              width={184}
+              height={90}
+              loading="lazy"
+              className="h-14 w-auto"
+            />
+          </span>
           <p className="mt-3 max-w-xs text-sm text-white/70">
             O MDSign é uma solução da {siteConfig.company}.
           </p>
