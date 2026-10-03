@@ -27,6 +27,7 @@ export function useLeadDialog() {
 }
 
 type LeadFields = {
+  website?: string;
   nome: string;
   email: string;
   telefone: string;
@@ -179,6 +180,11 @@ export function LeadDialogProvider({ children }: { children: ReactNode }) {
                 <div className="grid gap-1.5">
                   <Label htmlFor="lead-mensagem">Mensagem</Label>
                   <Textarea id="lead-mensagem" name="mensagem" rows={3} />
+                </div>
+                {/* Campo-armadilha contra robôs: invisível para pessoas. */}
+                <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+                  <label htmlFor="lead-website">Site</label>
+                  <input id="lead-website" name="website" tabIndex={-1} autoComplete="off" />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Usaremos seus dados apenas para responder a este contato, conforme a LGPD.
