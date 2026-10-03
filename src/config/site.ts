@@ -31,11 +31,12 @@ export const siteConfig = {
   apiDocsUrl: optional(env.VITE_API_DOCS_URL),
 
   /**
-   * Endpoint que recebe os leads do formulário (POST JSON). Deve ser um
-   * backend/Edge Function — nunca a API SignDoc diretamente. Sem valor, o
-   * formulário abre o WhatsApp com a mensagem preenchida.
+   * Edge Function do Supabase que recebe os leads (POST JSON). A URL é
+   * pública; a função só aceita os domínios do segredo ALLOWED_ORIGINS.
    */
-  leadEndpoint: optional(env.VITE_LEAD_ENDPOINT),
+  leadEndpoint:
+    optional(env.VITE_LEAD_ENDPOINT) ??
+    "https://vrksxqbopteeyeovdwpu.supabase.co/functions/v1/lead-submit",
   /** Google Tag Manager (opcional). */
   gtmId: optional(env.VITE_GTM_ID),
 

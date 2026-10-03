@@ -63,41 +63,18 @@ export function LeadDialogProvider({ children }: { children: ReactNode }) {
     setStatus("sending");
     track("form_submit", { form: "lead", plan: data.plano, source: options.source });
 
-    if (siteConfig.leadEndpoint) {
-      try {
-        const response = await fetch(siteConfig.leadEndpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(lead),
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        setStatus("sent");
-      } catch (error) {
-        console.error(error);
-        setStatus("error");
-      }
-      return;
+    try {
+      const response = await fetch(siteConfig.leadEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setStatus("sent");
+    } catch (error) {
+      console.error(error);
+      setStatus("error");
     }
-
-    // Sem backend configurado: encaminha pelo WhatsApp da Mundo Digital Tech.
-    const planName = plans.find((p) => p.id === data.plano)?.name ?? "Não sei ainda";
-    const text = [
-      "Olá! Tenho interesse no MDSign.",
-      `Nome: ${data.nome}`,
-      `Empresa: ${data.empresa || "-"}`,
-      `E-mail: ${data.email}`,
-      `Telefone: ${data.telefone || "-"}`,
-      `Plano de interesse: ${planName}`,
-      data.mensagem ? `Mensagem: ${data.mensagem}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-    window.open(
-      `https://wa.me/${siteConfig.contact.whatsapp}?text=${encodeURIComponent(text)}`,
-      "_blank",
-      "noopener",
-    );
-    setStatus("sent");
   }
 
   const value = useMemo(() => open, [open]);

@@ -25,9 +25,8 @@ Os rótulos seguem o PRD (seção 18). O destino vem da configuração:
 | Entrar | `VITE_APP_URL` | página `/entrar` |
 | Documentação da API | `VITE_API_DOCS_URL` | página `/desenvolvedores` |
 
-O formulário envia `POST` JSON para `VITE_LEAD_ENDPOINT` (backend ou Edge Function, nunca a
-API SignDoc direto do navegador). Sem endpoint, abre o WhatsApp da Mundo Digital Tech com a
-mensagem preenchida.
+O formulário envia `POST` JSON para a Edge Function `lead-submit` do Supabase (nunca para a API
+SignDoc direto do navegador), que grava o contato na tabela `leads`.
 
 ## Eventos de analytics
 
@@ -38,18 +37,21 @@ mensagem preenchida.
 ## Pendências antes de publicar
 
 - [ ] Definir `VITE_SITE_URL` (endereço de produção) e as demais URLs do ambiente.
+- [ ] Incluir o domínio de produção (e o do preview do Lovable, se for testar por lá) em
+      `ALLOWED_ORIGINS`: `npx supabase secrets set ALLOWED_ORIGINS=http://localhost:5188,https://<dominio>`.
 - [ ] Links "Quem somos" e "Blog" do rodapé (hoje aparecem como texto, sem link).
 
 ## Banco de dados (Supabase)
 
-Projeto Supabase próprio do MDSign. Estrutura em `supabase/`:
+Projeto Supabase próprio do MDSign: `vrksxqbopteeyeovdwpu` (já configurado: tabela criada,
+função publicada, `ALLOWED_ORIGINS=http://localhost:5188`). Estrutura em `supabase/`:
 
 - `migrations/20261003210000_leads.sql`: tabela `public.leads`, com RLS ligado e sem acesso público.
 - `functions/lead-submit`: Edge Function que recebe o formulário, valida os campos, bloqueia
   robôs (campo-armadilha), limita a 5 envios por IP a cada 10 minutos e grava com a service role.
   Aceita apenas os domínios listados no segredo `ALLOWED_ORIGINS`.
 
-Configuração (uma vez):
+Para configurar outro projeto do zero:
 
 ```bash
 npx supabase login
@@ -59,7 +61,8 @@ npx supabase secrets set ALLOWED_ORIGINS=http://localhost:5188
 npx supabase functions deploy lead-submit
 ```
 
-Depois, defina no front `VITE_LEAD_ENDPOINT=https://<ref-do-projeto>.supabase.co/functions/v1/lead-submit`.
+O front já aponta para a função deste projeto por padrão; para usar outra, defina
+`VITE_LEAD_ENDPOINT=https://<ref-do-projeto>.supabase.co/functions/v1/lead-submit`.
 Quando o domínio de produção existir, inclua-o em `ALLOWED_ORIGINS` (separado por vírgula).
 
 Os leads ficam em **Table Editor → leads** no painel do Supabase. A coluna `status` serve para
