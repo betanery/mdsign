@@ -10,14 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LangRouteRouteImport } from './routes/$lang/route'
 import { Route as DesenvolvedoresRouteImport } from './routes/desenvolvedores'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as LangIndexRouteImport } from './routes/$lang/index'
+import { Route as LangDesenvolvedoresRouteImport } from './routes/$lang/desenvolvedores'
+import { Route as LangEntrarRouteImport } from './routes/$lang/entrar'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LangRouteRoute = LangRouteRouteImport.update({
+  id: '/$lang',
+  path: '/$lang',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DesenvolvedoresRoute = DesenvolvedoresRouteImport.update({
@@ -40,13 +49,32 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LangIndexRoute = LangIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangDesenvolvedoresRoute = LangDesenvolvedoresRouteImport.update({
+  id: '/desenvolvedores',
+  path: '/desenvolvedores',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangEntrarRoute = LangEntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
+  getParentRoute: () => LangRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$lang': typeof LangRouteRouteWithChildren
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
+  '/$lang/entrar': typeof LangEntrarRoute
+  '/$lang/': typeof LangIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,32 +82,60 @@ export interface FileRoutesByTo {
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
+  '/$lang/entrar': typeof LangEntrarRoute
+  '/$lang': typeof LangIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$lang': typeof LangRouteRouteWithChildren
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
+  '/$lang/entrar': typeof LangEntrarRoute
+  '/$lang/': typeof LangIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/desenvolvedores' | '/entrar' | '/robots.txt' | '/sitemap.xml'
+    | '/'
+    | '/$lang'
+    | '/desenvolvedores'
+    | '/entrar'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/$lang/desenvolvedores'
+    | '/$lang/entrar'
+    | '/$lang/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/desenvolvedores' | '/entrar' | '/robots.txt' | '/sitemap.xml'
-  id:
-    | '__root__'
+  to:
     | '/'
     | '/desenvolvedores'
     | '/entrar'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$lang/desenvolvedores'
+    | '/$lang/entrar'
+    | '/$lang'
+  id:
+    | '__root__'
+    | '/'
+    | '/$lang'
+    | '/desenvolvedores'
+    | '/entrar'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/$lang/desenvolvedores'
+    | '/$lang/entrar'
+    | '/$lang/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LangRouteRoute: typeof LangRouteRouteWithChildren
   DesenvolvedoresRoute: typeof DesenvolvedoresRoute
   EntrarRoute: typeof EntrarRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -93,6 +149,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$lang': {
+      id: '/$lang'
+      path: '/$lang'
+      fullPath: '/$lang'
+      preLoaderRoute: typeof LangRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/desenvolvedores': {
@@ -123,11 +186,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$lang/': {
+      id: '/$lang/'
+      path: '/'
+      fullPath: '/$lang/'
+      preLoaderRoute: typeof LangIndexRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/desenvolvedores': {
+      id: '/$lang/desenvolvedores'
+      path: '/desenvolvedores'
+      fullPath: '/$lang/desenvolvedores'
+      preLoaderRoute: typeof LangDesenvolvedoresRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/entrar': {
+      id: '/$lang/entrar'
+      path: '/entrar'
+      fullPath: '/$lang/entrar'
+      preLoaderRoute: typeof LangEntrarRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
   }
 }
 
+interface LangRouteRouteChildren {
+  LangDesenvolvedoresRoute: typeof LangDesenvolvedoresRoute
+  LangEntrarRoute: typeof LangEntrarRoute
+  LangIndexRoute: typeof LangIndexRoute
+}
+
+const LangRouteRouteChildren: LangRouteRouteChildren = {
+  LangDesenvolvedoresRoute: LangDesenvolvedoresRoute,
+  LangEntrarRoute: LangEntrarRoute,
+  LangIndexRoute: LangIndexRoute,
+}
+
+const LangRouteRouteWithChildren = LangRouteRoute._addFileChildren(
+  LangRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LangRouteRoute: LangRouteRouteWithChildren,
   DesenvolvedoresRoute: DesenvolvedoresRoute,
   EntrarRoute: EntrarRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,

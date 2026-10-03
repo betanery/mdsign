@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 
-import { apiExample, integrationCapabilities, webhookEvents } from "@/content/landing";
+import { apiExample, capabilityIcons } from "@/content/landing";
+import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Cta } from "./cta";
 import { icons } from "./icons";
@@ -35,6 +36,8 @@ function CodeBlock({ code }: { code: string }) {
 
 export function Integrations() {
   const [tab, setTab] = useState<"request" | "response">("request");
+  const { t } = useI18n();
+  const it = t.integrations;
 
   return (
     <section
@@ -48,24 +51,21 @@ export function Integrations() {
       />
       <Container className="relative grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-center">
         <div>
-          <Eyebrow className="text-pink-300">Integrações</Eyebrow>
+          <Eyebrow className="text-pink-300">{it.eyebrow}</Eyebrow>
           <h2 id="integracoes-title" className="mt-2 text-3xl leading-tight font-bold sm:text-4xl">
-            <span className="text-pink-300">MDSign</span> dentro do seu sistema.
+            <span className="text-pink-300">MDSign</span> {it.titleRest}
           </h2>
-          <p className="mt-4 max-w-xl text-base text-white/80 sm:text-lg">
-            Use o MDSign como plataforma ou integre a assinatura eletrônica aos seus próprios
-            processos através da nossa API REST.
-          </p>
+          <p className="mt-4 max-w-xl text-base text-white/80 sm:text-lg">{it.text}</p>
           <Cta kind="api" source="integrations" variant="ghostLight" className="mt-7" arrow />
           <ul className="mt-10 grid grid-cols-2 gap-6 sm:grid-cols-4">
-            {integrationCapabilities.map((cap) => {
-              const Icon = icons[cap.icon];
+            {it.capabilities.map((label, i) => {
+              const Icon = icons[capabilityIcons[i] ?? "api"];
               return (
-                <li key={cap.label} className="flex flex-col items-center gap-2 text-center">
+                <li key={label} className="flex flex-col items-center gap-2 text-center">
                   <span className="flex size-12 items-center justify-center rounded-xl bg-white/10">
                     <Icon className="size-6 text-pink-300" aria-hidden />
                   </span>
-                  <span className="text-sm font-medium">{cap.label}</span>
+                  <span className="text-sm font-medium">{label}</span>
                 </li>
               );
             })}
@@ -76,13 +76,13 @@ export function Integrations() {
           <div className="min-w-0 overflow-hidden rounded-xl border border-white/10 bg-[oklch(0.17_0.05_280)] shadow-2xl">
             <div
               role="tablist"
-              aria-label="Exemplo da API"
+              aria-label={it.exampleLabel}
               className="flex border-b border-white/10 text-sm"
             >
               {(
                 [
-                  ["request", "Requisição"],
-                  ["response", "Resposta"],
+                  ["request", it.request],
+                  ["response", it.response],
                 ] as const
               ).map(([key, label]) => (
                 <button
@@ -122,9 +122,9 @@ export function Integrations() {
           </div>
 
           <div className="rounded-xl bg-white p-5 text-foreground shadow-2xl">
-            <p className="font-display font-semibold">Webhooks para acompanhamento de eventos</p>
+            <p className="font-display font-semibold">{it.webhooksTitle}</p>
             <ul className="mt-4 grid gap-x-4 gap-y-2.5 text-sm sm:grid-cols-2">
-              {webhookEvents.map((e) => (
+              {it.events.map((e) => (
                 <li key={e} className="flex items-center gap-2">
                   <CheckCircle2 className="size-4 shrink-0 text-brand" aria-hidden />
                   {e}

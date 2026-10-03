@@ -15,7 +15,8 @@ import { logoIcon } from "./logo";
 /**
  * Representação da tela de documentos do MDSign com dados fictícios
  * (nomes de documento aprovados no PRD, seção 2.2). Feita em HTML para ficar
- * nítida em qualquer tela e não exibir dados reais.
+ * nítida em qualquer tela e não exibir dados reais. O conteúdo da tela fica em
+ * português em todos os idiomas, como uma captura do produto (PRD 27.5).
  */
 const menu = [
   { icon: FilePlus2, label: "Novo documento", active: true },
@@ -39,12 +40,12 @@ const documents = [
   },
 ];
 
-export function ProductMockup() {
+export function ProductMockup({ label }: { label: string }) {
   return (
     <div
       className="relative mx-auto w-full max-w-[640px] select-none"
       role="img"
-      aria-label="Tela de documentos do MDSign no notebook e no celular, com documentos de exemplo"
+      aria-label={label}
     >
       {/* Notebook */}
       <div className="rounded-t-2xl border-[10px] border-b-0 border-neutral-900 bg-neutral-900 shadow-2xl">

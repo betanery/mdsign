@@ -8,6 +8,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const PLANS = ["cedro", "jacaranda", "angico", "aroeira", "ipe", "mogno"];
+const LOCALES = ["pt", "en", "es"];
 const MAX_PER_IP = 5; // envios por IP a cada 10 minutos
 const WINDOW_MINUTES = 10;
 
@@ -76,6 +77,8 @@ Deno.serve(async (req) => {
   }
 
   const plano = typeof body.plano === "string" && PLANS.includes(body.plano) ? body.plano : null;
+  const idioma =
+    typeof body.idioma === "string" && LOCALES.includes(body.idioma) ? body.idioma : null;
   const utm =
     body.utm && typeof body.utm === "object" && !Array.isArray(body.utm)
       ? Object.fromEntries(
@@ -105,6 +108,7 @@ Deno.serve(async (req) => {
     telefone: text(body.telefone, 40),
     empresa: text(body.empresa, 160),
     plano,
+    idioma,
     mensagem: text(body.mensagem, 2000),
     origem: text(body.source, 80),
     pagina: text(body.page, 500),

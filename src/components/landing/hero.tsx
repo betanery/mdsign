@@ -1,12 +1,14 @@
 import { CheckCircle2, User } from "lucide-react";
 
-import { platformFeatures, steps, trustItems } from "@/content/landing";
+import { stepIcons, trustIcons } from "@/content/landing";
+import { useI18n } from "@/i18n";
 import { Cta } from "./cta";
 import { icons } from "./icons";
 import { ProductMockup } from "./product-mockup";
 import { Container, Eyebrow, SectionHeading } from "./section";
 
 export function Hero() {
+  const { t } = useI18n();
   return (
     <section
       aria-labelledby="hero-title"
@@ -18,27 +20,24 @@ export function Hero() {
       />
       <Container className="relative grid items-center gap-12 py-12 sm:py-16 lg:grid-cols-[1fr_1.1fr] lg:py-20">
         <div>
-          <Eyebrow>Assinatura digital para empresas</Eyebrow>
+          <Eyebrow>{t.hero.eyebrow}</Eyebrow>
           <h1
             id="hero-title"
             className="mt-3 text-4xl leading-[1.08] font-bold text-foreground sm:text-5xl xl:text-6xl"
           >
-            Documentos assinados hoje.{" "}
+            {t.hero.titleLine1}{" "}
             <span className="block bg-gradient-to-r from-brand to-brand-magenta bg-clip-text text-transparent">
-              Um amanhã mais sustentável.
+              {t.hero.titleLine2}
             </span>
           </h1>
-          <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-            Envie, assine, gerencie e armazene seus documentos de forma simples, segura e 100%
-            digital. Menos papel, mais produtividade e um futuro com mais árvores.
-          </p>
+          <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">{t.hero.text}</p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Cta kind="free" source="hero" size="lg" arrow />
             <Cta kind="plans" source="hero" size="lg" variant="outline" />
           </div>
         </div>
         <div className="pb-8 lg:pb-0">
-          <ProductMockup />
+          <ProductMockup label={t.a11y.mockup} />
         </div>
       </Container>
     </section>
@@ -46,16 +45,17 @@ export function Hero() {
 }
 
 export function TrustBar() {
+  const { t } = useI18n();
   return (
-    <section aria-label="Diferenciais" className="border-y bg-white">
+    <section aria-label={t.trust.label} className="border-y bg-white">
       <Container>
         <ul className="grid grid-cols-1 gap-x-6 gap-y-4 py-6 sm:grid-cols-2 lg:grid-cols-5">
-          {trustItems.map((item) => {
-            const Icon = icons[item.icon];
+          {t.trust.items.map((label, i) => {
+            const Icon = icons[trustIcons[i] ?? "shield"];
             return (
-              <li key={item.label} className="flex items-center gap-3">
+              <li key={label} className="flex items-center gap-3">
                 <Icon className="size-7 shrink-0 text-brand" aria-hidden />
-                <span className="text-sm leading-snug font-semibold">{item.label}</span>
+                <span className="text-sm leading-snug font-semibold">{label}</span>
               </li>
             );
           })}
@@ -66,20 +66,22 @@ export function TrustBar() {
 }
 
 const signers = [
-  { name: "Matheus Rodrigues", status: "Assinado" },
-  { name: "Carlos Pereira", status: "Assinado" },
-  { name: "Ana Carolina", status: "Aguardando" },
+  { name: "Matheus Rodrigues", signed: true },
+  { name: "Carlos Pereira", signed: true },
+  { name: "Ana Carolina", signed: false },
 ];
 
 export function Platform() {
+  const { t } = useI18n();
+  const demo = t.platform.demo;
   return (
     <section id="produto" aria-labelledby="produto-title" className="bg-white py-16 sm:py-24">
       <Container className="grid items-center gap-12 lg:grid-cols-2">
         {/* Demonstração com dados fictícios */}
         <div className="relative order-2 mx-auto w-full max-w-lg lg:order-1" aria-hidden>
           <div className="rounded-2xl border bg-white p-5 shadow-xl">
-            <p className="font-display font-semibold">Solicitação de assinatura</p>
-            <p className="mt-4 text-sm font-semibold">Para</p>
+            <p className="font-display font-semibold">{demo.request}</p>
+            <p className="mt-4 text-sm font-semibold">{demo.to}</p>
             <div className="mt-2 flex items-center gap-3 rounded-lg border p-3">
               <span className="flex size-9 items-center justify-center rounded-full bg-muted">
                 <User className="size-5 text-muted-foreground" />
@@ -89,16 +91,16 @@ export function Platform() {
                 <p className="text-muted-foreground">carlos@empresa.com</p>
               </div>
             </div>
-            <p className="mt-4 text-sm font-semibold">Mensagem</p>
+            <p className="mt-4 text-sm font-semibold">{demo.message}</p>
             <p className="mt-2 rounded-lg border p-3 text-sm text-muted-foreground">
-              Segue o documento para sua assinatura. Obrigada!
+              {demo.messageText}
             </p>
             <div className="mt-4 rounded-lg bg-brand py-2.5 text-center text-sm font-semibold text-white">
-              Enviar documento
+              {demo.send}
             </div>
           </div>
           <div className="relative -mt-10 ml-auto w-[85%] rounded-2xl border bg-white p-5 shadow-xl sm:-mt-16 sm:w-[75%]">
-            <p className="font-display text-sm font-semibold">Signatários do documento</p>
+            <p className="font-display text-sm font-semibold">{demo.signers}</p>
             <ol className="mt-3 space-y-3">
               {signers.map((s, i) => (
                 <li key={s.name} className="flex items-center gap-2 text-sm">
@@ -107,12 +109,12 @@ export function Platform() {
                   <span className="flex-1 font-medium">{s.name}</span>
                   <span
                     className={
-                      s.status === "Assinado"
+                      s.signed
                         ? "rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-xs font-medium text-success"
                         : "rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
                     }
                   >
-                    {s.status}
+                    {s.signed ? demo.signed : demo.waiting}
                   </span>
                 </li>
               ))}
@@ -124,21 +126,19 @@ export function Platform() {
           <SectionHeading
             id="produto-title"
             align="left"
-            eyebrow="Mais agilidade para o seu dia a dia"
-            title="Assine, gerencie e acompanhe todos os seus documentos em um só lugar."
-            subtitle="Crie fluxos de assinatura, defina responsáveis, acompanhe o status de cada documento e integre com os seus sistemas através da nossa API."
+            eyebrow={t.platform.eyebrow}
+            title={t.platform.title}
+            subtitle={t.platform.text}
           />
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-            {platformFeatures.map((feature) => (
+            {t.platform.features.map((feature) => (
               <li key={feature} className="flex items-center gap-2.5">
                 <CheckCircle2 className="size-5 shrink-0 text-brand" aria-hidden />
                 <span>{feature}</span>
               </li>
             ))}
           </ul>
-          <Cta kind="platform" source="platform" className="mt-8" arrow>
-            Conheça a plataforma
-          </Cta>
+          <Cta kind="platform" source="platform" className="mt-8" arrow />
         </div>
       </Container>
     </section>
@@ -146,6 +146,7 @@ export function Platform() {
 }
 
 export function HowItWorks() {
+  const { t } = useI18n();
   return (
     <section
       id="como-funciona"
@@ -155,13 +156,13 @@ export function HowItWorks() {
       <Container>
         <SectionHeading
           id="como-funciona-title"
-          eyebrow="Como funciona"
-          title="Assinar não deveria dar trabalho."
-          subtitle="Em poucos passos, seus documentos assinados e sob controle."
+          eyebrow={t.how.eyebrow}
+          title={t.how.title}
+          subtitle={t.how.subtitle}
         />
         <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step, i) => {
-            const Icon = icons[step.icon];
+          {t.how.steps.map((step, i) => {
+            const Icon = icons[stepIcons[i] ?? "pen"];
             return (
               <li
                 key={step.title}

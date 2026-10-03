@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useParams,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -13,8 +14,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { captureUtm } from "../lib/analytics";
-import { absoluteUrl, siteConfig } from "../config/site";
-import { LeadDialogProvider } from "../components/landing/lead-dialog";
+import { siteConfig } from "../config/site";
+import { fallbackLocale, htmlLang, isLocale, messages } from "../i18n";
 
 function NotFoundComponent() {
   return (
@@ -77,41 +78,31 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => {
-    const canonical = absoluteUrl("/");
-    const ogImage = absoluteUrl("/og-image.png");
-    return {
-      meta: [
-        { charSet: "utf-8" },
-        { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { title: siteConfig.title },
-        { name: "description", content: siteConfig.description },
-        { name: "author", content: siteConfig.company },
-        { name: "theme-color", content: "#9724C2" },
-        { property: "og:site_name", content: siteConfig.name },
-        { property: "og:locale", content: "pt_BR" },
-        { property: "og:title", content: siteConfig.title },
-        { property: "og:description", content: siteConfig.description },
-        { property: "og:type", content: "website" },
-        ...(canonical ? [{ property: "og:url", content: canonical }] : []),
-        ...(ogImage ? [{ property: "og:image", content: ogImage }] : []),
-        { name: "twitter:card", content: "summary_large_image" },
-      ],
-      links: [
-        { rel: "stylesheet", href: appCss },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-        {
-          rel: "stylesheet",
-          href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap",
-        },
-        { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
-        { rel: "icon", href: "/icon-512.png", type: "image/png" },
-        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-        ...(canonical ? [{ rel: "canonical", href: canonical }] : []),
-      ],
-    };
-  },
+  // Metadados comuns. Título, descrição, Open Graph, canonical e hreflang
+  // de cada idioma ficam em routes/$lang/route.tsx.
+  head: () => ({
+    meta: [
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "author", content: siteConfig.company },
+      { name: "theme-color", content: "#9724C2" },
+      { property: "og:site_name", content: siteConfig.name },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap",
+      },
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+      { rel: "icon", href: "/icon-512.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+    ],
+  }),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -119,8 +110,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const { lang } = useParams({ strict: false });
+  const locale = isLocale(lang) ? lang : fallbackLocale;
   return (
-    <html lang="pt-BR">
+    <html lang={htmlLang[locale]}>
       <head>
         <HeadContent />
         {siteConfig.gtmId && (
@@ -136,7 +129,7 @@ function RootShell({ children }: { children: ReactNode }) {
           href="#conteudo"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:shadow"
         >
-          Pular para o conteúdo
+          {messages[locale].a11y.skipToContent}
         </a>
         {children}
         <Scripts />
@@ -155,9 +148,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <LeadDialogProvider>
-        <Outlet />
-      </LeadDialogProvider>
+      <Outlet />
     </QueryClientProvider>
   );
 }

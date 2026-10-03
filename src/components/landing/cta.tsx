@@ -5,24 +5,15 @@ import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
 import type { PlanId } from "@/content/landing";
 import { track, type AnalyticsEvent } from "@/lib/analytics";
+import { useI18n } from "@/i18n";
 import { useLeadDialog } from "./lead-dialog";
 
 /**
- * Rótulos padronizados do PRD (seção 18). Cada CTA resolve o destino pela
+ * Rótulos padronizados do PRD (seção 18), em messages.cta. Cada CTA resolve o destino pela
  * configuração: com a URL definida vira link; sem ela, abre o formulário de
  * contato — assim nenhum botão fica quebrado na Fase 1.
  */
 export type CtaKind = "free" | "plans" | "platform" | "subscribe" | "specialist" | "api" | "login";
-
-const labels: Record<CtaKind, string> = {
-  free: "Comece grátis",
-  plans: "Conheça os planos",
-  platform: "Conheça a plataforma",
-  subscribe: "Assinar plano",
-  specialist: "Fale com um especialista",
-  api: "Documentação da API",
-  login: "Entrar",
-};
 
 const events: Record<CtaKind, AnalyticsEvent> = {
   free: "cta_comece_gratis",
@@ -34,14 +25,18 @@ const events: Record<CtaKind, AnalyticsEvent> = {
   login: "cta_entrar",
 };
 
-function resolveHref(kind: CtaKind, plan?: PlanId): string | undefined {
+function resolveHref(
+  kind: CtaKind,
+  path: (to?: string) => string,
+  plan?: PlanId,
+): string | undefined {
   switch (kind) {
     case "free":
       return siteConfig.signupUrl ?? siteConfig.appUrl;
     case "plans":
-      return "/#planos";
+      return path("/#planos");
     case "platform":
-      return "/#como-funciona";
+      return path("/#como-funciona");
     case "subscribe":
       return siteConfig.checkoutUrl && plan
         ? `${siteConfig.checkoutUrl}${siteConfig.checkoutUrl.includes("?") ? "&" : "?"}plano=${plan}`
@@ -49,9 +44,9 @@ function resolveHref(kind: CtaKind, plan?: PlanId): string | undefined {
     case "specialist":
       return undefined;
     case "api":
-      return siteConfig.apiDocsUrl ?? "/desenvolvedores";
+      return siteConfig.apiDocsUrl ?? path("/desenvolvedores");
     case "login":
-      return siteConfig.appUrl ?? "/entrar";
+      return siteConfig.appUrl ?? path("/entrar");
   }
 }
 
@@ -80,7 +75,8 @@ export const Cta = forwardRef<HTMLAnchorElement & HTMLButtonElement, CtaProps>(f
   ref,
 ) {
   const openLead = useLeadDialog();
-  const href = resolveHref(kind, plan);
+  const { t, locale, path } = useI18n();
+  const href = resolveHref(kind, path, plan);
 
   const classes = cn(
     "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
@@ -93,13 +89,13 @@ export const Cta = forwardRef<HTMLAnchorElement & HTMLButtonElement, CtaProps>(f
 
   const content = (
     <>
-      {children ?? labels[kind]}
+      {children ?? t.cta[kind]}
       {arrow && <ArrowRight className="size-4" aria-hidden />}
     </>
   );
 
   const onClick = () => {
-    track(events[kind], { source, plan });
+    track(events[kind], { source, plan, lang: locale });
     if (!href) openLead({ plan: plan ?? (kind === "free" ? "cedro" : undefined), source });
   };
 

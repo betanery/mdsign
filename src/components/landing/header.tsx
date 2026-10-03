@@ -1,14 +1,56 @@
 import { useEffect, useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 
-import { navItems } from "@/content/landing";
+import { navAnchors } from "@/content/landing";
+import {
+  localeLabels,
+  localeNames,
+  locales,
+  rememberLocale,
+  switchLocalePath,
+  useI18n,
+} from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Cta } from "./cta";
 import { Logo } from "./logo";
 
+/** Seletor PT | EN | ES. A escolha fica salva e prevalece nas próximas visitas. */
+function LanguageSwitcher({ className }: { className?: string }) {
+  const { locale, t } = useI18n();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  return (
+    <nav aria-label={t.a11y.language} className={className}>
+      <ul className="flex items-center rounded-lg border p-0.5 text-xs font-semibold">
+        {locales.map((l) => (
+          <li key={l}>
+            <a
+              href={switchLocalePath(pathname, l)}
+              hrefLang={l}
+              lang={l}
+              aria-current={l === locale ? "true" : undefined}
+              aria-label={localeNames[l]}
+              onClick={() => rememberLocale(l)}
+              className={cn(
+                "flex min-h-9 min-w-9 items-center justify-center rounded-md px-2 transition-colors",
+                l === locale ? "bg-brand text-white" : "text-foreground/70 hover:text-brand",
+              )}
+            >
+              {localeLabels[l]}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 export function Header() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { t, path } = useI18n();
+  const navItems = t.nav.map((label, i) => ({ label, href: navAnchors[i] ?? "#" }));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -25,15 +67,15 @@ export function Header() {
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:h-[72px] lg:px-8">
-        <a href="/" aria-label="MDSign — página inicial" className="shrink-0">
+        <a href={path()} aria-label={t.a11y.home} className="shrink-0">
           <Logo />
         </a>
 
-        <nav aria-label="Principal" className="hidden lg:block">
-          <ul className="flex items-center gap-7 text-sm font-medium text-foreground/80">
+        <nav aria-label={t.a11y.mainNav} className="hidden xl:block">
+          <ul className="flex items-center gap-6 text-sm font-medium text-foreground/80">
             {navItems.map((item) => (
               <li key={item.href}>
-                <a href={item.href} className="transition-colors hover:text-brand">
+                <a href={path(`/${item.href}`)} className="transition-colors hover:text-brand">
                   {item.label}
                 </a>
               </li>
@@ -41,31 +83,33 @@ export function Header() {
           </ul>
         </nav>
 
-        <div className="hidden items-center gap-3 lg:flex">
-          <Cta kind="login" source="header" variant="outline" size="sm" />
-          <Cta kind="free" source="header" size="sm" />
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <div className="hidden items-center gap-3 xl:flex">
+            <Cta kind="login" source="header" variant="outline" size="sm" />
+            <Cta kind="free" source="header" size="sm" />
+          </div>
+          <button
+            type="button"
+            className="inline-flex size-11 items-center justify-center rounded-lg text-foreground xl:hidden"
+            aria-expanded={open}
+            aria-controls="menu-mobile"
+            aria-label={open ? t.a11y.closeMenu : t.a11y.openMenu}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X className="size-6" /> : <Menu className="size-6" />}
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="inline-flex size-11 items-center justify-center rounded-lg text-foreground lg:hidden"
-          aria-expanded={open}
-          aria-controls="menu-mobile"
-          aria-label={open ? "Fechar menu" : "Abrir menu"}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <X className="size-6" /> : <Menu className="size-6" />}
-        </button>
       </div>
 
       {open && (
-        <div id="menu-mobile" className="border-t bg-white lg:hidden">
-          <nav aria-label="Principal (celular)" className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+        <div id="menu-mobile" className="border-t bg-white xl:hidden">
+          <nav aria-label={t.a11y.mobileNav} className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
             <ul className="flex flex-col">
               {navItems.map((item) => (
                 <li key={item.href}>
                   <a
-                    href={item.href}
+                    href={path(`/${item.href}`)}
                     className="block rounded-md px-2 py-3 text-base font-medium hover:bg-brand-soft"
                     onClick={() => setOpen(false)}
                   >

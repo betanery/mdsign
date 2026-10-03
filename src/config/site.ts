@@ -14,10 +14,6 @@ function optional(value: string | undefined): string | undefined {
 export const siteConfig = {
   name: "MDSign",
   company: "Mundo Digital Tech",
-  slogan: "Não use papel, plante uma árvore!",
-  title: "MDSign — Assinatura digital para empresas",
-  description:
-    "Envie, assine, gerencie e armazene seus documentos de forma simples, segura e 100% digital. Assinatura eletrônica e com certificado digital ICP-Brasil.",
   /** URL pública canônica, ex.: https://mdsign.com.br (sem barra final). */
   siteUrl: optional(env.VITE_SITE_URL)?.replace(/\/$/, ""),
 

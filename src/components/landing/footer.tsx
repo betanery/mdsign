@@ -1,12 +1,25 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
-import { footerLinks } from "@/content/landing";
+import { footerCompanyLinks, footerProductLinks } from "@/content/landing";
+import { useI18n } from "@/i18n";
 import mundoDigitalTechLogo from "@/assets/brand/mundo-digital-tech-branca.svg";
 import { Container } from "./section";
 
 export function Footer() {
   const { contact } = siteConfig;
+  const { t, path } = useI18n();
+  const groups = [
+    {
+      title: t.footer.productTitle,
+      links: t.footer.product.map((label, i) => ({ label, href: footerProductLinks[i] })),
+    },
+    {
+      title: t.footer.companyTitle,
+      links: t.footer.company.map((label, i) => ({ label, href: footerCompanyLinks[i] })),
+    },
+  ];
+
   return (
     <footer id="rodape" className="bg-navy text-white">
       <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1.5fr]">
@@ -14,25 +27,23 @@ export function Footer() {
           {/* Versão branca da logo oficial, para o fundo azul do rodapé. */}
           <img
             src={mundoDigitalTechLogo}
-            alt="Mundo Digital Tech"
+            alt={siteConfig.company}
             width={184}
             height={90}
             loading="lazy"
             className="h-16 w-auto"
           />
-          <p className="mt-3 max-w-xs text-sm text-white/70">
-            O MDSign é uma solução da {siteConfig.company}.
-          </p>
+          <p className="mt-3 max-w-xs text-sm text-white/70">{t.footer.solutionBy}</p>
         </div>
 
-        {Object.entries(footerLinks).map(([group, links]) => (
-          <nav key={group} aria-label={group}>
-            <p className="font-semibold">{group}</p>
+        {groups.map((group) => (
+          <nav key={group.title} aria-label={group.title}>
+            <p className="font-semibold">{group.title}</p>
             <ul className="mt-3 space-y-2 text-sm text-white/75">
-              {links.map((link) => (
+              {group.links.map((link) => (
                 <li key={link.label}>
                   {link.href ? (
-                    <a href={link.href} className="hover:text-white">
+                    <a href={path(link.href)} className="hover:text-white">
                       {link.label}
                     </a>
                   ) : (
@@ -64,7 +75,7 @@ export function Footer() {
       </Container>
       <div className="border-t border-white/10">
         <Container className="py-5 text-xs text-white/60">
-          © {new Date().getFullYear()} MDSign · {siteConfig.company}. Todos os direitos reservados.
+          © {new Date().getFullYear()} MDSign · {siteConfig.company}. {t.footer.rights}
         </Container>
       </div>
     </footer>

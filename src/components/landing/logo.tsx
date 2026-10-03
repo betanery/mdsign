@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * Logo oficial MDSign (extraída do PDF "MDSign - Logo Sem Registro").
- * Disposição horizontal com as peças originais — sem redesenho.
+ * Disposição horizontal com as peças originais — sem redesenho. O slogan da
+ * logo é parte do arquivo oficial (em português) e fica decorativo para leitores
+ * de tela; o slogan traduzido aparece no conteúdo da página.
  */
 export function Logo({
   className,
@@ -22,7 +24,8 @@ export function Logo({
         {showTagline && (
           <img
             src={tagline}
-            alt="Não use papel, plante uma árvore!"
+            alt=""
+            aria-hidden
             width={709}
             height={40}
             className="hidden h-[7px] w-auto sm:block"
