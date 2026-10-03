@@ -37,14 +37,14 @@ SignDoc direto do navegador), que grava o contato na tabela `leads`.
 ## Pendências antes de publicar
 
 - [ ] Definir `VITE_SITE_URL` (endereço de produção) e as demais URLs do ambiente.
-- [ ] Incluir o domínio de produção (e o do preview do Lovable, se for testar por lá) em
-      `ALLOWED_ORIGINS`: `npx supabase secrets set ALLOWED_ORIGINS=http://localhost:5188,https://<dominio>`.
+- [ ] Incluir o domínio de produção em `ALLOWED_ORIGINS` (mantendo os atuais, separados por vírgula).
 - [ ] Links "Quem somos" e "Blog" do rodapé (hoje aparecem como texto, sem link).
 
 ## Banco de dados (Supabase)
 
 Projeto Supabase próprio do MDSign: `vrksxqbopteeyeovdwpu` (já configurado: tabela criada,
-função publicada, `ALLOWED_ORIGINS=http://localhost:5188`). Estrutura em `supabase/`:
+função publicada). `ALLOWED_ORIGINS` libera: `http://localhost:5188`, `https://mdsign.lovable.app`
+e o preview do Lovable (`id-preview--e9331f71-….lovable.app` e `e9331f71-….lovableproject.com`). Estrutura em `supabase/`:
 
 - `migrations/20261003210000_leads.sql`: tabela `public.leads`, com RLS ligado e sem acesso público.
 - `functions/lead-submit`: Edge Function que recebe o formulário, valida os campos, bloqueia
