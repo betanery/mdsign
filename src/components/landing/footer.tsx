@@ -2,7 +2,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { footerLinks } from "@/content/landing";
-import mundoDigitalTechLogo from "@/assets/brand/mundo-digital-tech.svg";
+import mundoDigitalTechLogo from "@/assets/brand/mundo-digital-tech-branca.svg";
 import { Container } from "./section";
 
 export function Footer() {
@@ -11,17 +11,15 @@ export function Footer() {
     <footer id="rodape" className="bg-navy text-white">
       <Container className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1.5fr]">
         <div>
-          {/* Logo oficial com texto escuro: fica sobre fundo branco, sem recolorir. */}
-          <span className="inline-block rounded-xl bg-white px-4 py-3">
-            <img
-              src={mundoDigitalTechLogo}
-              alt="Mundo Digital Tech"
-              width={184}
-              height={90}
-              loading="lazy"
-              className="h-14 w-auto"
-            />
-          </span>
+          {/* Versão branca da logo oficial, para o fundo azul do rodapé. */}
+          <img
+            src={mundoDigitalTechLogo}
+            alt="Mundo Digital Tech"
+            width={184}
+            height={90}
+            loading="lazy"
+            className="h-16 w-auto"
+          />
           <p className="mt-3 max-w-xs text-sm text-white/70">
             O MDSign é uma solução da {siteConfig.company}.
           </p>
