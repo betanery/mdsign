@@ -58,6 +58,14 @@ instância ou com a Lacuna.
   enviar esse campo. `allowElectronicSignature: true` não muda o resultado (500 `332543`).
 - Conclusão: a validação do pedido passa (erros de validação voltam como 400/422) e a falha
   acontece **depois**, no processamento interno do servidor.
+- Comparação com aplicações que funcionam (Asaas/Novaweb, Formulário de Assinatura/TESTE
+  XUPETINHA, Integração Teste Conectenvios): todas têm o papel **Administrador**. Acrescentado
+  à MDSign Backend: continua 500 (`D63E18`, `65503F`).
+- MDSIGN Landing (organização Admin): upload funciona; criação responde
+  `422 OrganizationRequired` (organização de sistema não aceita documentos), como esperado.
+- Uploads: falhas intermitentes que dependem do momento, não da aplicação (`457F70`).
+- Próximo teste A/B: aplicação temporária numa organização antiga que funciona (ex.: TESTE
+  XUPETINHA) para separar "organização nova" de "instância".
 
 ### Decisão proposta
 
