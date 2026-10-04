@@ -41,16 +41,17 @@ Regras garantidas pelo banco e cobertas pelos testes:
 - ninguém insere associações direto nem apaga auditoria;
 - anônimo não lê nada.
 
-## Configuração pendente no Supabase (painel)
+## Configuração de autenticação no Supabase
 
-Authentication → URL Configuration:
+Aplicada em 03/10/2026 com `npx supabase config push` (`supabase/config.toml`, seção `[auth]`):
 
 - **Site URL:** `https://mdsign.lovable.app` (trocar pelo domínio de produção depois)
-- **Redirect URLs:** `http://localhost:5188/**`, `https://mdsign.lovable.app/**`,
-  `https://id-preview--e9331f71-3227-44d0-b78a-35bb1ae5a699.lovable.app/**`
+- **Redirect URLs:** `http://localhost:5188/**`, `https://mdsign.lovable.app/**` e os dois
+  endereços de preview do Lovable.
 
-Sem isso, os links de confirmação de cadastro e de recuperação de senha voltam para o endereço
-padrão do Supabase. Para produção, configurar SMTP próprio (Authentication → Emails): o envio
+O `config.toml` foi alinhado ao que já estava no projeto (confirmação de e-mail ligada, MFA TOTP,
+pooler, storage). Antes de qualquer `config push`, rode `npx supabase config diff` e confira que
+só mudam os itens desejados. Para produção, configurar SMTP próprio (Authentication → Emails): o envio
 padrão do Supabase tem limite baixo de e-mails por hora.
 
 Super Admin: incluir o usuário em `public.platform_admins` (SQL Editor:
