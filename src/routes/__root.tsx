@@ -119,12 +119,15 @@ function RootShell({ children }: { children: ReactNode }) {
         )}
       </head>
       <body>
-        <a
-          href="#conteudo"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:shadow"
-        >
-          {messages[locale].a11y.skipToContent}
-        </a>
+        {/* Páginas com idioma no endereço; o app (/app, /admin) tem o próprio link. */}
+        {isLocale(lang) && (
+          <a
+            href="#conteudo"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:shadow"
+          >
+            {messages[locale].a11y.skipToContent}
+          </a>
+        )}
         {children}
         <Scripts />
       </body>

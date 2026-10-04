@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LangRouteRouteImport } from './routes/$lang/route'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as DesenvolvedoresRouteImport } from './routes/desenvolvedores'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
@@ -18,6 +20,16 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LangIndexRouteImport } from './routes/$lang/index'
 import { Route as LangDesenvolvedoresRouteImport } from './routes/$lang/desenvolvedores'
 import { Route as LangEntrarRouteImport } from './routes/$lang/entrar'
+import { Route as AppShellRouteImport } from './routes/app/_shell'
+import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-password'
+import { Route as AppLoginRouteImport } from './routes/app/login'
+import { Route as AppResetPasswordRouteImport } from './routes/app/reset-password'
+import { Route as AppSignupRouteImport } from './routes/app/signup'
+import { Route as AppShellIndexRouteImport } from './routes/app/_shell/index'
+import { Route as AppShellSectionRouteImport } from './routes/app/_shell/$section'
+import { Route as AppShellOrganizationRouteImport } from './routes/app/_shell/organization'
+import { Route as AppShellSettingsRouteImport } from './routes/app/_shell/settings'
+import { Route as AppInviteTokenRouteImport } from './routes/app/invite.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -27,6 +39,16 @@ const IndexRoute = IndexRouteImport.update({
 const LangRouteRoute = LangRouteRouteImport.update({
   id: '/$lang',
   path: '/$lang',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DesenvolvedoresRoute = DesenvolvedoresRouteImport.update({
@@ -64,78 +86,195 @@ const LangEntrarRoute = LangEntrarRouteImport.update({
   path: '/entrar',
   getParentRoute: () => LangRouteRoute,
 } as any)
+const AppShellRoute = AppShellRouteImport.update({
+  id: '/_shell',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppLoginRoute = AppLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppResetPasswordRoute = AppResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppSignupRoute = AppSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppShellIndexRoute = AppShellIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellSectionRoute = AppShellSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellOrganizationRoute = AppShellOrganizationRouteImport.update({
+  id: '/organization',
+  path: '/organization',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellSettingsRoute = AppShellSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppInviteTokenRoute = AppInviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$lang': typeof LangRouteRouteWithChildren
+  '/app': typeof AppRouteRouteWithChildren
+  '/admin': typeof AdminRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
+  '/app/forgot-password': typeof AppForgotPasswordRoute
+  '/app/login': typeof AppLoginRoute
+  '/app/reset-password': typeof AppResetPasswordRoute
+  '/app/signup': typeof AppSignupRoute
   '/$lang/': typeof LangIndexRoute
+  '/app/$section': typeof AppShellSectionRoute
+  '/app/organization': typeof AppShellOrganizationRoute
+  '/app/settings': typeof AppShellSettingsRoute
+  '/app/invite/$token': typeof AppInviteTokenRoute
+  '/app/': typeof AppShellIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app': typeof AppShellIndexRoute
+  '/admin': typeof AdminRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
+  '/app/forgot-password': typeof AppForgotPasswordRoute
+  '/app/login': typeof AppLoginRoute
+  '/app/reset-password': typeof AppResetPasswordRoute
+  '/app/signup': typeof AppSignupRoute
   '/$lang': typeof LangIndexRoute
+  '/app/$section': typeof AppShellSectionRoute
+  '/app/organization': typeof AppShellOrganizationRoute
+  '/app/settings': typeof AppShellSettingsRoute
+  '/app/invite/$token': typeof AppInviteTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$lang': typeof LangRouteRouteWithChildren
+  '/app': typeof AppRouteRouteWithChildren
+  '/admin': typeof AdminRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
+  '/app/_shell': typeof AppShellRouteWithChildren
+  '/app/forgot-password': typeof AppForgotPasswordRoute
+  '/app/login': typeof AppLoginRoute
+  '/app/reset-password': typeof AppResetPasswordRoute
+  '/app/signup': typeof AppSignupRoute
   '/$lang/': typeof LangIndexRoute
+  '/app/_shell/$section': typeof AppShellSectionRoute
+  '/app/_shell/organization': typeof AppShellOrganizationRoute
+  '/app/_shell/settings': typeof AppShellSettingsRoute
+  '/app/invite/$token': typeof AppInviteTokenRoute
+  '/app/_shell/': typeof AppShellIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/$lang'
+    | '/app'
+    | '/admin'
     | '/desenvolvedores'
     | '/entrar'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
+    | '/app/forgot-password'
+    | '/app/login'
+    | '/app/reset-password'
+    | '/app/signup'
     | '/$lang/'
+    | '/app/$section'
+    | '/app/organization'
+    | '/app/settings'
+    | '/app/invite/$token'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app'
+    | '/admin'
     | '/desenvolvedores'
     | '/entrar'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
+    | '/app/forgot-password'
+    | '/app/login'
+    | '/app/reset-password'
+    | '/app/signup'
     | '/$lang'
+    | '/app/$section'
+    | '/app/organization'
+    | '/app/settings'
+    | '/app/invite/$token'
   id:
     | '__root__'
     | '/'
     | '/$lang'
+    | '/app'
+    | '/admin'
     | '/desenvolvedores'
     | '/entrar'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
+    | '/app/_shell'
+    | '/app/forgot-password'
+    | '/app/login'
+    | '/app/reset-password'
+    | '/app/signup'
     | '/$lang/'
+    | '/app/_shell/$section'
+    | '/app/_shell/organization'
+    | '/app/_shell/settings'
+    | '/app/invite/$token'
+    | '/app/_shell/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LangRouteRoute: typeof LangRouteRouteWithChildren
+  AppRouteRoute: typeof AppRouteRouteWithChildren
+  AdminRoute: typeof AdminRoute
   DesenvolvedoresRoute: typeof DesenvolvedoresRoute
   EntrarRoute: typeof EntrarRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -156,6 +295,20 @@ declare module '@tanstack/react-router' {
       path: '/$lang'
       fullPath: '/$lang'
       preLoaderRoute: typeof LangRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/desenvolvedores': {
@@ -207,6 +360,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LangEntrarRouteImport
       parentRoute: typeof LangRouteRoute
     }
+    '/app/_shell': {
+      id: '/app/_shell'
+      path: ''
+      fullPath: '/app'
+      preLoaderRoute: typeof AppShellRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/forgot-password': {
+      id: '/app/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/app/forgot-password'
+      preLoaderRoute: typeof AppForgotPasswordRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/login': {
+      id: '/app/login'
+      path: '/login'
+      fullPath: '/app/login'
+      preLoaderRoute: typeof AppLoginRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/reset-password': {
+      id: '/app/reset-password'
+      path: '/reset-password'
+      fullPath: '/app/reset-password'
+      preLoaderRoute: typeof AppResetPasswordRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/signup': {
+      id: '/app/signup'
+      path: '/signup'
+      fullPath: '/app/signup'
+      preLoaderRoute: typeof AppSignupRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/_shell/': {
+      id: '/app/_shell/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppShellIndexRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/$section': {
+      id: '/app/_shell/$section'
+      path: '/$section'
+      fullPath: '/app/$section'
+      preLoaderRoute: typeof AppShellSectionRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/organization': {
+      id: '/app/_shell/organization'
+      path: '/organization'
+      fullPath: '/app/organization'
+      preLoaderRoute: typeof AppShellOrganizationRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/settings': {
+      id: '/app/_shell/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppShellSettingsRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/invite/$token': {
+      id: '/app/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/app/invite/$token'
+      preLoaderRoute: typeof AppInviteTokenRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -226,9 +449,51 @@ const LangRouteRouteWithChildren = LangRouteRoute._addFileChildren(
   LangRouteRouteChildren,
 )
 
+interface AppShellRouteChildren {
+  AppShellSectionRoute: typeof AppShellSectionRoute
+  AppShellOrganizationRoute: typeof AppShellOrganizationRoute
+  AppShellSettingsRoute: typeof AppShellSettingsRoute
+  AppShellIndexRoute: typeof AppShellIndexRoute
+}
+
+const AppShellRouteChildren: AppShellRouteChildren = {
+  AppShellSectionRoute: AppShellSectionRoute,
+  AppShellOrganizationRoute: AppShellOrganizationRoute,
+  AppShellSettingsRoute: AppShellSettingsRoute,
+  AppShellIndexRoute: AppShellIndexRoute,
+}
+
+const AppShellRouteWithChildren = AppShellRoute._addFileChildren(
+  AppShellRouteChildren,
+)
+
+interface AppRouteRouteChildren {
+  AppShellRoute: typeof AppShellRouteWithChildren
+  AppForgotPasswordRoute: typeof AppForgotPasswordRoute
+  AppLoginRoute: typeof AppLoginRoute
+  AppResetPasswordRoute: typeof AppResetPasswordRoute
+  AppSignupRoute: typeof AppSignupRoute
+  AppInviteTokenRoute: typeof AppInviteTokenRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppShellRoute: AppShellRouteWithChildren,
+  AppForgotPasswordRoute: AppForgotPasswordRoute,
+  AppLoginRoute: AppLoginRoute,
+  AppResetPasswordRoute: AppResetPasswordRoute,
+  AppSignupRoute: AppSignupRoute,
+  AppInviteTokenRoute: AppInviteTokenRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LangRouteRoute: LangRouteRouteWithChildren,
+  AppRouteRoute: AppRouteRouteWithChildren,
+  AdminRoute: AdminRoute,
   DesenvolvedoresRoute: DesenvolvedoresRoute,
   EntrarRoute: EntrarRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
