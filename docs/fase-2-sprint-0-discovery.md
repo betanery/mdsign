@@ -66,6 +66,9 @@ instância ou com a Lacuna.
 - Uploads: falhas intermitentes que dependem do momento, não da aplicação (`457F70`).
 - Próximo teste A/B: aplicação temporária numa organização antiga que funciona (ex.: TESTE
   XUPETINHA) para separar "organização nova" de "instância".
+- ❌ Resultado do A/B: aplicação "MDSign Teste" (Administrador) na TESTE XUPETINHA também
+  falha (500 `7E25AD`). **O problema é da instância**, não da organização nova. Suspeita
+  principal: faturamento desabilitado em toda a instância.
 
 ### Decisão proposta
 
