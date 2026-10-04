@@ -44,6 +44,14 @@ instância ou com a Lacuna.
 - ❌ `POST /api/documents` na MDSign Plataforma responde **500** (códigos `77483E` e `FBD910`),
   com o mesmo padrão do erro da tela de plano (`4BB15E`). Nada foi criado. Hipótese: organização
   criada sem responsável/assinatura, ou efeito de desabilitar o faturamento. Investigar nos logs.
+- ❌ Descartado em seguida: responsável na organização (usuário admin incluído), opção de
+  desligar notificações e o arquivo (o mesmo PDF que funciona pelo painel também falha).
+  O painel cria documentos na MDSign Plataforma normalmente; a organização tem subscription
+  (eventos 21:01 e 21:14). Uploads pela API também falham **de forma intermitente** (500
+  `3EF69D`). Códigos para os logs: `CFCA21`, `99B237`, `DD8CAB`, `FBD910`, `77483E`, `3EF69D`,
+  `4BB15E`.
+- ✅ A aplicação com papel Básico **não lista documentos criados por usuários no painel**:
+  documentos criados fora do MDSign não aparecem para a integração (impacta a migração, §51).
 
 ### Decisão proposta
 
