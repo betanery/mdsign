@@ -32,6 +32,13 @@ instância ou com a Lacuna.
 - ✅ Organização-motor criada pelo painel em 03/10/2026: **MDSign Plataforma**
   (id `01620f89-b1c8-45fc-a4f1-08df1268a801`, CNPJ 32.650.036/0001-07).
 
+- ✅ Aplicação **MDSign Backend** (MDSign Plataforma, papéis Básico + Criador de documentos),
+  chave em `SIGNDOC_API_KEY`: `/api/folders`, `/api/documents`, `/api/document-flows` e
+  `/api/organizations/users` respondem 200 (organização vazia). O faturamento da instância foi
+  desabilitado para liberar a organização sem assinatura.
+- ⚠️ A tela de plano/faturamento do painel falha em todas as organizações (erro `4BB15E`):
+  investigar nos logs do servidor.
+
 ### Decisão proposta
 
 | Modelo | Uso | Como funciona |
