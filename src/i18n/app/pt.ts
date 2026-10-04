@@ -42,6 +42,8 @@ const pt = {
     weakPassword: "A senha precisa ter pelo menos 8 caracteres.",
     alreadyRegistered: "Já existe uma conta com esse e-mail. Entre ou recupere a senha.",
     rateLimited: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+    emailNotSent:
+      "Não conseguimos enviar o e-mail de confirmação agora. Tente novamente em alguns minutos ou fale com o suporte.",
     logout: "Sair",
     terms: "Ao criar a conta, você concorda com os termos de uso e a política de privacidade.",
   },

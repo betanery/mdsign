@@ -45,6 +45,8 @@ const es: AppMessages = {
     alreadyRegistered:
       "Ya existe una cuenta con ese correo. Inicia sesión o recupera la contraseña.",
     rateLimited: "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.",
+    emailNotSent:
+      "No pudimos enviar el correo de confirmación ahora. Inténtalo de nuevo en unos minutos o contacta con soporte.",
     logout: "Cerrar sesión",
     terms: "Al crear la cuenta, aceptas los términos de uso y la política de privacidad.",
   },

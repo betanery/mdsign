@@ -59,6 +59,13 @@ export function friendlyError(
   if (msg.includes("password") && msg.includes("characters")) return t.auth.weakPassword;
   if (msg.includes("rate limit") || msg.includes("over_email_send_rate_limit"))
     return t.auth.rateLimited;
+  // E-mail padrão do Supabase sem SMTP próprio: só envia para a equipe do projeto.
+  if (
+    msg.includes("email_address_not_authorized") ||
+    msg.includes("not authorized") ||
+    msg.includes("sending confirmation")
+  )
+    return t.auth.emailNotSent;
   if (msg.includes("last_owner")) return t.organization.lastOwner;
   if (msg.includes("invitation_email_mismatch")) return t.invite.mismatch;
   if (msg.includes("invitation_invalid")) return t.invite.invalid;

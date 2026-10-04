@@ -44,6 +44,8 @@ const en: AppMessages = {
     alreadyRegistered:
       "An account with this email already exists. Sign in or recover your password.",
     rateLimited: "Too many attempts. Wait a few minutes and try again.",
+    emailNotSent:
+      "We couldn't send the confirmation email right now. Try again in a few minutes or contact support.",
     logout: "Sign out",
     terms: "By creating an account, you agree to the terms of use and the privacy policy.",
   },

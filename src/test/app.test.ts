@@ -42,6 +42,12 @@ describe("validação de documentos", () => {
       t.organization.lastOwner,
     );
     expect(friendlyError({ message: "forbidden", code: "42501" }, t)).toBe(t.common.forbidden);
+    expect(
+      friendlyError(
+        { message: "Email address not authorized", code: "email_address_not_authorized" },
+        t,
+      ),
+    ).toBe(t.auth.emailNotSent);
     expect(friendlyError({ message: "boom" }, t)).toBe(t.common.genericError);
   });
 });
