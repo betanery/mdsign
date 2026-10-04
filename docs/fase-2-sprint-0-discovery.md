@@ -52,6 +52,12 @@ instância ou com a Lacuna.
   `4BB15E`.
 - ✅ A aplicação com papel Básico **não lista documentos criados por usuários no painel**:
   documentos criados fora do MDSign não aparecem para a integração (impacta a migração, §51).
+- ✅ Revisão do pedido contra o Swagger da instância: campos obrigatórios corretos
+  (`files[].id/name/displayName/contentType`, `flowActions[].type/step/user`).
+- ✅ `signatureType` está desabilitado na instância (`422 DocumentSignatureTypesDisabled`): não
+  enviar esse campo. `allowElectronicSignature: true` não muda o resultado (500 `332543`).
+- Conclusão: a validação do pedido passa (erros de validação voltam como 400/422) e a falha
+  acontece **depois**, no processamento interno do servidor.
 
 ### Decisão proposta
 
