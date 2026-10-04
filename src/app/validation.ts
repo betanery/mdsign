@@ -66,6 +66,8 @@ export function friendlyError(
     msg.includes("sending confirmation")
   )
     return t.auth.emailNotSent;
+  if (msg.includes("profiles_cpf_unique") || (msg.includes("23505") && msg.includes("cpf")))
+    return t.settings.cpfTaken;
   if (msg.includes("last_owner")) return t.organization.lastOwner;
   if (msg.includes("invitation_email_mismatch")) return t.invite.mismatch;
   if (msg.includes("invitation_invalid")) return t.invite.invalid;

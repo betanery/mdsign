@@ -61,26 +61,31 @@ function Shell() {
   );
 }
 
+type ProfileBasics = { full_name: string | null; cpf: string | null };
+
 function OrgGate() {
   const { loading, organizations } = useOrg();
   const { user } = useAuth();
-  // undefined = carregando; null = perfil sem nome (precisa confirmar).
-  const [profileName, setProfileName] = useState<string | null | undefined>(undefined);
+  // undefined = carregando.
+  const [profile, setProfile] = useState<ProfileBasics | undefined>(undefined);
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, cpf")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => setProfileName(data?.full_name?.trim() || null));
+      .then(({ data }) =>
+        setProfile({ full_name: data?.full_name ?? null, cpf: data?.cpf ?? null }),
+      );
   }, [user]);
 
-  if (loading || profileName === undefined) return <FullScreenLoading />;
+  if (loading || profile === undefined) return <FullScreenLoading />;
   if (organizations.length === 0) return <Onboarding />;
-  // Já tem organização mas o perfil está sem nome (ex.: conta criada por outro caminho).
-  if (profileName === null) return <ConfirmProfile onDone={setProfileName} />;
+  // Nome e CPF são obrigatórios para assinar (o CPF é o `identifier` do signatário no motor).
+  if (!profile.full_name?.trim() || !profile.cpf)
+    return <ConfirmProfile initial={profile} onDone={setProfile} />;
   return (
     <AppShell>
       <Outlet />
@@ -89,31 +94,34 @@ function OrgGate() {
 }
 
 /** Confirma nome e CPF antes de entrar no app (PRD §50: "confirmar perfil"). */
-function ConfirmProfile({ onDone }: { onDone: (name: string) => void }) {
+function ConfirmProfile({
+  initial,
+  onDone,
+}: {
+  initial: ProfileBasics;
+  onDone: (profile: ProfileBasics) => void;
+}) {
   const { t } = useAppI18n();
   const { user } = useAuth();
-  const [fullName, setFullName] = useState("");
-  const [cpf, setCpf] = useState("");
+  const [fullName, setFullName] = useState(initial.full_name ?? "");
+  const [cpf, setCpf] = useState(formatCpf(initial.cpf ?? ""));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!user) return;
-    if (cpf && !isValidCpf(cpf)) {
+    if (!isValidCpf(cpf)) {
       setError(t.settings.cpfInvalid);
       return;
     }
     setBusy(true);
     setError(null);
-    const name = fullName.trim();
-    const { error: err } = await supabase
-      .from("profiles")
-      .update({ full_name: name, cpf: cpf ? onlyDigits(cpf) : null })
-      .eq("id", user.id);
+    const next = { full_name: fullName.trim(), cpf: onlyDigits(cpf) };
+    const { error: err } = await supabase.from("profiles").update(next).eq("id", user.id);
     setBusy(false);
     if (err) setError(friendlyError(err, t));
-    else onDone(name);
+    else onDone(next);
   }
 
   return (
@@ -133,16 +141,19 @@ function ConfirmProfile({ onDone }: { onDone: (name: string) => void }) {
           />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="cp-cpf">
-            {t.settings.cpf} <span className="text-muted-foreground">({t.common.optional})</span>
-          </Label>
+          <Label htmlFor="cp-cpf">{t.settings.cpf}</Label>
           <Input
             id="cp-cpf"
             inputMode="numeric"
+            required
             value={cpf}
             onChange={(e) => setCpf(formatCpf(e.target.value))}
             placeholder="000.000.000-00"
+            aria-describedby="cp-cpf-hint"
           />
+          <p id="cp-cpf-hint" className="text-xs text-muted-foreground">
+            {t.settings.cpfRequiredHint}
+          </p>
         </div>
         {error && <FormMessage kind="error">{error}</FormMessage>}
         <Button type="submit" size="lg" disabled={busy} className="bg-brand hover:bg-brand-strong">
@@ -182,7 +193,7 @@ function Onboarding() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const name = String(new FormData(event.currentTarget).get("name")).trim();
-    if (cpf && !isValidCpf(cpf)) {
+    if (!isValidCpf(cpf)) {
       setError(t.settings.cpfInvalid);
       return;
     }
@@ -195,7 +206,7 @@ function Onboarding() {
     setError(null);
     const profile = await supabase
       .from("profiles")
-      .update({ full_name: fullName.trim() || null, cpf: cpf ? onlyDigits(cpf) : null })
+      .update({ full_name: fullName.trim(), cpf: onlyDigits(cpf) })
       .eq("id", user.id);
     if (profile.error) {
       setError(friendlyError(profile.error, t));
@@ -234,19 +245,18 @@ function Onboarding() {
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="me-cpf">
-              {t.settings.cpf} <span className="text-muted-foreground">({t.common.optional})</span>
-            </Label>
+            <Label htmlFor="me-cpf">{t.settings.cpf}</Label>
             <Input
               id="me-cpf"
               inputMode="numeric"
+              required
               value={cpf}
               onChange={(e) => setCpf(formatCpf(e.target.value))}
               placeholder="000.000.000-00"
               aria-describedby="me-cpf-hint"
             />
             <p id="me-cpf-hint" className="text-xs text-muted-foreground">
-              {t.settings.profileText}
+              {t.settings.cpfRequiredHint}
             </p>
           </div>
         </fieldset>

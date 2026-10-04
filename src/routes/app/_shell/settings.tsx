@@ -40,7 +40,7 @@ function SettingsPage() {
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (!user) return;
-    if (cpf && !isValidCpf(cpf)) {
+    if (!isValidCpf(cpf)) {
       setError(t.settings.cpfInvalid);
       return;
     }
@@ -49,7 +49,7 @@ function SettingsPage() {
       .from("profiles")
       .update({
         full_name: fullName.trim() || null,
-        cpf: cpf ? onlyDigits(cpf) : null,
+        cpf: onlyDigits(cpf),
         phone: phone.trim() || null,
       })
       .eq("id", user.id);
@@ -82,10 +82,15 @@ function SettingsPage() {
               <Input
                 id="cpf"
                 inputMode="numeric"
+                required
                 value={cpf}
                 onChange={(e) => setCpf(formatCpf(e.target.value))}
                 placeholder="000.000.000-00"
+                aria-describedby="cpf-hint"
               />
+              <p id="cpf-hint" className="text-xs text-muted-foreground">
+                {t.settings.cpfRequiredHint}
+              </p>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="phone">{t.settings.phone}</Label>

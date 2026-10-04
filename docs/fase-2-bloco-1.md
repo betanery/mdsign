@@ -65,10 +65,17 @@ Super Admin: incluir o usuário em `public.platform_admins` (SQL Editor:
 - Servidor (Supabase): `minimum_password_length = 8` e `password_requirements = "letters_digits"`
   (o mais próximo sem exigir maiúsculas/minúsculas; o caractere especial é exigido na tela).
 
-## Perfil
+## Perfil e CPF
 
-Quem entra sem nome no perfil (ex.: conta criada pelo painel do Supabase) vê "Confirme seu perfil"
-antes de seguir, mesmo já tendo organização.
+O CPF é **obrigatório**: o motor de assinatura exige o `identifier` (CPF) de cada signatário, e o
+"Só eu assino" usa o CPF da própria pessoa. Quem entra sem nome ou sem CPF vê "Confirme seu
+perfil" antes de seguir, mesmo já tendo organização. O primeiro acesso e as Configurações também
+exigem CPF válido. No banco, um CPF só pode estar em uma conta
+(`20261004180000_profiles_cpf_unico.sql`).
+
+Observação para EN/ES: o motor aceita como `identifier` o CPF (Brasil) ou a Cédula de Identidad
+(Equador/Paraguai). Signatários estrangeiros sem esses documentos precisam de uma decisão de
+produto antes do Bloco 2.
 
 ## Fora do Bloco 1
 

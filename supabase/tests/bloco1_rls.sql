@@ -156,4 +156,12 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- CPF único por conta
+update public.profiles set cpf = '81976153069' where id = '00000000-0000-0000-0000-00000000000a';
+do $$ begin
+  update public.profiles set cpf = '81976153069' where id = '00000000-0000-0000-0000-00000000000b';
+  assert false, 'o mesmo CPF não pode estar em duas contas';
+exception when unique_violation then null;
+end $$;
+
 select 'todos os testes de RLS do Bloco 1 passaram' as resultado;

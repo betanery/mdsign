@@ -185,6 +185,9 @@ const en: AppMessages = {
     fullName: "Full name",
     cpf: "CPF (Brazilian ID)",
     cpfInvalid: "Invalid CPF. Check the 11 digits.",
+    cpfRequiredHint: "Required: the CPF identifies you when signing documents.",
+    cpfTaken:
+      "This CPF is already registered to another account. Sign in with that account or contact support.",
     phone: "Mobile phone",
     language: "Language",
     account: "Account",

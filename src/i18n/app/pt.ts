@@ -184,6 +184,9 @@ const pt = {
     fullName: "Nome completo",
     cpf: "CPF",
     cpfInvalid: "CPF inválido. Confira os 11 dígitos.",
+    cpfRequiredHint: "Obrigatório: o CPF identifica você na assinatura dos documentos.",
+    cpfTaken:
+      "Este CPF já está cadastrado em outra conta. Entre com essa conta ou fale com o suporte.",
     phone: "Celular",
     language: "Idioma",
     account: "Conta",
