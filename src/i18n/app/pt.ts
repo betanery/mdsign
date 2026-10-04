@@ -49,6 +49,8 @@ const pt = {
   },
   onboarding: {
     title: "Vamos criar sua organização",
+    profileStep: "1. Confirme seu perfil",
+    orgStep: "2. Sua organização",
     subtitle:
       "A organização reúne seus documentos, modelos e equipe. Você pode convidar pessoas depois.",
     orgName: "Nome da organização",

@@ -51,6 +51,8 @@ const en: AppMessages = {
   },
   onboarding: {
     title: "Let's create your organization",
+    profileStep: "1. Confirm your profile",
+    orgStep: "2. Your organization",
     subtitle:
       "The organization brings together your documents, templates and team. You can invite people later.",
     orgName: "Organization name",
