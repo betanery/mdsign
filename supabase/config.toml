@@ -432,3 +432,24 @@ verify_jwt = false
 
 [functions.documents-action]
 verify_jwt = false
+
+[functions.documents-send]
+verify_jwt = false
+
+[functions.documents-from-template]
+verify_jwt = false
+
+[functions.app-config]
+verify_jwt = false
+
+[functions.public-form]
+verify_jwt = false
+
+[functions.bulk-jobs]
+verify_jwt = false
+
+[functions.signdoc-webhook]
+verify_jwt = false
+
+[functions.reminders-run]
+verify_jwt = false

@@ -4,16 +4,8 @@ import { Construction } from "lucide-react";
 import { PageHeader } from "@/app/components/app-shell";
 import { useAppI18n } from "@/app/i18n";
 
-/** Seções das próximas etapas da Fase 2: aparecem no menu, ainda sem conteúdo. */
-const upcoming = [
-  "templates",
-  "processes",
-  "bulk",
-  "forms",
-  "contacts",
-  "integrations",
-  "reports",
-] as const;
+/** Seções das próximas fases: aparecem no menu, ainda sem conteúdo. */
+const upcoming = ["processes", "integrations", "reports"] as const;
 type Upcoming = (typeof upcoming)[number];
 
 export const Route = createFileRoute("/app/_shell/$section")({

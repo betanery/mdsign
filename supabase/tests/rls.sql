@@ -46,6 +46,9 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Empresa A no Ipê (10 usuários) para os convites abaixo; Empresa B segue no Cedro.
+update public.subscriptions set plan_id = 'ipe' where organization_id = (select v from t_ids where k = 'orgA');
+
 -- Ana convida Bruno como Visualizador e Carla como Gestora
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
 set local role authenticated;
@@ -164,4 +167,145 @@ do $$ begin
 exception when unique_violation then null;
 end $$;
 
-select 'todos os testes de RLS do Bloco 1 passaram' as resultado;
+-- Bloco 6: planos e consumo
+do $$ begin
+  assert (select plan_id from public.subscriptions where organization_id = (select v from t_ids where k = 'orgB')) = 'cedro', 'organização nova nasce no Cedro';
+  for i in 1..5 loop
+    assert public.consume_document((select v from t_ids where k = 'orgB'), 'teste'), 'Cedro permite até 5 documentos';
+  end loop;
+  assert not public.consume_document((select v from t_ids where k = 'orgB'), 'teste'), 'Cedro bloqueia o 6º documento';
+  perform public.refund_document((select v from t_ids where k = 'orgB'));
+  assert public.consume_document((select v from t_ids where k = 'orgB'), 'teste'), 'documento devolvido libera de novo';
+  assert exists (select 1 from public.policy_events where organization_id = (select v from t_ids where k = 'orgB') and policy_id = 'usage_alert'), 'alerta de 80% registrado';
+  assert exists (select 1 from public.policy_events where organization_id = (select v from t_ids where k = 'orgB') and policy_id = 'usage_block'), 'bloqueio registrado';
+  for i in 1..50 loop
+    assert public.consume_document((select v from t_ids where k = 'orgA'), 'teste'), 'Ipê é ilimitado';
+  end loop;
+end $$;
+
+-- Bruno vê o consumo da Empresa B (dele) e não o de uma organização onde não é membro
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.org_usage((select v from t_ids where k = 'orgB'))) = 0, 'Carla não vê o consumo da Empresa B';
+  assert (select documents_total_used from public.org_usage((select v from t_ids where k = 'orgA'))) = 50, 'Carla vê o consumo da Empresa A';
+end $$;
+reset role;
+
+-- Limite de usuários: Empresa B (Cedro, 1 usuário) não convida mais ninguém
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.invite_member((select v from t_ids where k = 'orgB'), 'novo@teste.mdsign', 'member');
+  assert false, 'Cedro não permite segundo usuário';
+exception when raise_exception then null;
+end $$;
+reset role;
+
+
+-- Blocos 4 e 5: modelos, formulários e massa
+-- Carla (gestora da Empresa A) cria modelo da organização; Bruno (visualizador) não.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+insert into public.templates (organization_id, owner_id, scope, name, body)
+  values ((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000c', 'organization', 'Modelo A', 'Olá {{nome}}');
+do $$ begin
+  assert (select count(*) from public.templates where scope = 'mdsign') >= 4, 'biblioteca MDSign visível';
+  assert exists (select 1 from public.templates where name = 'Modelo A'), 'gestora vê o modelo da organização';
+end $$;
+reset role;
+insert into t_ids values ('tplA', (select id from public.templates where name = 'Modelo A'));
+
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  insert into public.templates (organization_id, owner_id, scope, name, body)
+    values ((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000b', 'organization', 'Invasor', 'x');
+  assert false, 'visualizador não cria modelo da organização';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  update public.templates set name = 'Hack' where scope = 'mdsign';
+  assert (select count(*) from public.templates where name = 'Hack') = 0, 'ninguém altera a biblioteca MDSign';
+  -- Bruno vê o modelo da Empresa A (é membro), mas não o pessoal de outra pessoa.
+  assert exists (select 1 from public.templates where name = 'Modelo A'), 'membro vê modelo da organização';
+  assert (select count(*) from public.forms) = 0, 'visualizador não vê formulários';
+end $$;
+reset role;
+
+-- Reserva de vagas do formulário: máximo de 2 respostas
+insert into public.forms (organization_id, template_id, name, max_responses)
+  values ((select v from t_ids where k = 'orgA'), (select v from t_ids where k = 'tplA'), 'Form A', 2);
+do $$
+declare f uuid := (select id from public.forms where name = 'Form A');
+begin
+  assert (select token from public.forms where id = f) ~ '^[a-f0-9]{32}$', 'token aleatório de 32 hex';
+  assert public.claim_form_slot(f), '1ª resposta';
+  assert public.claim_form_slot(f), '2ª resposta';
+  assert not public.claim_form_slot(f), 'máximo de respostas respeitado';
+  perform public.release_form_slot(f);
+  assert public.claim_form_slot(f), 'vaga devolvida pode ser usada';
+  update public.forms set expires_at = now() - interval '1 minute', responses_count = 0 where id = f;
+  assert not public.claim_form_slot(f), 'formulário vencido não aceita respostas';
+end $$;
+
+-- Lote: itens reservados uma vez só e lote encerrado quando não há pendentes
+insert into public.bulk_jobs (organization_id, name, status, total)
+  values ((select v from t_ids where k = 'orgA'), 'Lote A', 'sending', 3);
+insert into public.bulk_items (job_id, organization_id, row_number, data)
+  select (select id from public.bulk_jobs where name = 'Lote A'), (select v from t_ids where k = 'orgA'), g, '{}'::jsonb
+  from generate_series(1, 3) g;
+do $$
+declare j uuid := (select id from public.bulk_jobs where name = 'Lote A');
+begin
+  assert (select count(*) from public.claim_bulk_items(j, 2)) = 2, 'pega 2 itens';
+  assert (select count(*) from public.claim_bulk_items(j, 2)) = 1, 'não pega de novo os já reservados';
+  update public.bulk_items set status = 'sent' where job_id = j and row_number < 3;
+  update public.bulk_items set status = 'failed' where job_id = j and row_number = 3;
+  perform public.refresh_bulk_job(j);
+  assert (select status from public.bulk_jobs where id = j) = 'done', 'lote encerrado';
+  assert (select sent from public.bulk_jobs where id = j) = 2 and (select failed from public.bulk_jobs where id = j) = 1, 'totais do lote';
+end $$;
+
+-- Bruno (agora operador, com bulk.send) vê o lote, mas não grava nem chama as reservas
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.bulk_jobs) = 1, 'operador vê o lote da organização';
+  update public.bulk_items set status = 'pending';
+  assert false, 'usuário não altera itens do lote';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.claim_form_slot(gen_random_uuid());
+  assert false, 'usuário não chama claim_form_slot';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+-- Super Admin: só quem está em platform_admins
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.admin_overview();
+  assert false, 'gestora comum não acessa o Super Admin';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.admin_set_plan((select v from t_ids where k = 'orgB'), 'ipe');
+  assert false, 'gestora comum não troca plano';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-00000000000c');
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.admin_overview()) >= 2, 'Super Admin vê as organizações';
+  perform public.admin_set_plan((select v from t_ids where k = 'orgB'), 'angico', 'paid');
+  assert (select plan_id from public.subscriptions where organization_id = (select v from t_ids where k = 'orgB')) = 'angico', 'Super Admin troca o plano';
+  perform public.admin_set_policy('usage_alert', true, '{"percent": 90}');
+  assert (select config->>'percent' from public.policies where id = 'usage_alert') = '90', 'Super Admin ajusta política';
+end $$;
+reset role;
+
+select 'todos os testes de RLS e permissões passaram' as resultado;

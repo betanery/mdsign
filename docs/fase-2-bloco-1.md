@@ -7,7 +7,7 @@ PRD Fase 2 §58, Bloco 1: Auth, tenant, organização, perfis, permissões, desi
 | Área | Onde |
 |---|---|
 | Banco: perfis, organizações, unidades, membros, papéis, permissões, convites, auditoria, Super Admin | `supabase/migrations/20261004090000_bloco1_tenancy.sql` |
-| Testes de isolamento (RLS) e permissões | `supabase/tests/bloco1_rls.sql` · rodar com `bash scripts/test-rls.sh` |
+| Testes de isolamento (RLS) e permissões | `supabase/tests/rls.sql` · rodar com `bash scripts/test-rls.sh` |
 | Cliente Supabase (chave publishable) | `src/lib/supabase.ts` |
 | Sessão, organização atual e permissões | `src/app/auth.tsx`, `src/app/org.tsx` |
 | Idiomas do app (pt, en, es) | `src/i18n/app/*.ts`, `src/app/i18n.tsx` |

@@ -1,0 +1,613 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Download, FileSpreadsheet, Loader2, Send } from "lucide-react";
+import { toast } from "sonner";
+
+import { ApiError, callFunction } from "@/app/api";
+import { useAppConfig, type AuthLevel } from "@/app/app-config";
+import { PageHeader } from "@/app/components/app-shell";
+import { FormMessage } from "@/app/components/auth-layout";
+import { newParticipant, validateParticipants } from "@/app/components/participants-editor";
+import { Stepper } from "@/app/components/pdf-drop";
+import {
+  defaultSendOptions,
+  SendOptions,
+  sendOptionsPayload,
+  type SendOptionsValue,
+} from "@/app/components/send-options";
+import {
+  normalizeValue,
+  templateSelect,
+  validateValues,
+  type TemplateField,
+  type TemplateRow,
+} from "@/app/components/template-fields";
+import { errorText } from "@/app/errors";
+import { useAppI18n } from "@/app/i18n";
+import { useOrg } from "@/app/org";
+import {
+  downloadCsv,
+  excelSerialToIso,
+  normalizeHeader,
+  readSheet,
+  toCsv,
+  type Sheet,
+} from "@/app/sheet";
+import { selectClass } from "@/app/ui";
+import { onlyDigits } from "@/app/validation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
+
+// Envio em massa (PRD §17–§19): Modelo → Planilha → Colunas → Conferência → Envio.
+export const Route = createFileRoute("/app/_shell/bulk/new")({ component: NewBulk });
+
+type Signer = "name" | "email" | "cpf" | "phone";
+type Mapping = {
+  signer: Record<Signer, number>;
+  fields: Record<string, { col: number; fixed: string }>;
+};
+type Row = {
+  key: number;
+  name: string;
+  email: string;
+  cpf: string;
+  phone: string;
+  values: Record<string, string>;
+};
+
+const signerAliases: Record<Signer, string[]> = {
+  name: ["nome", "name", "nomecompleto", "participante", "signatario", "nombre"],
+  email: ["email", "mail", "correo", "correoelectronico"],
+  cpf: ["cpf", "documento"],
+  phone: ["celular", "telefone", "phone", "whatsapp", "telefono", "movil"],
+};
+
+function autoMap(sheet: Sheet, fields: TemplateField[]): Mapping {
+  const heads = sheet.headers.map(normalizeHeader);
+  const find = (names: string[]) => heads.findIndex((h) => names.includes(h));
+  const signer = Object.fromEntries(
+    (Object.keys(signerAliases) as Signer[]).map((k) => [k, find(signerAliases[k])]),
+  ) as Record<Signer, number>;
+  const fieldMap: Mapping["fields"] = {};
+  for (const f of fields)
+    fieldMap[f.key] = {
+      col: find([normalizeHeader(f.key), normalizeHeader(f.label)]),
+      fixed: "",
+    };
+  return { signer, fields: fieldMap };
+}
+
+function NewBulk() {
+  const { t, f, locale } = useAppI18n();
+  const { current } = useOrg();
+  const config = useAppConfig();
+  const navigate = useNavigate();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [step, setStep] = useState(0);
+  const [templates, setTemplates] = useState<TemplateRow[]>([]);
+  const [tpl, setTpl] = useState<TemplateRow | null>(null);
+  const [sheet, setSheet] = useState<Sheet | null>(null);
+  const [fileName, setFileName] = useState("");
+  const [mapping, setMapping] = useState<Mapping | null>(null);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [onlyIssues, setOnlyIssues] = useState(true);
+  const [authLevel, setAuthLevel] = useState<AuthLevel>("basic");
+  const [options, setOptions] = useState<SendOptionsValue>(() => defaultSendOptions(locale));
+  const [jobName, setJobName] = useState("");
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!current) return;
+    supabase
+      .from("templates")
+      .select(templateSelect)
+      .or(`scope.eq.mdsign,organization_id.eq.${current.id}`)
+      .order("name")
+      .then(({ data }) => setTemplates((data as TemplateRow[] | null) ?? []));
+  }, [current]);
+
+  const fields = useMemo(() => tpl?.fields ?? [], [tpl]);
+
+  // Problemas de cada linha: participante + campos do modelo.
+  const problems = useMemo(() => {
+    const drafts = rows.map((r) => ({
+      ...newParticipant(),
+      name: r.name,
+      email: r.email,
+      cpf: r.cpf,
+      noCpf: !onlyDigits(r.cpf) && config.foreignSigners,
+      phone: r.phone,
+      authLevel,
+    }));
+    const p = validateParticipants(drafts, config);
+    return rows.map((r, i) => [
+      ...(p[i] ?? []),
+      ...validateValues(fields, r.values).map((k) => `values.${k}`),
+    ]);
+  }, [rows, fields, config, authLevel]);
+  const issues = problems.filter((p) => p.length).length;
+
+  async function pickFile(file: File | undefined) {
+    if (!file || !tpl) return;
+    setError(null);
+    try {
+      const parsed = await readSheet(file);
+      if (parsed.rows.length === 0) return setError(t.errors["bulk_empty"]!);
+      if (parsed.rows.length > 1000) return setError(t.errors["bulk_too_many"]!);
+      setSheet(parsed);
+      setFileName(file.name);
+      setMapping(autoMap(parsed, fields));
+    } catch {
+      setError(t.errors["sheet_unreadable"]!);
+    }
+  }
+
+  function buildRows() {
+    if (!sheet || !mapping) return;
+    const cell = (r: string[], col: number) => (col >= 0 ? (r[col] ?? "").trim() : "");
+    setRows(
+      sheet.rows.map((r, i) => ({
+        key: i + 1,
+        name: cell(r, mapping.signer.name),
+        email: cell(r, mapping.signer.email).toLowerCase(),
+        cpf: onlyDigits(cell(r, mapping.signer.cpf)),
+        phone: cell(r, mapping.signer.phone),
+        values: Object.fromEntries(
+          fields.map((fl) => {
+            const m = mapping.fields[fl.key];
+            let raw = m && m.col >= 0 ? cell(r, m.col) : (m?.fixed ?? "");
+            if (fl.type === "date") raw = excelSerialToIso(raw) ?? raw;
+            return [fl.key, normalizeValue(fl, raw)];
+          }),
+        ),
+      })),
+    );
+  }
+
+  function sample() {
+    if (!tpl) return;
+    downloadCsv(
+      "mdsign-envio-em-massa.csv",
+      toCsv(["nome", "email", "cpf", "celular", ...fields.map((fl) => fl.key)], []),
+    );
+  }
+
+  function downloadIssues() {
+    downloadCsv(
+      "mdsign-pendencias.csv",
+      toCsv(
+        [
+          t.bulk.row,
+          "nome",
+          "email",
+          "cpf",
+          "celular",
+          ...fields.map((fl) => fl.key),
+          t.bulk.error,
+        ],
+        rows
+          .map((r, i) => ({ r, p: problems[i]! }))
+          .filter(({ p }) => p.length)
+          .map(({ r, p }) => [
+            String(r.key),
+            r.name,
+            r.email,
+            r.cpf,
+            r.phone,
+            ...fields.map((fl) => r.values[fl.key] ?? ""),
+            p.map((x) => x.replace("values.", "")).join(", "),
+          ]),
+      ),
+    );
+  }
+
+  const updateRow = (key: number, patch: Partial<Row>) =>
+    setRows((list) => list.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+
+  async function ensureJob(): Promise<string | null> {
+    if (jobId) return jobId;
+    if (!current || !tpl) return null;
+    try {
+      const r = await callFunction<{ jobId: string }>("bulk-jobs", {
+        action: "create",
+        organizationId: current.id,
+        templateId: tpl.id,
+        name: jobName.trim() || `${tpl.name} — ${fileName}`,
+        mapping,
+        options: { ...sendOptionsPayload(options), authLevel },
+        rows: rows.map((r) => ({
+          name: r.name,
+          email: r.email,
+          cpf: onlyDigits(r.cpf) || null,
+          noCpf: !onlyDigits(r.cpf) && config.foreignSigners,
+          phone: r.phone || null,
+          values: r.values,
+        })),
+      });
+      setJobId(r.jobId);
+      return r.jobId;
+    } catch (e) {
+      setError(errorText(t, e));
+      if (e instanceof ApiError && e.code === "invalid_rows") setStep(3);
+      return null;
+    }
+  }
+
+  async function sendTest() {
+    setBusy("test");
+    setError(null);
+    const id = await ensureJob();
+    if (id)
+      try {
+        await callFunction("bulk-jobs", { action: "test", jobId: id });
+        toast.success(t.bulk.testSent);
+      } catch (e) {
+        setError(errorText(t, e));
+      }
+    setBusy(null);
+  }
+
+  async function start() {
+    if (!window.confirm(f(t.bulk.confirmText, { n: String(rows.length) }))) return;
+    setBusy("start");
+    setError(null);
+    const id = await ensureJob();
+    if (id)
+      try {
+        await callFunction("bulk-jobs", { action: "start", jobId: id });
+        void navigate({ to: "/app/bulk/$id", params: { id } });
+        return;
+      } catch (e) {
+        setError(errorText(t, e));
+      }
+    setBusy(null);
+  }
+
+  function next() {
+    setError(null);
+    if (step === 0 && !tpl) return setError(t.bulk.chooseTemplate);
+    if (step === 1 && !sheet) return setError(t.bulk.upload);
+    if (step === 2) buildRows();
+    if (step === 3) {
+      if (rows.length === 0) return setError(t.errors["bulk_empty"]!);
+      if (issues) return setError(t.errors["invalid_rows"]!);
+      if (!jobName) setJobName(`${tpl?.name ?? ""} — ${fileName}`.slice(0, 160));
+    }
+    setStep((s) => s + 1);
+  }
+
+  if (!current) return <p>{t.notFoundOrg}</p>;
+
+  const columnSelect = (value: number, onChange: (v: number) => void, id: string) => (
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className={cn(selectClass, "h-10 w-full")}
+    >
+      <option value={-1}>{t.bulk.ignore}</option>
+      {sheet?.headers.map((h, i) => (
+        <option key={`${h}-${i}`} value={i}>
+          {h}
+        </option>
+      ))}
+    </select>
+  );
+  const visible = rows
+    .map((r, i) => ({ r, p: problems[i]! }))
+    .filter(({ p }) => !onlyIssues || p.length)
+    .slice(0, 200);
+
+  return (
+    <>
+      <PageHeader title={t.bulk.new} subtitle={t.bulk.subtitle} />
+      <Stepper steps={t.bulk.steps} current={step} />
+      <div className="grid gap-5">
+        {step === 0 && (
+          <fieldset className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <legend className="mb-2 font-display text-lg font-semibold">
+              {t.bulk.chooseTemplate}
+            </legend>
+            {templates.map((x) => (
+              <label
+                key={x.id}
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-xl border bg-white p-4",
+                  tpl?.id === x.id && "border-brand bg-brand-soft",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="template"
+                  checked={tpl?.id === x.id}
+                  onChange={() => {
+                    setTpl(x);
+                    setSheet(null);
+                    setMapping(null);
+                  }}
+                  className="mt-1 accent-[var(--color-brand)]"
+                />
+                <span>
+                  <span className="block font-medium">{x.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {f(t.templates.fieldsCount, { n: String(x.fields.length) })}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+
+        {step === 1 && (
+          <div className="grid max-w-2xl gap-4">
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed bg-white p-10 text-center hover:border-brand/60"
+            >
+              <FileSpreadsheet className="size-10 text-brand" aria-hidden />
+              <span className="font-medium">{fileName || t.bulk.upload}</span>
+              <span className="text-sm text-muted-foreground">{t.bulk.uploadHint}</span>
+              {sheet && (
+                <span className="text-sm font-semibold text-brand">
+                  {f(t.bulk.rows, { n: String(sheet.rows.length) })}
+                </span>
+              )}
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className="sr-only"
+              onChange={(e) => void pickFile(e.target.files?.[0])}
+            />
+            <Button variant="ghost" className="w-fit" onClick={sample}>
+              <Download aria-hidden />
+              {t.bulk.sample}
+            </Button>
+          </div>
+        )}
+
+        {step === 2 && mapping && (
+          <div className="grid max-w-3xl gap-4">
+            <p className="text-sm text-muted-foreground">{t.bulk.mappingHint}</p>
+            <div className="grid gap-3 rounded-2xl border bg-white p-5 sm:grid-cols-2">
+              {(
+                [
+                  ["name", t.bulk.signerName],
+                  ["email", t.bulk.signerEmail],
+                  ["cpf", t.bulk.signerCpf],
+                  ["phone", t.bulk.signerPhone],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key} className="grid gap-1.5">
+                  <Label htmlFor={`map-${key}`}>{label}</Label>
+                  {columnSelect(
+                    mapping.signer[key],
+                    (v) => setMapping({ ...mapping, signer: { ...mapping.signer, [key]: v } }),
+                    `map-${key}`,
+                  )}
+                </div>
+              ))}
+            </div>
+            {fields.length > 0 && (
+              <div className="grid gap-3 rounded-2xl border bg-white p-5">
+                {fields.map((fl) => {
+                  const m = mapping.fields[fl.key] ?? { col: -1, fixed: "" };
+                  const set = (patch: Partial<typeof m>) =>
+                    setMapping({
+                      ...mapping,
+                      fields: { ...mapping.fields, [fl.key]: { ...m, ...patch } },
+                    });
+                  return (
+                    <div
+                      key={fl.key}
+                      className="grid gap-2 sm:grid-cols-[12rem_1fr_1fr] sm:items-center"
+                    >
+                      <Label htmlFor={`map-f-${fl.key}`}>{fl.label}</Label>
+                      {columnSelect(m.col, (col) => set({ col }), `map-f-${fl.key}`)}
+                      <Input
+                        aria-label={`${fl.label}: ${t.bulk.fixedValue}`}
+                        placeholder={t.bulk.fixedValue}
+                        value={m.fixed}
+                        disabled={m.col >= 0}
+                        type={fl.type === "date" ? "date" : "text"}
+                        onChange={(e) => set({ fixed: e.target.value })}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="grid gap-4">
+            <p
+              className={cn(
+                "rounded-xl border px-4 py-3 font-medium",
+                issues
+                  ? "border-orange-200 bg-orange-50 text-orange-800"
+                  : "border-success/30 bg-success/10 text-success",
+              )}
+              role="status"
+            >
+              {issues
+                ? f(t.bulk.summary, { ready: String(rows.length - issues), issues: String(issues) })
+                : f(t.bulk.allReady, { n: String(rows.length) })}
+            </p>
+            {issues > 0 && (
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={onlyIssues}
+                    onChange={(e) => setOnlyIssues(e.target.checked)}
+                    className="size-4 accent-[var(--color-brand)]"
+                  />
+                  {t.bulk.onlyIssues}
+                </label>
+                <Button size="sm" variant="outline" onClick={downloadIssues}>
+                  <Download aria-hidden />
+                  {t.bulk.downloadIssues}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setRows(rows.filter((_, i) => !problems[i]!.length))}
+                >
+                  {t.bulk.removeIssues}
+                </Button>
+                <p className="w-full text-sm text-muted-foreground">{t.bulk.fixHint}</p>
+              </div>
+            )}
+            <div className="overflow-x-auto rounded-2xl border bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="text-muted-foreground">
+                  <tr>
+                    <th className="p-2 font-medium">{t.bulk.row}</th>
+                    <th className="p-2 font-medium">{t.participants.name}</th>
+                    <th className="p-2 font-medium">{t.participants.email}</th>
+                    <th className="p-2 font-medium">{t.participants.cpf}</th>
+                    {fields.map((fl) => (
+                      <th key={fl.key} className="p-2 font-medium whitespace-nowrap">
+                        {fl.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {visible.map(({ r, p }) => {
+                    const cell = (field: string, value: string, onChange: (v: string) => void) => (
+                      <td className="p-1.5">
+                        <Input
+                          value={value}
+                          onChange={(e) => onChange(e.target.value)}
+                          aria-invalid={p.includes(field)}
+                          aria-label={`${t.bulk.row} ${r.key}: ${field}`}
+                          className={cn("h-8 min-w-36", p.includes(field) && "border-destructive")}
+                        />
+                      </td>
+                    );
+                    return (
+                      <tr key={r.key} className={p.length ? "bg-orange-50/50" : ""}>
+                        <td className="p-2 text-muted-foreground">{r.key}</td>
+                        {cell("name", r.name, (v) => updateRow(r.key, { name: v }))}
+                        {cell("email", r.email, (v) => updateRow(r.key, { email: v.trim() }))}
+                        {cell("cpf", r.cpf, (v) => updateRow(r.key, { cpf: onlyDigits(v) }))}
+                        {fields.map((fl) => (
+                          <td key={fl.key} className="p-1.5">
+                            <Input
+                              value={r.values[fl.key] ?? ""}
+                              type={fl.type === "date" ? "date" : "text"}
+                              onChange={(e) =>
+                                updateRow(r.key, {
+                                  values: {
+                                    ...r.values,
+                                    [fl.key]: normalizeValue(fl, e.target.value),
+                                  },
+                                })
+                              }
+                              aria-invalid={p.includes(`values.${fl.key}`)}
+                              aria-label={`${t.bulk.row} ${r.key}: ${fl.label}`}
+                              className={cn(
+                                "h-8 min-w-36",
+                                p.includes(`values.${fl.key}`) && "border-destructive",
+                              )}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
+          <div className="grid max-w-3xl gap-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label htmlFor="job-name">{t.bulk.name}</Label>
+                <Input
+                  id="job-name"
+                  value={jobName}
+                  maxLength={160}
+                  disabled={Boolean(jobId)}
+                  onChange={(e) => setJobName(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="job-auth">{t.participants.authLevel}</Label>
+                <select
+                  id="job-auth"
+                  value={authLevel}
+                  disabled={Boolean(jobId)}
+                  onChange={(e) => setAuthLevel(e.target.value as AuthLevel)}
+                  className={cn(selectClass, "h-10")}
+                >
+                  {config.authLevels.map((l) => (
+                    <option key={l} value={l}>
+                      {t.participants.levels[l]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <fieldset disabled={Boolean(jobId)} className="contents">
+              <SendOptions value={options} onChange={setOptions} />
+            </fieldset>
+            <p className="text-sm text-muted-foreground">
+              {f(t.bulk.confirmText, { n: String(rows.length) })}
+            </p>
+          </div>
+        )}
+
+        {error && <FormMessage kind="error">{error}</FormMessage>}
+        <div className="flex flex-wrap gap-3">
+          {step > 0 && !jobId && (
+            <Button
+              variant="outline"
+              onClick={() => setStep((s) => s - 1)}
+              disabled={busy !== null}
+            >
+              {t.send.back}
+            </Button>
+          )}
+          {step < 4 ? (
+            <Button className="bg-brand hover:bg-brand-strong" onClick={next}>
+              {t.send.next}
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => void sendTest()} disabled={busy !== null}>
+                {busy === "test" && <Loader2 className="animate-spin" aria-hidden />}
+                {t.bulk.test}
+              </Button>
+              <Button
+                className="bg-brand hover:bg-brand-strong"
+                onClick={() => void start()}
+                disabled={busy !== null}
+              >
+                {busy === "start" ? (
+                  <Loader2 className="animate-spin" aria-hidden />
+                ) : (
+                  <Send aria-hidden />
+                )}
+                {t.bulk.start}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

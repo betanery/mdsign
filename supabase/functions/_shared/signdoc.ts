@@ -2,7 +2,10 @@
 
 import { AppError } from "./http.ts";
 
-const BASE_URL = (Deno.env.get("SIGNDOC_BASE_URL") ?? "https://sign.signdocmd.com.br").replace(/\/$/, "");
+const BASE_URL = (Deno.env.get("SIGNDOC_BASE_URL") ?? "https://sign.signdocmd.com.br").replace(
+  /\/$/,
+  "",
+);
 const API_KEY = Deno.env.get("SIGNDOC_API_KEY") ?? "";
 
 export type EngineFlowAction = {
@@ -26,14 +29,21 @@ export type EngineDocument = {
   flowActions: EngineFlowAction[];
 };
 
-async function call<T>(method: string, path: string, body?: unknown, init?: RequestInit): Promise<T> {
+async function call<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  init?: RequestInit,
+): Promise<T> {
   if (!API_KEY) throw new AppError("engine_not_configured", 503);
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
     ...init,
     headers: {
       "X-Api-Key": API_KEY,
-      ...(body !== undefined && !(body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+      ...(body !== undefined && !(body instanceof FormData)
+        ? { "Content-Type": "application/json" }
+        : {}),
       ...(init?.headers ?? {}),
     },
     body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
@@ -43,10 +53,14 @@ async function call<T>(method: string, path: string, body?: unknown, init?: Requ
   if (!res.ok) {
     console.error("signdoc", method, path, res.status, text.slice(0, 500));
     // 400/422 trazem o motivo; 500 traz exceptionCode para os logs do servidor.
-    throw new AppError(res.status >= 500 ? "engine_unavailable" : "engine_rejected", res.status >= 500 ? 502 : 422, {
-      code: data?.code ?? data?.exceptionCode ?? null,
-      errors: data?.errors ?? null,
-    });
+    throw new AppError(
+      res.status >= 500 ? "engine_unavailable" : "engine_rejected",
+      res.status >= 500 ? 502 : 422,
+      {
+        code: data?.code ?? data?.exceptionCode ?? null,
+        errors: data?.errors ?? null,
+      },
+    );
   }
   return data as T;
 }
@@ -58,13 +72,20 @@ export const signdoc = {
     const r = await call<{ id: string }>("POST", "/api/uploads", form);
     return r.id;
   },
+  async uploadBytes(base64: string): Promise<string> {
+    const r = await call<{ id: string }>("POST", "/api/uploads/bytes", { bytes: base64 });
+    return r.id;
+  },
   createDocuments(request: unknown) {
     return call<{ uploadId: string; documentId: string }[]>("POST", "/api/documents", request);
   },
   getDocument(id: string) {
     return call<EngineDocument>("GET", `/api/documents/${id}`);
   },
-  actionUrl(id: string, body: { identifier?: string; emailAddress?: string; flowActionId?: string }) {
+  actionUrl(
+    id: string,
+    body: { identifier?: string; emailAddress?: string; flowActionId?: string },
+  ) {
     return call<{ url: string; embedUrl: string }>("POST", `/api/documents/${id}/action-url`, body);
   },
   /** Link temporário para baixar uma versão (Signatures = PDF assinado; PrinterFriendlyVersion = com manifesto). */
@@ -75,7 +96,10 @@ export const signdoc = {
     return call<null>("POST", `/api/documents/${id}/cancellation`, { reason });
   },
   remind(documentId: string, flowActionId: string) {
-    return call<null>("POST", "/api/notifications/flow-action-reminder", { documentId, flowActionId });
+    return call<null>("POST", "/api/notifications/flow-action-reminder", {
+      documentId,
+      flowActionId,
+    });
   },
   baseUrl: BASE_URL,
 };

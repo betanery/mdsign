@@ -65,9 +65,7 @@ function DocumentDetail() {
       await load();
     } catch (e) {
       const code = e instanceof ApiError ? e.code : "internal_error";
-      toast.error(
-        t.sign.errors[code] ?? (code === "forbidden" ? t.common.forbidden : t.common.genericError),
-      );
+      toast.error(t.errors[code] ?? t.common.genericError);
     } finally {
       setBusy(null);
     }
@@ -188,7 +186,7 @@ function DocumentDetail() {
               setEmbedUrl(null);
               void run("sync", () => documentAction(id, "sync"));
             }}
-            onError={() => toast.error(t.sign.errors["widget"] ?? t.common.genericError)}
+            onError={() => toast.error(t.errors["widget"] ?? t.common.genericError)}
           />
         </div>
       )}

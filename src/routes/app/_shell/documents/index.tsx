@@ -19,13 +19,21 @@ import { supabase } from "@/lib/supabase";
 
 type Tab = "all" | "waiting" | "forMe" | "concluded";
 
-export const Route = createFileRoute("/app/_shell/documents/")({ component: DocumentsPage });
+const tabs: Tab[] = ["all", "waiting", "forMe", "concluded"];
+
+export const Route = createFileRoute("/app/_shell/documents/")({
+  validateSearch: (search: Record<string, unknown>): { tab?: Tab | undefined } => ({
+    tab: tabs.includes(search["tab"] as Tab) ? (search["tab"] as Tab) : undefined,
+  }),
+  component: DocumentsPage,
+});
 
 function DocumentsPage() {
   const { t, f, locale } = useAppI18n();
   const { user } = useAuth();
   const { current } = useOrg();
-  const [tab, setTab] = useState<Tab>("all");
+  const search = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(search.tab ?? "all");
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
 
   useEffect(() => {
@@ -50,8 +58,6 @@ function DocumentsPage() {
       );
     return true;
   });
-
-  const tabs: Tab[] = ["all", "waiting", "forMe", "concluded"];
 
   return (
     <>
@@ -96,9 +102,14 @@ function DocumentsPage() {
       ) : visible.length === 0 ? (
         <div className="rounded-2xl border bg-white p-8 text-center shadow-sm">
           <p className="text-muted-foreground">{t.documents.empty}</p>
-          <Button asChild variant="outline" className="mt-4">
-            <Link to="/app/sign">{t.documents.emptyAction}</Link>
-          </Button>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/sign">{t.documents.emptyAction}</Link>
+            </Button>
+            <Button asChild className="bg-brand hover:bg-brand-strong">
+              <Link to="/app/send">{t.documents.emptySend}</Link>
+            </Button>
+          </div>
         </div>
       ) : (
         <ul className="divide-y rounded-2xl border bg-white shadow-sm">

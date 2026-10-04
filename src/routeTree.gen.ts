@@ -25,14 +25,25 @@ import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-passw
 import { Route as AppLoginRouteImport } from './routes/app/login'
 import { Route as AppResetPasswordRouteImport } from './routes/app/reset-password'
 import { Route as AppSignupRouteImport } from './routes/app/signup'
+import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as AppShellIndexRouteImport } from './routes/app/_shell/index'
 import { Route as AppShellSectionRouteImport } from './routes/app/_shell/$section'
+import { Route as AppShellContactsRouteImport } from './routes/app/_shell/contacts'
+import { Route as AppShellFormsRouteImport } from './routes/app/_shell/forms'
 import { Route as AppShellOrganizationRouteImport } from './routes/app/_shell/organization'
+import { Route as AppShellSendRouteImport } from './routes/app/_shell/send'
 import { Route as AppShellSettingsRouteImport } from './routes/app/_shell/settings'
 import { Route as AppShellSignRouteImport } from './routes/app/_shell/sign'
 import { Route as AppInviteTokenRouteImport } from './routes/app/invite.$token'
+import { Route as AppShellBulkIndexRouteImport } from './routes/app/_shell/bulk/index'
+import { Route as AppShellBulkIdRouteImport } from './routes/app/_shell/bulk/$id'
+import { Route as AppShellBulkNewRouteImport } from './routes/app/_shell/bulk/new'
 import { Route as AppShellDocumentsIndexRouteImport } from './routes/app/_shell/documents/index'
 import { Route as AppShellDocumentsIdRouteImport } from './routes/app/_shell/documents/$id'
+import { Route as AppShellTemplatesIndexRouteImport } from './routes/app/_shell/templates/index'
+import { Route as AppShellTemplatesIdRouteImport } from './routes/app/_shell/templates/$id'
+import { Route as AppShellTemplatesNewRouteImport } from './routes/app/_shell/templates/new'
+import { Route as AppShellTemplatesEditIdRouteImport } from './routes/app/_shell/templates/edit.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -113,6 +124,11 @@ const AppSignupRoute = AppSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const FTokenRoute = FTokenRouteImport.update({
+  id: '/f/$token',
+  path: '/f/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppShellIndexRoute = AppShellIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -123,9 +139,24 @@ const AppShellSectionRoute = AppShellSectionRouteImport.update({
   path: '/$section',
   getParentRoute: () => AppShellRoute,
 } as any)
+const AppShellContactsRoute = AppShellContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellFormsRoute = AppShellFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
+  getParentRoute: () => AppShellRoute,
+} as any)
 const AppShellOrganizationRoute = AppShellOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellSendRoute = AppShellSendRouteImport.update({
+  id: '/send',
+  path: '/send',
   getParentRoute: () => AppShellRoute,
 } as any)
 const AppShellSettingsRoute = AppShellSettingsRouteImport.update({
@@ -143,6 +174,21 @@ const AppInviteTokenRoute = AppInviteTokenRouteImport.update({
   path: '/invite/$token',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppShellBulkIndexRoute = AppShellBulkIndexRouteImport.update({
+  id: '/bulk/',
+  path: '/bulk/',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellBulkIdRoute = AppShellBulkIdRouteImport.update({
+  id: '/bulk/$id',
+  path: '/bulk/$id',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellBulkNewRoute = AppShellBulkNewRouteImport.update({
+  id: '/bulk/new',
+  path: '/bulk/new',
+  getParentRoute: () => AppShellRoute,
+} as any)
 const AppShellDocumentsIndexRoute = AppShellDocumentsIndexRouteImport.update({
   id: '/documents/',
   path: '/documents/',
@@ -151,6 +197,26 @@ const AppShellDocumentsIndexRoute = AppShellDocumentsIndexRouteImport.update({
 const AppShellDocumentsIdRoute = AppShellDocumentsIdRouteImport.update({
   id: '/documents/$id',
   path: '/documents/$id',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellTemplatesIndexRoute = AppShellTemplatesIndexRouteImport.update({
+  id: '/templates/',
+  path: '/templates/',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellTemplatesIdRoute = AppShellTemplatesIdRouteImport.update({
+  id: '/templates/$id',
+  path: '/templates/$id',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellTemplatesNewRoute = AppShellTemplatesNewRouteImport.update({
+  id: '/templates/new',
+  path: '/templates/new',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellTemplatesEditIdRoute = AppShellTemplatesEditIdRouteImport.update({
+  id: '/templates/edit/$id',
+  path: '/templates/edit/$id',
   getParentRoute: () => AppShellRoute,
 } as any)
 
@@ -169,15 +235,26 @@ export interface FileRoutesByFullPath {
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
+  '/f/$token': typeof FTokenRoute
   '/$lang/': typeof LangIndexRoute
   '/app/$section': typeof AppShellSectionRoute
+  '/app/contacts': typeof AppShellContactsRoute
+  '/app/forms': typeof AppShellFormsRoute
   '/app/organization': typeof AppShellOrganizationRoute
+  '/app/send': typeof AppShellSendRoute
   '/app/settings': typeof AppShellSettingsRoute
   '/app/sign': typeof AppShellSignRoute
   '/app/invite/$token': typeof AppInviteTokenRoute
   '/app/': typeof AppShellIndexRoute
+  '/app/bulk/$id': typeof AppShellBulkIdRoute
+  '/app/bulk/new': typeof AppShellBulkNewRoute
   '/app/documents/$id': typeof AppShellDocumentsIdRoute
+  '/app/templates/$id': typeof AppShellTemplatesIdRoute
+  '/app/templates/new': typeof AppShellTemplatesNewRoute
+  '/app/bulk/': typeof AppShellBulkIndexRoute
   '/app/documents/': typeof AppShellDocumentsIndexRoute
+  '/app/templates/': typeof AppShellTemplatesIndexRoute
+  '/app/templates/edit/$id': typeof AppShellTemplatesEditIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -193,14 +270,25 @@ export interface FileRoutesByTo {
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
+  '/f/$token': typeof FTokenRoute
   '/$lang': typeof LangIndexRoute
   '/app/$section': typeof AppShellSectionRoute
+  '/app/contacts': typeof AppShellContactsRoute
+  '/app/forms': typeof AppShellFormsRoute
   '/app/organization': typeof AppShellOrganizationRoute
+  '/app/send': typeof AppShellSendRoute
   '/app/settings': typeof AppShellSettingsRoute
   '/app/sign': typeof AppShellSignRoute
   '/app/invite/$token': typeof AppInviteTokenRoute
+  '/app/bulk/$id': typeof AppShellBulkIdRoute
+  '/app/bulk/new': typeof AppShellBulkNewRoute
   '/app/documents/$id': typeof AppShellDocumentsIdRoute
+  '/app/templates/$id': typeof AppShellTemplatesIdRoute
+  '/app/templates/new': typeof AppShellTemplatesNewRoute
+  '/app/bulk': typeof AppShellBulkIndexRoute
   '/app/documents': typeof AppShellDocumentsIndexRoute
+  '/app/templates': typeof AppShellTemplatesIndexRoute
+  '/app/templates/edit/$id': typeof AppShellTemplatesEditIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -219,15 +307,26 @@ export interface FileRoutesById {
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
+  '/f/$token': typeof FTokenRoute
   '/$lang/': typeof LangIndexRoute
   '/app/_shell/$section': typeof AppShellSectionRoute
+  '/app/_shell/contacts': typeof AppShellContactsRoute
+  '/app/_shell/forms': typeof AppShellFormsRoute
   '/app/_shell/organization': typeof AppShellOrganizationRoute
+  '/app/_shell/send': typeof AppShellSendRoute
   '/app/_shell/settings': typeof AppShellSettingsRoute
   '/app/_shell/sign': typeof AppShellSignRoute
   '/app/invite/$token': typeof AppInviteTokenRoute
   '/app/_shell/': typeof AppShellIndexRoute
+  '/app/_shell/bulk/$id': typeof AppShellBulkIdRoute
+  '/app/_shell/bulk/new': typeof AppShellBulkNewRoute
   '/app/_shell/documents/$id': typeof AppShellDocumentsIdRoute
+  '/app/_shell/templates/$id': typeof AppShellTemplatesIdRoute
+  '/app/_shell/templates/new': typeof AppShellTemplatesNewRoute
+  '/app/_shell/bulk/': typeof AppShellBulkIndexRoute
   '/app/_shell/documents/': typeof AppShellDocumentsIndexRoute
+  '/app/_shell/templates/': typeof AppShellTemplatesIndexRoute
+  '/app/_shell/templates/edit/$id': typeof AppShellTemplatesEditIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -246,15 +345,26 @@ export interface FileRouteTypes {
     | '/app/login'
     | '/app/reset-password'
     | '/app/signup'
+    | '/f/$token'
     | '/$lang/'
     | '/app/$section'
+    | '/app/contacts'
+    | '/app/forms'
     | '/app/organization'
+    | '/app/send'
     | '/app/settings'
     | '/app/sign'
     | '/app/invite/$token'
     | '/app/'
+    | '/app/bulk/$id'
+    | '/app/bulk/new'
     | '/app/documents/$id'
+    | '/app/templates/$id'
+    | '/app/templates/new'
+    | '/app/bulk/'
     | '/app/documents/'
+    | '/app/templates/'
+    | '/app/templates/edit/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -270,14 +380,25 @@ export interface FileRouteTypes {
     | '/app/login'
     | '/app/reset-password'
     | '/app/signup'
+    | '/f/$token'
     | '/$lang'
     | '/app/$section'
+    | '/app/contacts'
+    | '/app/forms'
     | '/app/organization'
+    | '/app/send'
     | '/app/settings'
     | '/app/sign'
     | '/app/invite/$token'
+    | '/app/bulk/$id'
+    | '/app/bulk/new'
     | '/app/documents/$id'
+    | '/app/templates/$id'
+    | '/app/templates/new'
+    | '/app/bulk'
     | '/app/documents'
+    | '/app/templates'
+    | '/app/templates/edit/$id'
   id:
     | '__root__'
     | '/'
@@ -295,15 +416,26 @@ export interface FileRouteTypes {
     | '/app/login'
     | '/app/reset-password'
     | '/app/signup'
+    | '/f/$token'
     | '/$lang/'
     | '/app/_shell/$section'
+    | '/app/_shell/contacts'
+    | '/app/_shell/forms'
     | '/app/_shell/organization'
+    | '/app/_shell/send'
     | '/app/_shell/settings'
     | '/app/_shell/sign'
     | '/app/invite/$token'
     | '/app/_shell/'
+    | '/app/_shell/bulk/$id'
+    | '/app/_shell/bulk/new'
     | '/app/_shell/documents/$id'
+    | '/app/_shell/templates/$id'
+    | '/app/_shell/templates/new'
+    | '/app/_shell/bulk/'
     | '/app/_shell/documents/'
+    | '/app/_shell/templates/'
+    | '/app/_shell/templates/edit/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -315,6 +447,7 @@ export interface RootRouteChildren {
   EntrarRoute: typeof EntrarRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  FTokenRoute: typeof FTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -431,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSignupRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/f/$token': {
+      id: '/f/$token'
+      path: '/f/$token'
+      fullPath: '/f/$token'
+      preLoaderRoute: typeof FTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/_shell/': {
       id: '/app/_shell/'
       path: '/'
@@ -445,11 +585,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShellSectionRouteImport
       parentRoute: typeof AppShellRoute
     }
+    '/app/_shell/contacts': {
+      id: '/app/_shell/contacts'
+      path: '/contacts'
+      fullPath: '/app/contacts'
+      preLoaderRoute: typeof AppShellContactsRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/forms': {
+      id: '/app/_shell/forms'
+      path: '/forms'
+      fullPath: '/app/forms'
+      preLoaderRoute: typeof AppShellFormsRouteImport
+      parentRoute: typeof AppShellRoute
+    }
     '/app/_shell/organization': {
       id: '/app/_shell/organization'
       path: '/organization'
       fullPath: '/app/organization'
       preLoaderRoute: typeof AppShellOrganizationRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/send': {
+      id: '/app/_shell/send'
+      path: '/send'
+      fullPath: '/app/send'
+      preLoaderRoute: typeof AppShellSendRouteImport
       parentRoute: typeof AppShellRoute
     }
     '/app/_shell/settings': {
@@ -473,6 +634,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInviteTokenRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/_shell/bulk/': {
+      id: '/app/_shell/bulk/'
+      path: '/bulk'
+      fullPath: '/app/bulk/'
+      preLoaderRoute: typeof AppShellBulkIndexRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/bulk/$id': {
+      id: '/app/_shell/bulk/$id'
+      path: '/bulk/$id'
+      fullPath: '/app/bulk/$id'
+      preLoaderRoute: typeof AppShellBulkIdRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/bulk/new': {
+      id: '/app/_shell/bulk/new'
+      path: '/bulk/new'
+      fullPath: '/app/bulk/new'
+      preLoaderRoute: typeof AppShellBulkNewRouteImport
+      parentRoute: typeof AppShellRoute
+    }
     '/app/_shell/documents/': {
       id: '/app/_shell/documents/'
       path: '/documents'
@@ -485,6 +667,34 @@ declare module '@tanstack/react-router' {
       path: '/documents/$id'
       fullPath: '/app/documents/$id'
       preLoaderRoute: typeof AppShellDocumentsIdRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/templates/': {
+      id: '/app/_shell/templates/'
+      path: '/templates'
+      fullPath: '/app/templates/'
+      preLoaderRoute: typeof AppShellTemplatesIndexRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/templates/$id': {
+      id: '/app/_shell/templates/$id'
+      path: '/templates/$id'
+      fullPath: '/app/templates/$id'
+      preLoaderRoute: typeof AppShellTemplatesIdRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/templates/new': {
+      id: '/app/_shell/templates/new'
+      path: '/templates/new'
+      fullPath: '/app/templates/new'
+      preLoaderRoute: typeof AppShellTemplatesNewRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/templates/edit/$id': {
+      id: '/app/_shell/templates/edit/$id'
+      path: '/templates/edit/$id'
+      fullPath: '/app/templates/edit/$id'
+      preLoaderRoute: typeof AppShellTemplatesEditIdRouteImport
       parentRoute: typeof AppShellRoute
     }
   }
@@ -508,22 +718,42 @@ const LangRouteRouteWithChildren = LangRouteRoute._addFileChildren(
 
 interface AppShellRouteChildren {
   AppShellSectionRoute: typeof AppShellSectionRoute
+  AppShellContactsRoute: typeof AppShellContactsRoute
+  AppShellFormsRoute: typeof AppShellFormsRoute
   AppShellOrganizationRoute: typeof AppShellOrganizationRoute
+  AppShellSendRoute: typeof AppShellSendRoute
   AppShellSettingsRoute: typeof AppShellSettingsRoute
   AppShellSignRoute: typeof AppShellSignRoute
   AppShellIndexRoute: typeof AppShellIndexRoute
+  AppShellBulkIdRoute: typeof AppShellBulkIdRoute
+  AppShellBulkNewRoute: typeof AppShellBulkNewRoute
   AppShellDocumentsIdRoute: typeof AppShellDocumentsIdRoute
+  AppShellTemplatesIdRoute: typeof AppShellTemplatesIdRoute
+  AppShellTemplatesNewRoute: typeof AppShellTemplatesNewRoute
+  AppShellBulkIndexRoute: typeof AppShellBulkIndexRoute
   AppShellDocumentsIndexRoute: typeof AppShellDocumentsIndexRoute
+  AppShellTemplatesIndexRoute: typeof AppShellTemplatesIndexRoute
+  AppShellTemplatesEditIdRoute: typeof AppShellTemplatesEditIdRoute
 }
 
 const AppShellRouteChildren: AppShellRouteChildren = {
   AppShellSectionRoute: AppShellSectionRoute,
+  AppShellContactsRoute: AppShellContactsRoute,
+  AppShellFormsRoute: AppShellFormsRoute,
   AppShellOrganizationRoute: AppShellOrganizationRoute,
+  AppShellSendRoute: AppShellSendRoute,
   AppShellSettingsRoute: AppShellSettingsRoute,
   AppShellSignRoute: AppShellSignRoute,
   AppShellIndexRoute: AppShellIndexRoute,
+  AppShellBulkIdRoute: AppShellBulkIdRoute,
+  AppShellBulkNewRoute: AppShellBulkNewRoute,
   AppShellDocumentsIdRoute: AppShellDocumentsIdRoute,
+  AppShellTemplatesIdRoute: AppShellTemplatesIdRoute,
+  AppShellTemplatesNewRoute: AppShellTemplatesNewRoute,
+  AppShellBulkIndexRoute: AppShellBulkIndexRoute,
   AppShellDocumentsIndexRoute: AppShellDocumentsIndexRoute,
+  AppShellTemplatesIndexRoute: AppShellTemplatesIndexRoute,
+  AppShellTemplatesEditIdRoute: AppShellTemplatesEditIdRoute,
 }
 
 const AppShellRouteWithChildren = AppShellRoute._addFileChildren(
@@ -561,6 +791,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntrarRoute: EntrarRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  FTokenRoute: FTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

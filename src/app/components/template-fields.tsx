@@ -1,0 +1,207 @@
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import type { AppMessages } from "@/i18n/app/pt";
+import { selectClass } from "../ui";
+import { formatCpf, isValidCnpj, isValidCpf, onlyDigits } from "../validation";
+
+export const fieldTypes = [
+  "text",
+  "cpf",
+  "cnpj",
+  "email",
+  "phone",
+  "date",
+  "currency",
+  "number",
+  "select",
+  "checkbox",
+] as const;
+export type FieldType = (typeof fieldTypes)[number];
+
+export type TemplateField = {
+  key: string;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  source?: "sender" | "signer";
+  options?: string[];
+};
+
+export type TemplateRow = {
+  id: string;
+  organization_id: string | null;
+  owner_id: string | null;
+  scope: "mdsign" | "organization" | "personal";
+  category: string;
+  locale: "pt" | "en" | "es";
+  name: string;
+  description: string | null;
+  body: string;
+  fields: TemplateField[];
+  updated_at: string;
+};
+
+export const templateSelect =
+  "id, organization_id, owner_id, scope, category, locale, name, description, body, fields, updated_at";
+
+/** Campos {{chave}} usados no texto (mesma regra do gerador de PDF). */
+export function placeholders(body: string): string[] {
+  return [...new Set([...body.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)].map((m) => m[1]!))];
+}
+
+const humanize = (key: string) => key.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+
+function guessType(key: string): FieldType {
+  const k = key.toLowerCase();
+  if (k.includes("cpf")) return "cpf";
+  if (k.includes("cnpj")) return "cnpj";
+  if (k.includes("email")) return "email";
+  if (k.includes("telefone") || k.includes("celular") || k.includes("phone")) return "phone";
+  if (k.startsWith("data") || k.includes("date") || k.includes("fecha")) return "date";
+  if (k.includes("valor") || k.includes("preco") || k.includes("price")) return "currency";
+  return "text";
+}
+
+/** Mantém os campos alinhados ao texto: cria os novos e remove os que saíram. */
+export function syncFields(body: string, fields: TemplateField[]): TemplateField[] {
+  const byKey = new Map(fields.map((f) => [f.key, f]));
+  return placeholders(body).map(
+    (key) =>
+      byKey.get(key) ?? {
+        key,
+        label: humanize(key),
+        type: guessType(key),
+        required: true,
+        source: "sender",
+      },
+  );
+}
+
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** Mesmas regras do backend (validateValues). Devolve as chaves com problema. */
+export function validateValues(fields: TemplateField[], values: Record<string, string>): string[] {
+  const bad: string[] = [];
+  for (const f of fields) {
+    const v = String(values[f.key] ?? "").trim();
+    if (!v) {
+      if (f.required) bad.push(f.key);
+      continue;
+    }
+    if (f.type === "cpf" && !isValidCpf(v)) bad.push(f.key);
+    if (f.type === "cnpj" && !isValidCnpj(v)) bad.push(f.key);
+    if (f.type === "email" && !EMAIL.test(v)) bad.push(f.key);
+    if (f.type === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) bad.push(f.key);
+    if (f.type === "select" && f.options?.length && !f.options.includes(v)) bad.push(f.key);
+  }
+  return bad;
+}
+
+/** Normaliza valores vindos de planilha/digitação (datas dd/mm/aaaa, CPF com pontos…). */
+export function normalizeValue(field: TemplateField, raw: string): string {
+  const v = String(raw ?? "").trim();
+  if (field.type === "date") {
+    const br = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (br) return `${br[3]}-${br[2]!.padStart(2, "0")}-${br[1]!.padStart(2, "0")}`;
+  }
+  if (field.type === "cpf" || field.type === "cnpj") return onlyDigits(v);
+  return v;
+}
+
+export function FieldInput({
+  field,
+  value,
+  onChange,
+  invalid,
+  t,
+  idPrefix = "f",
+}: {
+  field: TemplateField;
+  value: string;
+  onChange: (v: string) => void;
+  invalid: boolean;
+  t: AppMessages;
+  idPrefix?: string;
+}) {
+  const id = `${idPrefix}-${field.key}`;
+  const label = (
+    <Label htmlFor={id}>
+      {field.label}
+      {!field.required && (
+        <span className="font-normal text-muted-foreground"> ({t.common.optional})</span>
+      )}
+    </Label>
+  );
+  let input;
+  switch (field.type) {
+    case "select":
+      input = (
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(selectClass, "h-10 w-full")}
+          aria-invalid={invalid}
+        >
+          <option value="">{t.templates.fill.choose}</option>
+          {(field.options ?? []).map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      );
+      break;
+    case "checkbox":
+      input = (
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(selectClass, "h-10 w-full")}
+          aria-invalid={invalid}
+        >
+          <option value="">{t.templates.fill.choose}</option>
+          <option value="true">{t.common.yes}</option>
+          <option value="false">{t.common.no}</option>
+        </select>
+      );
+      break;
+    default:
+      input = (
+        <Input
+          id={id}
+          value={field.type === "cpf" ? formatCpf(value) : value}
+          type={
+            field.type === "date"
+              ? "date"
+              : field.type === "email"
+                ? "email"
+                : field.type === "number"
+                  ? "number"
+                  : field.type === "phone"
+                    ? "tel"
+                    : "text"
+          }
+          inputMode={
+            field.type === "cpf" || field.type === "cnpj" || field.type === "currency"
+              ? "decimal"
+              : undefined
+          }
+          onChange={(e) =>
+            onChange(field.type === "cpf" ? onlyDigits(e.target.value) : e.target.value)
+          }
+          aria-invalid={invalid}
+          maxLength={2000}
+        />
+      );
+  }
+  return (
+    <div className="grid gap-1.5">
+      {label}
+      {input}
+      {invalid && <p className="text-xs text-destructive">{t.errors["invalid_fields"]}</p>}
+    </div>
+  );
+}

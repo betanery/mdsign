@@ -10,7 +10,7 @@ trap 'rm -f "$sql"' EXIT
 {
   echo "begin;"
   for migration in "$@"; do cat "$migration"; echo; done
-  cat supabase/tests/bloco1_rls.sql
+  cat supabase/tests/rls.sql
   echo "rollback;"
 } > "$sql"
 

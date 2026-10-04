@@ -30,7 +30,7 @@ function SelfSign() {
   const [doc, setDoc] = useState<{ documentId: string; embedUrl: string } | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
-  const errorText = (code: string) => t.sign.errors[code] ?? t.common.genericError;
+  const errorText = (code: string) => t.errors[code] ?? t.common.genericError;
 
   function pick(f: File | undefined) {
     if (!f) return;

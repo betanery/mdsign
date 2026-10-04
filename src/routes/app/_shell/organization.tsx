@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg, type OrgRole } from "@/app/org";
+import { selectClass } from "@/app/ui";
 import { formatCnpj, friendlyError, isValidCnpj, onlyDigits } from "@/app/validation";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,9 +48,6 @@ type AuditEntry = {
   data: Record<string, unknown>;
 };
 
-const selectClass =
-  "h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60";
-
 function OrganizationPage() {
   const { t } = useAppI18n();
   const { current, can } = useOrg();
@@ -62,6 +61,7 @@ function OrganizationPage() {
           <TabsTrigger value="units">{t.organization.tabUnits}</TabsTrigger>
           {can("audit.view") && <TabsTrigger value="audit">{t.organization.tabAudit}</TabsTrigger>}
           <TabsTrigger value="profile">{t.organization.tabProfile}</TabsTrigger>
+          <TabsTrigger value="plan">{t.organization.tabPlan}</TabsTrigger>
         </TabsList>
         <TabsContent value="members">
           <MembersTab orgId={current.id} />
@@ -77,8 +77,25 @@ function OrganizationPage() {
         <TabsContent value="profile">
           <ProfileTab />
         </TabsContent>
+        <TabsContent value="plan">
+          <PlanTab />
+        </TabsContent>
       </Tabs>
     </>
+  );
+}
+
+function PlanTab() {
+  const { t } = useAppI18n();
+  const usage = useOrgUsage();
+  return (
+    <section className="max-w-xl rounded-2xl border bg-white p-5 shadow-sm">
+      {usage ? (
+        <PlanUsage usage={usage} />
+      ) : (
+        <p className="text-muted-foreground">{t.common.loading}</p>
+      )}
+    </section>
   );
 }
 

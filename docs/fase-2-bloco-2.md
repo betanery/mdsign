@@ -6,8 +6,8 @@ Entregue em etapas:
 | Etapa | Conteúdo | Situação |
 |---|---|---|
 | **2A** | Só eu assino de ponta a ponta, lista e detalhe de documentos, timeline | ✅ pronta para teste |
-| 2B | Enviar para assinatura: participantes (com CPF ou estrangeiros), ordem, autenticação, revisão | próxima |
-| 2C | Webhooks do motor (status em tempo real), lembretes automáticos | depois |
+| 2B | Enviar para assinatura: participantes (com CPF ou estrangeiros), ordem, autenticação, revisão | ✅ ver [fase-2-blocos-2b-a-6.md](fase-2-blocos-2b-a-6.md) |
+| 2C | Webhooks do motor (status em tempo real), lembretes automáticos | ✅ ver [fase-2-blocos-2b-a-6.md](fase-2-blocos-2b-a-6.md) |
 
 ## Arquitetura (PRD §4)
 
