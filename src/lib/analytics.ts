@@ -14,7 +14,11 @@ export type AnalyticsEvent =
   | "cta_documentacao_api"
   | "cta_entrar"
   | "form_submit"
-  | "faq_open";
+  | "faq_open"
+  // App (Fase 2, PRD §49)
+  | "signup"
+  | "organization_created"
+  | "member_invited";
 
 type Params = Record<string, string | number | boolean | undefined>;
 

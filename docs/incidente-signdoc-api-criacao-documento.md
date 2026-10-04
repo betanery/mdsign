@@ -29,6 +29,10 @@ Criar documento **pelo painel** (usuário logado), na mesma organização, funci
 }
 ```
 
+Repetição literal do guia (4 passos, mesmo corpo e nomes de arquivo), às 2026-10-03T22:00:36–37-03:00:
+`GET /api/documents` → 200 · `POST /api/uploads/bytes` → 200 (`6f2c81ac-bb06-4f0f-90cf-f7271aaa209c`) ·
+`POST /api/documents` → **500 `2F77FB`** (22:00:37).
+
 Organização: MDSign Plataforma (`01620f89-b1c8-45fc-a4f1-08df1268a801`). Aplicação: MDSign Backend
 (ID visível em System Admin → Aplicações). A documentação oficial afirma que a chave de uma
 organização deve criar documentos nela: não é comportamento esperado.
@@ -93,7 +97,7 @@ aplicação**: gravação do documento/agente, lançamento de consumo, enfileira
 3. Verificar Hangfire (System Admin → Hangfire) por jobs com falha no horário dos testes.
 4. Verificar o estado dos serviços em System Admin → Servidores.
 5. Para cada código, obter **Exception Type, Message, InnerException e StackTrace**. Começar por
-   `17FF36` e `E7E211`; depois `D788B3`, `5ABF5B`, `84AAED`. Se apontarem para o mesmo método,
+   `2F77FB`, `17FF36` e `E7E211`; depois `D788B3`, `5ABF5B`, `84AAED`. Se apontarem para o mesmo método,
    o diagnóstico fecha.
 6. Teste A/B no mesmo minuto: (A) criar pelo painel na MDSign Plataforma e (B) pela API com o
    mesmo PDF e participante. Anotar horário exato, Organization ID, Application ID, User ID (A) e
