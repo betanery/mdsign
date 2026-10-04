@@ -20,9 +20,12 @@ export const siteConfig = {
    */
   siteUrl: (optional(env.VITE_SITE_URL) ?? "https://mdsign.lovable.app").replace(/\/$/, ""),
 
-  /** Aplicação MDSign (Fase 2). Sem valor, "Entrar" leva ao contato. */
-  appUrl: optional(env.VITE_APP_URL),
-  /** Cadastro no plano gratuito Cedro. Sem valor, usa appUrl ou o contato. */
+  /** Login do app MDSign (Fase 2): destino de "Entrar". */
+  appUrl: optional(env.VITE_APP_URL) ?? "/app/login",
+  /**
+   * Cadastro no plano Cedro: destino de "Comece grátis". Sem valor, abre o formulário de
+   * contato. No lançamento do app, definir VITE_SIGNUP_URL=/app/signup.
+   */
   signupUrl: optional(env.VITE_SIGNUP_URL),
   /** Contratação de plano pago (Fase 3: checkout). Recebe ?plano=<id>. */
   checkoutUrl: optional(env.VITE_CHECKOUT_URL),

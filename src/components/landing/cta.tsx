@@ -32,7 +32,7 @@ function resolveHref(
 ): string | undefined {
   switch (kind) {
     case "free":
-      return siteConfig.signupUrl ?? siteConfig.appUrl;
+      return siteConfig.signupUrl;
     case "plans":
       return path("/#planos");
     case "platform":
@@ -46,7 +46,7 @@ function resolveHref(
     case "api":
       return siteConfig.apiDocsUrl ?? path("/desenvolvedores");
     case "login":
-      return siteConfig.appUrl ?? path("/entrar");
+      return siteConfig.appUrl;
   }
 }
 

@@ -36,10 +36,10 @@ Os rótulos seguem o PRD (seção 18). O destino vem da configuração:
 
 | CTA | Com a variável definida | Sem a variável |
 | --- | --- | --- |
-| Comece grátis | `VITE_SIGNUP_URL` (ou `VITE_APP_URL`) | abre o formulário com o plano Cedro |
+| Comece grátis | `VITE_SIGNUP_URL` (no lançamento: `/app/signup`) | abre o formulário com o plano Cedro |
 | Assinar plano | `VITE_CHECKOUT_URL?plano=<id>` | abre o formulário com o plano escolhido |
 | Fale com um especialista | — | abre o formulário |
-| Entrar | `VITE_APP_URL` | página `/<idioma>/entrar` |
+| Entrar | `VITE_APP_URL` | login do app (`/app/login`); `/<idioma>/entrar` redireciona para ele |
 | Documentação da API | `VITE_API_DOCS_URL` | página `/<idioma>/desenvolvedores` |
 
 O formulário envia `POST` JSON para a Edge Function `lead-submit` do Supabase (nunca para a API
