@@ -69,6 +69,18 @@ instância ou com a Lacuna.
 - ❌ Resultado do A/B: aplicação "MDSign Teste" (Administrador) na TESTE XUPETINHA também
   falha (500 `7E25AD`). **O problema é da instância**, não da organização nova. Suspeita
   principal: faturamento desabilitado em toda a instância.
+- ❌ Faturamento reativado: continua 500 nas duas organizações (`5ABF5B`, `84AAED`). Signatária
+  fictícia (CPF válido gerado, e-mail descartável): 500 (`D788B3`). Corpo **idêntico ao exemplo
+  do Swagger**, com `Content-Type: application/json-patch+json`: 500 (`E7E211`). Variações
+  (Aprovador, contentType octet-stream, upload por bytes, pasta nova, notificações desligadas):
+  todas 500 (`9DE798`, `0194A7`, `AD4F18`, `E5B69E`, `09798E`).
+- ✅ Isolamento por etapas: ler o PDF enviado (`validate-signatures`) funciona; gravar no banco
+  (`POST /api/folders`) funciona; processar o mesmo pedido de criação sem efetivar
+  (`POST /api/marks-sessions/documents`) funciona e devolve `embedUrl`.
+- **Conclusão:** o servidor falha somente na efetivação do documento criado por aplicação
+  (gravação do documento/agente, consumo, tarefas Hangfire ou webhooks). Pelo painel (agente
+  usuário) funciona. Próximo passo: logs do servidor e comparar com uma chave nova de uma
+  aplicação antiga que funciona (ex.: "Formulário de Assinatura").
 
 ### Decisão proposta
 
