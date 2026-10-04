@@ -82,6 +82,16 @@ instância ou com a Lacuna.
   usuário) funciona. Próximo passo: logs do servidor e comparar com uma chave nova de uma
   aplicação antiga que funciona (ex.: "Formulário de Assinatura").
 
+- ✅ **Resolvido às 22:11:** a criação pela API voltou a funcionar sem mudança no pedido (ver
+  `docs/incidente-signdoc-api-criacao-documento.md`). Confirmado com a biblioteca oficial
+  `signer-node-client` e com chamadas diretas. `action-url` devolve `url` e `embedUrl`.
+  Exemplos oficiais (SignerSamples) usam o pedido mínimo: `files` + `flowActions` com `type` e
+  `user`; `step` e `allowElectronicSignature` são opcionais.
+- ⚠️ `allowElectronicSignature` sem valor resulta em `false`: o participante só assina com
+  certificado. Para assinatura eletrônica, o MDSign deve enviar `true` explicitamente.
+- ⚠️ O `embedUrl` só funciona dentro do componente `LacunaSignerWidget` (aberto direto, fica na
+  tela de carregamento). Integração no Bloco 2.
+
 ### Decisão proposta
 
 | Modelo | Uso | Como funciona |

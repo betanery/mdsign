@@ -1,5 +1,16 @@
 # Incidente: criação de documento pela API do SignDoc retorna erro 500
 
+> **Situação em 03/10/2026, 22:11 (-03:00): normalizado sem mudança do lado cliente.**
+> Última falha: 22:02:17 (`ADCAD6`). Primeiro sucesso: 22:11:41, com a biblioteca oficial
+> `signer-node-client` 1.1.0 (cenário `createDocumentWithOneSignerScenario` do SignerSamples).
+> Em seguida, **o mesmo pedido que falhava** passou a funcionar: os dois PDFs, os dois
+> signatários, com e sem `step`, com e sem `allowElectronicSignature` (8 combinações, todas
+> 200). `action-url` devolveu `url` e `embedUrl`. Os documentos de teste foram cancelados.
+> Como nada mudou no pedido, a causa foi uma mudança/recuperação na instância entre 22:02 e
+> 22:11. **Pendente:** confirmar com quem administra o servidor o que mudou nesse intervalo
+> (reinício, faturamento reativado com efeito após cache, correção) e ainda analisar os stack
+> traces, para evitar recorrência.
+
 **Instância:** https://sign.signdocmd.com.br (Signer on-premises, Swagger versão 2.9.0)
 **Data dos testes:** 03/10/2026, entre 21h e 23h
 **Endpoint afetado:** `POST /api/documents`
