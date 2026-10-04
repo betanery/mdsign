@@ -24,7 +24,15 @@ const en: AppMessages = {
     name: "Full name",
     email: "Email",
     password: "Password",
-    passwordHint: "At least 8 characters.",
+    passwordHint: "At least 8 characters, with at least 1 number and 1 special character.",
+    confirmPassword: "Confirm password",
+    ruleLength: "At least 8 characters",
+    ruleNumber: "At least 1 number",
+    ruleSpecial: "At least 1 special character (e.g. ! @ # $ %)",
+    ruleMatch: "Both passwords match",
+    passwordRulesTitle: "The password must have:",
+    passwordMismatch: "The passwords don't match.",
+    passwordWeakRules: "The password doesn't meet the security requirements.",
     newPassword: "New password",
     login: "Sign in",
     signup: "Create account",
@@ -40,7 +48,7 @@ const en: AppMessages = {
     checkEmail: "We sent you a confirmation email. Open the link to activate your account.",
     invalidCredentials: "Incorrect email or password.",
     emailNotConfirmed: "Confirm your email before signing in. Check your inbox.",
-    weakPassword: "The password must have at least 8 characters.",
+    weakPassword: "The password must have at least 8 characters, 1 number and 1 special character.",
     alreadyRegistered:
       "An account with this email already exists. Sign in or recover your password.",
     rateLimited: "Too many attempts. Wait a few minutes and try again.",
@@ -52,6 +60,7 @@ const en: AppMessages = {
   onboarding: {
     title: "Let's create your organization",
     profileStep: "1. Confirm your profile",
+    confirmProfileTitle: "Confirm your profile",
     orgStep: "2. Your organization",
     subtitle:
       "The organization brings together your documents, templates and team. You can invite people later.",

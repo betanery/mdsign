@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 
 import { AuthLayout, FormMessage } from "@/app/components/auth-layout";
 import { useAppI18n } from "@/app/i18n";
+import { PasswordFields, validatePassword } from "@/app/password";
 import { friendlyError } from "@/app/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,11 +33,12 @@ function Signup() {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const password = String(form.get("password"));
-    if (password.length < 8) {
-      setError(t.auth.weakPassword);
+    const invalid = validatePassword(form, t);
+    if (invalid) {
+      setError(invalid);
       return;
     }
+    const password = String(form.get("password"));
     setBusy(true);
     setError(null);
     const { data, error: err } = await supabase.auth.signUp({
@@ -87,21 +89,7 @@ function Signup() {
             <Label htmlFor="email">{t.auth.email}</Label>
             <Input id="email" name="email" type="email" required autoComplete="email" />
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="password">{t.auth.password}</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              aria-describedby="password-hint"
-            />
-            <p id="password-hint" className="text-xs text-muted-foreground">
-              {t.auth.passwordHint}
-            </p>
-          </div>
+          <PasswordFields label={t.auth.password} />
           {error && <FormMessage kind="error">{error}</FormMessage>}
           <Button
             type="submit"

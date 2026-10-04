@@ -69,3 +69,16 @@ describe("rotas do app", () => {
     expect(router.matchRoutes(path).at(-1)?.routeId).not.toBe(rootRouteId);
   });
 });
+
+describe("política de senha", () => {
+  it("exige 8 caracteres, 1 número e 1 especial", async () => {
+    const { isStrongPassword, passwordChecks } = await import("@/app/password");
+    expect(isStrongPassword("abc12345")).toBe(false); // sem especial
+    expect(isStrongPassword("abcdefg!")).toBe(false); // sem número
+    expect(isStrongPassword("ab1!")).toBe(false); // curta
+    expect(isStrongPassword("Senha#2026")).toBe(true);
+    expect(isStrongPassword("çáéíóú1_")).toBe(true);
+    expect(passwordChecks("Senha#2026", "Senha#2026").match).toBe(true);
+    expect(passwordChecks("Senha#2026", "Senha#2025").match).toBe(false);
+  });
+});

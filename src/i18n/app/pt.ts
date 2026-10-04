@@ -23,7 +23,15 @@ const pt = {
     name: "Nome completo",
     email: "E-mail",
     password: "Senha",
-    passwordHint: "Mínimo de 8 caracteres.",
+    passwordHint: "Mínimo de 8 caracteres, com pelo menos 1 número e 1 caractere especial.",
+    confirmPassword: "Confirmar senha",
+    ruleLength: "Pelo menos 8 caracteres",
+    ruleNumber: "Pelo menos 1 número",
+    ruleSpecial: "Pelo menos 1 caractere especial (ex.: ! @ # $ %)",
+    ruleMatch: "As duas senhas são iguais",
+    passwordRulesTitle: "A senha precisa ter:",
+    passwordMismatch: "As senhas não conferem.",
+    passwordWeakRules: "A senha não atende aos requisitos de segurança.",
     newPassword: "Nova senha",
     login: "Entrar",
     signup: "Criar conta",
@@ -39,7 +47,7 @@ const pt = {
     checkEmail: "Enviamos um e-mail de confirmação. Abra o link para ativar sua conta.",
     invalidCredentials: "E-mail ou senha incorretos.",
     emailNotConfirmed: "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.",
-    weakPassword: "A senha precisa ter pelo menos 8 caracteres.",
+    weakPassword: "A senha precisa ter pelo menos 8 caracteres, 1 número e 1 caractere especial.",
     alreadyRegistered: "Já existe uma conta com esse e-mail. Entre ou recupere a senha.",
     rateLimited: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
     emailNotSent:
@@ -50,6 +58,7 @@ const pt = {
   onboarding: {
     title: "Vamos criar sua organização",
     profileStep: "1. Confirme seu perfil",
+    confirmProfileTitle: "Confirme seu perfil",
     orgStep: "2. Sua organização",
     subtitle:
       "A organização reúne seus documentos, modelos e equipe. Você pode convidar pessoas depois.",

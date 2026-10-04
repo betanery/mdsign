@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 
 import { AuthLayout, FormMessage } from "@/app/components/auth-layout";
 import { useAppI18n } from "@/app/i18n";
+import { PasswordFields, validatePassword } from "@/app/password";
 import { friendlyError } from "@/app/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +21,14 @@ function ResetPassword() {
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const password = String(new FormData(event.currentTarget).get("password"));
-    if (password.length < 8) {
-      setError(t.auth.weakPassword);
+    const form = new FormData(event.currentTarget);
+    const invalid = validatePassword(form, t);
+    if (invalid) {
+      setError(invalid);
       return;
     }
+    const password = String(form.get("password"));
+    setError(null);
     setState("busy");
     const { error: err } = await supabase.auth.updateUser({ password });
     if (err) {
@@ -46,19 +50,7 @@ function ResetPassword() {
         </div>
       ) : (
         <form className="grid gap-4" onSubmit={onSubmit}>
-          <div className="grid gap-1.5">
-            <Label htmlFor="password">{t.auth.newPassword}</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              autoFocus
-            />
-            <p className="text-xs text-muted-foreground">{t.auth.passwordHint}</p>
-          </div>
+          <PasswordFields label={t.auth.newPassword} autoFocus />
           {error && <FormMessage kind="error">{error}</FormMessage>}
           <Button
             type="submit"

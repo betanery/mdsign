@@ -57,6 +57,19 @@ padrão do Supabase tem limite baixo de e-mails por hora.
 Super Admin: incluir o usuário em `public.platform_admins` (SQL Editor:
 `insert into platform_admins (user_id) select id from auth.users where email = '...';`).
 
+## Senhas
+
+- Tela (cadastro e troca de senha): mínimo de 8 caracteres, 1 número e 1 caractere especial,
+  com campo "Confirmar senha" e lista de requisitos que atualiza enquanto a pessoa digita
+  (`src/app/password.tsx`).
+- Servidor (Supabase): `minimum_password_length = 8` e `password_requirements = "letters_digits"`
+  (o mais próximo sem exigir maiúsculas/minúsculas; o caractere especial é exigido na tela).
+
+## Perfil
+
+Quem entra sem nome no perfil (ex.: conta criada pelo painel do Supabase) vê "Confirme seu perfil"
+antes de seguir, mesmo já tendo organização.
+
 ## Fora do Bloco 1
 
 Convites ainda não enviam e-mail (o link é copiado na tela); envio entra com as notificações

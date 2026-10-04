@@ -25,7 +25,15 @@ const es: AppMessages = {
     name: "Nombre completo",
     email: "Correo electrónico",
     password: "Contraseña",
-    passwordHint: "Mínimo 8 caracteres.",
+    passwordHint: "Mínimo 8 caracteres, con al menos 1 número y 1 carácter especial.",
+    confirmPassword: "Confirmar contraseña",
+    ruleLength: "Al menos 8 caracteres",
+    ruleNumber: "Al menos 1 número",
+    ruleSpecial: "Al menos 1 carácter especial (ej.: ! @ # $ %)",
+    ruleMatch: "Las dos contraseñas coinciden",
+    passwordRulesTitle: "La contraseña debe tener:",
+    passwordMismatch: "Las contraseñas no coinciden.",
+    passwordWeakRules: "La contraseña no cumple los requisitos de seguridad.",
     newPassword: "Nueva contraseña",
     login: "Iniciar sesión",
     signup: "Crear cuenta",
@@ -41,7 +49,7 @@ const es: AppMessages = {
     checkEmail: "Te enviamos un correo de confirmación. Abre el enlace para activar tu cuenta.",
     invalidCredentials: "Correo o contraseña incorrectos.",
     emailNotConfirmed: "Confirma tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.",
-    weakPassword: "La contraseña debe tener al menos 8 caracteres.",
+    weakPassword: "La contraseña debe tener al menos 8 caracteres, 1 número y 1 carácter especial.",
     alreadyRegistered:
       "Ya existe una cuenta con ese correo. Inicia sesión o recupera la contraseña.",
     rateLimited: "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.",
@@ -53,6 +61,7 @@ const es: AppMessages = {
   onboarding: {
     title: "Vamos a crear tu organización",
     profileStep: "1. Confirma tu perfil",
+    confirmProfileTitle: "Confirma tu perfil",
     orgStep: "2. Tu organización",
     subtitle:
       "La organización reúne tus documentos, plantillas y equipo. Puedes invitar a personas después.",
