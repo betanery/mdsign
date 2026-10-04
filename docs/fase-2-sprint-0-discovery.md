@@ -39,6 +39,12 @@ instância ou com a Lacuna.
 - ⚠️ A tela de plano/faturamento do painel falha em todas as organizações (erro `4BB15E`):
   investigar nos logs do servidor.
 
+- ✅ `identifier` (CPF) é **obrigatório** para cada signatário (`400 Identifier is required`).
+- ✅ Upload funciona (`/api/uploads/bytes` e `/api/uploads` multipart).
+- ❌ `POST /api/documents` na MDSign Plataforma responde **500** (códigos `77483E` e `FBD910`),
+  com o mesmo padrão do erro da tela de plano (`4BB15E`). Nada foi criado. Hipótese: organização
+  criada sem responsável/assinatura, ou efeito de desabilitar o faturamento. Investigar nos logs.
+
 ### Decisão proposta
 
 | Modelo | Uso | Como funciona |
