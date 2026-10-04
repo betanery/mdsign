@@ -29,6 +29,9 @@ instância ou com a Lacuna.
   A organização Sys Admin não tem assinatura. Para documentos é preciso uma aplicação dentro de
   uma organização com assinatura, o que confirma o modelo abaixo.
 
+- ✅ Organização-motor criada pelo painel em 03/10/2026: **MDSign Plataforma**
+  (id `01620f89-b1c8-45fc-a4f1-08df1268a801`, CNPJ 32.650.036/0001-07).
+
 ### Decisão proposta
 
 | Modelo | Uso | Como funciona |
