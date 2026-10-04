@@ -29,7 +29,10 @@ import { Route as AppShellIndexRouteImport } from './routes/app/_shell/index'
 import { Route as AppShellSectionRouteImport } from './routes/app/_shell/$section'
 import { Route as AppShellOrganizationRouteImport } from './routes/app/_shell/organization'
 import { Route as AppShellSettingsRouteImport } from './routes/app/_shell/settings'
+import { Route as AppShellSignRouteImport } from './routes/app/_shell/sign'
 import { Route as AppInviteTokenRouteImport } from './routes/app/invite.$token'
+import { Route as AppShellDocumentsIndexRouteImport } from './routes/app/_shell/documents/index'
+import { Route as AppShellDocumentsIdRouteImport } from './routes/app/_shell/documents/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,10 +133,25 @@ const AppShellSettingsRoute = AppShellSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppShellRoute,
 } as any)
+const AppShellSignRoute = AppShellSignRouteImport.update({
+  id: '/sign',
+  path: '/sign',
+  getParentRoute: () => AppShellRoute,
+} as any)
 const AppInviteTokenRoute = AppInviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const AppShellDocumentsIndexRoute = AppShellDocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
+  getParentRoute: () => AppShellRoute,
+} as any)
+const AppShellDocumentsIdRoute = AppShellDocumentsIdRouteImport.update({
+  id: '/documents/$id',
+  path: '/documents/$id',
+  getParentRoute: () => AppShellRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -155,8 +173,11 @@ export interface FileRoutesByFullPath {
   '/app/$section': typeof AppShellSectionRoute
   '/app/organization': typeof AppShellOrganizationRoute
   '/app/settings': typeof AppShellSettingsRoute
+  '/app/sign': typeof AppShellSignRoute
   '/app/invite/$token': typeof AppInviteTokenRoute
   '/app/': typeof AppShellIndexRoute
+  '/app/documents/$id': typeof AppShellDocumentsIdRoute
+  '/app/documents/': typeof AppShellDocumentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -176,7 +197,10 @@ export interface FileRoutesByTo {
   '/app/$section': typeof AppShellSectionRoute
   '/app/organization': typeof AppShellOrganizationRoute
   '/app/settings': typeof AppShellSettingsRoute
+  '/app/sign': typeof AppShellSignRoute
   '/app/invite/$token': typeof AppInviteTokenRoute
+  '/app/documents/$id': typeof AppShellDocumentsIdRoute
+  '/app/documents': typeof AppShellDocumentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -199,8 +223,11 @@ export interface FileRoutesById {
   '/app/_shell/$section': typeof AppShellSectionRoute
   '/app/_shell/organization': typeof AppShellOrganizationRoute
   '/app/_shell/settings': typeof AppShellSettingsRoute
+  '/app/_shell/sign': typeof AppShellSignRoute
   '/app/invite/$token': typeof AppInviteTokenRoute
   '/app/_shell/': typeof AppShellIndexRoute
+  '/app/_shell/documents/$id': typeof AppShellDocumentsIdRoute
+  '/app/_shell/documents/': typeof AppShellDocumentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -223,8 +250,11 @@ export interface FileRouteTypes {
     | '/app/$section'
     | '/app/organization'
     | '/app/settings'
+    | '/app/sign'
     | '/app/invite/$token'
     | '/app/'
+    | '/app/documents/$id'
+    | '/app/documents/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -244,7 +274,10 @@ export interface FileRouteTypes {
     | '/app/$section'
     | '/app/organization'
     | '/app/settings'
+    | '/app/sign'
     | '/app/invite/$token'
+    | '/app/documents/$id'
+    | '/app/documents'
   id:
     | '__root__'
     | '/'
@@ -266,8 +299,11 @@ export interface FileRouteTypes {
     | '/app/_shell/$section'
     | '/app/_shell/organization'
     | '/app/_shell/settings'
+    | '/app/_shell/sign'
     | '/app/invite/$token'
     | '/app/_shell/'
+    | '/app/_shell/documents/$id'
+    | '/app/_shell/documents/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -423,12 +459,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShellSettingsRouteImport
       parentRoute: typeof AppShellRoute
     }
+    '/app/_shell/sign': {
+      id: '/app/_shell/sign'
+      path: '/sign'
+      fullPath: '/app/sign'
+      preLoaderRoute: typeof AppShellSignRouteImport
+      parentRoute: typeof AppShellRoute
+    }
     '/app/invite/$token': {
       id: '/app/invite/$token'
       path: '/invite/$token'
       fullPath: '/app/invite/$token'
       preLoaderRoute: typeof AppInviteTokenRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/app/_shell/documents/': {
+      id: '/app/_shell/documents/'
+      path: '/documents'
+      fullPath: '/app/documents/'
+      preLoaderRoute: typeof AppShellDocumentsIndexRouteImport
+      parentRoute: typeof AppShellRoute
+    }
+    '/app/_shell/documents/$id': {
+      id: '/app/_shell/documents/$id'
+      path: '/documents/$id'
+      fullPath: '/app/documents/$id'
+      preLoaderRoute: typeof AppShellDocumentsIdRouteImport
+      parentRoute: typeof AppShellRoute
     }
   }
 }
@@ -453,14 +510,20 @@ interface AppShellRouteChildren {
   AppShellSectionRoute: typeof AppShellSectionRoute
   AppShellOrganizationRoute: typeof AppShellOrganizationRoute
   AppShellSettingsRoute: typeof AppShellSettingsRoute
+  AppShellSignRoute: typeof AppShellSignRoute
   AppShellIndexRoute: typeof AppShellIndexRoute
+  AppShellDocumentsIdRoute: typeof AppShellDocumentsIdRoute
+  AppShellDocumentsIndexRoute: typeof AppShellDocumentsIndexRoute
 }
 
 const AppShellRouteChildren: AppShellRouteChildren = {
   AppShellSectionRoute: AppShellSectionRoute,
   AppShellOrganizationRoute: AppShellOrganizationRoute,
   AppShellSettingsRoute: AppShellSettingsRoute,
+  AppShellSignRoute: AppShellSignRoute,
   AppShellIndexRoute: AppShellIndexRoute,
+  AppShellDocumentsIdRoute: AppShellDocumentsIdRoute,
+  AppShellDocumentsIndexRoute: AppShellDocumentsIndexRoute,
 }
 
 const AppShellRouteWithChildren = AppShellRoute._addFileChildren(

@@ -6,7 +6,6 @@ import { useAppI18n } from "@/app/i18n";
 
 /** Seções das próximas etapas da Fase 2: aparecem no menu, ainda sem conteúdo. */
 const upcoming = [
-  "documents",
   "templates",
   "processes",
   "bulk",

@@ -44,14 +44,14 @@ type NavKey =
   | "settings";
 
 type NavItem = { key: NavKey; icon: LucideIcon } & (
-  | { to: "/app" | "/app/organization" | "/app/settings"; section?: never }
-  | { section: Exclude<NavKey, "home" | "organization" | "settings">; to?: never }
+  | { to: "/app" | "/app/documents" | "/app/organization" | "/app/settings"; section?: never }
+  | { section: Exclude<NavKey, "home" | "documents" | "organization" | "settings">; to?: never }
 );
 
 /** Navegação desktop do PRD §6, na ordem definida. Itens com `section` ainda não existem. */
 const navItems: NavItem[] = [
   { key: "home", to: "/app", icon: Home },
-  { key: "documents", section: "documents", icon: Files },
+  { key: "documents", to: "/app/documents", icon: Files },
   { key: "templates", section: "templates", icon: LayoutTemplate },
   { key: "processes", section: "processes", icon: Workflow },
   { key: "bulk", section: "bulk", icon: FileStack },
@@ -63,12 +63,12 @@ const navItems: NavItem[] = [
   { key: "settings", to: "/app/settings", icon: Settings },
 ];
 
-/** As quatro portas principais (PRD §1 e §6). */
+/** As quatro portas principais (PRD §1 e §6). `to` = jornada já disponível. */
 export const journeys = [
-  { key: "selfSign", icon: FilePen },
-  { key: "send", icon: Send },
-  { key: "template", icon: LayoutTemplate },
-  { key: "bulk", icon: FileStack },
+  { key: "selfSign", icon: FilePen, to: "/app/sign" },
+  { key: "send", icon: Send, to: null },
+  { key: "template", icon: LayoutTemplate, to: null },
+  { key: "bulk", icon: FileStack, to: null },
 ] as const;
 
 function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void) | undefined }) {
@@ -205,25 +205,44 @@ export function JourneySheet({
           <SheetTitle>{t.nav.newAction}</SheetTitle>
         </SheetHeader>
         <ul className="grid gap-2 p-4 pt-0 sm:grid-cols-2">
-          {journeys.map(({ key, icon: Icon }) => (
-            <li key={key}>
-              <div
-                aria-disabled
-                className="flex items-start gap-3 rounded-xl border p-4 opacity-80"
-              >
+          {journeys.map(({ key, icon: Icon, to }) => {
+            const body = (
+              <>
                 <Icon className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden />
                 <div>
                   <p className="font-semibold">
-                    {t.actions[key]}{" "}
-                    <span className="ml-1 rounded bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand uppercase">
-                      {t.common.soon}
-                    </span>
+                    {t.actions[key]}
+                    {!to && (
+                      <span className="ml-2 rounded bg-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-brand uppercase">
+                        {t.common.soon}
+                      </span>
+                    )}
                   </p>
                   <p className="text-sm text-muted-foreground">{t.actions[`${key}Text`]}</p>
                 </div>
-              </div>
-            </li>
-          ))}
+              </>
+            );
+            return (
+              <li key={key}>
+                {to ? (
+                  <Link
+                    to={to}
+                    onClick={() => onOpenChange(false)}
+                    className="flex items-start gap-3 rounded-xl border p-4 hover:border-brand hover:bg-brand-soft"
+                  >
+                    {body}
+                  </Link>
+                ) : (
+                  <div
+                    aria-disabled
+                    className="flex items-start gap-3 rounded-xl border p-4 opacity-70"
+                  >
+                    {body}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </SheetContent>
     </Sheet>
@@ -243,7 +262,7 @@ function MobileBar({ onMore, onPlus }: { onMore: () => void; onPlus: () => void 
         <Home className="size-5" aria-hidden />
         {t.nav.home}
       </Link>
-      <Link to="/app/$section" params={{ section: "documents" }} className={item}>
+      <Link to="/app/documents" className={item}>
         <Files className="size-5" aria-hidden />
         {t.nav.documents}
       </Link>

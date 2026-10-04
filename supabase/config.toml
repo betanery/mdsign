@@ -425,3 +425,10 @@ enabled = true
 # A função valida os dados, limita envios por IP e grava com a service role.
 [functions.lead-submit]
 verify_jwt = false
+
+# Funções do app: validam o token do usuário dentro da função (supabase.auth.getUser).
+[functions.documents-self-sign]
+verify_jwt = false
+
+[functions.documents-action]
+verify_jwt = false

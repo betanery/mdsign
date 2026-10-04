@@ -1,0 +1,137 @@
+// Ações sobre um documento do MDSign (PRD §26): assinar (embedUrl), atualizar status, baixar,
+// cancelar e lembrar. Cada ação confere a permissão de quem chama.
+
+import { admin, requireUser, type Caller } from "../_shared/auth.ts";
+import { syncDocument } from "../_shared/documents.ts";
+import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
+import { signdoc } from "../_shared/signdoc.ts";
+
+type Body = {
+  documentId?: string;
+  action?: "sign-url" | "sync" | "download" | "cancel" | "remind";
+  participantId?: string;
+  reason?: string;
+  version?: "signed" | "original" | "printable";
+};
+
+type Doc = {
+  id: string;
+  organization_id: string;
+  created_by: string | null;
+  status: string;
+  engine_document_id: string;
+};
+
+async function loadVisible(caller: Caller, documentId: string): Promise<Doc> {
+  // Leitura com a identidade do usuário: se o RLS não deixa ver, não existe para ele.
+  const { data } = await caller.asUser
+    .from("documents")
+    .select("id, organization_id, created_by, status, engine_document_id")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!data) throw new AppError("document_not_found", 404);
+  return data as Doc;
+}
+
+async function canManage(caller: Caller, doc: Doc) {
+  if (doc.created_by === caller.user.id) return true;
+  const { data } = await caller.asUser.rpc("has_org_permission", {
+    org: doc.organization_id,
+    perm: "documents.manage",
+  });
+  return Boolean(data);
+}
+
+Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
+  try {
+    if (req.method !== "POST") throw new AppError("method_not_allowed", 405);
+    const caller = await requireUser(req);
+    const body = (await req.json()) as Body;
+    if (!body.documentId || !body.action) throw new AppError("invalid_request");
+    const doc = await loadVisible(caller, body.documentId);
+
+    switch (body.action) {
+      case "sign-url": {
+        if (doc.status !== "pending") throw new AppError("document_not_pending", 409);
+        const { data: rows } = await admin
+          .from("document_participants")
+          .select("id, user_id, email, cpf, status, step, engine_flow_action_id")
+          .eq("document_id", doc.id)
+          .in("status", ["pending", "created"])
+          .order("step");
+        const email = caller.user.email?.toLowerCase();
+        const me = (rows ?? []).find(
+          (p) => p.user_id === caller.user.id || (email && p.email.toLowerCase() === email),
+        );
+        if (!me) throw new AppError("nothing_to_sign", 409);
+        const action = await signdoc.actionUrl(doc.engine_document_id, {
+          emailAddress: me.email,
+          ...(me.cpf ? { identifier: me.cpf } : {}),
+          ...(me.engine_flow_action_id ? { flowActionId: me.engine_flow_action_id } : {}),
+        });
+        return json({ embedUrl: action.embedUrl }, 200, origin);
+      }
+
+      case "sync": {
+        const { status } = await syncDocument(doc);
+        return json({ status }, 200, origin);
+      }
+
+      case "download": {
+        const type =
+          body.version === "original"
+            ? "Original"
+            : body.version === "printable"
+              ? "PrinterFriendlyVersion"
+              : doc.status === "concluded"
+                ? "Signatures"
+                : "Original";
+        const ticket = await signdoc.ticket(doc.engine_document_id, type);
+        const url = ticket.location.startsWith("http") ? ticket.location : `${signdoc.baseUrl}${ticket.location}`;
+        return json({ url }, 200, origin);
+      }
+
+      case "cancel": {
+        if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
+        if (doc.status !== "pending") throw new AppError("document_not_pending", 409);
+        const reason = (body.reason ?? "").trim().slice(0, 500) || "Cancelado pelo remetente no MDSign.";
+        await signdoc.cancel(doc.engine_document_id, reason);
+        await syncDocument(doc);
+        await admin.rpc("write_audit_as", {
+          org: doc.organization_id,
+          actor: caller.user.id,
+          act: "document.canceled",
+          ent: "document",
+          ent_id: doc.id,
+          payload: { reason },
+        });
+        return json({ status: "canceled" }, 200, origin);
+      }
+
+      case "remind": {
+        if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
+        const { data: p } = await admin
+          .from("document_participants")
+          .select("id, name, status, engine_flow_action_id")
+          .eq("document_id", doc.id)
+          .eq("id", body.participantId ?? "")
+          .maybeSingle();
+        if (!p?.engine_flow_action_id || p.status !== "pending") throw new AppError("nothing_to_remind", 409);
+        await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
+        await admin.from("document_events").insert({
+          document_id: doc.id,
+          organization_id: doc.organization_id,
+          type: "participant.reminded",
+          actor_name: p.name,
+          source: "mdsign",
+        });
+        return json({ ok: true }, 200, origin);
+      }
+    }
+    throw new AppError("invalid_action");
+  } catch (error) {
+    return handleError(error, origin);
+  }
+});

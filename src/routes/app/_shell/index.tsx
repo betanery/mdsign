@@ -67,9 +67,15 @@ function Dashboard() {
 
       <section aria-label={t.nav.newAction}>
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {journeys.map(({ key, icon: Icon }) => (
-            <li key={key}>
-              <div className="flex h-full flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm">
+          {journeys.map(({ key, icon: Icon, to }) => {
+            const card = (
+              <div
+                className={
+                  to
+                    ? "flex h-full flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm transition-colors hover:border-brand"
+                    : "flex h-full flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm"
+                }
+              >
                 <span className="flex size-11 items-center justify-center rounded-xl bg-brand-soft">
                   <Icon className="size-5 text-brand" aria-hidden />
                 </span>
@@ -77,12 +83,15 @@ function Dashboard() {
                   <h2 className="font-display text-base font-semibold">{t.actions[key]}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{t.actions[`${key}Text`]}</p>
                 </div>
-                <span className="w-fit rounded bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground uppercase">
-                  {t.common.soon}
-                </span>
+                {!to && (
+                  <span className="w-fit rounded bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground uppercase">
+                    {t.common.soon}
+                  </span>
+                )}
               </div>
-            </li>
-          ))}
+            );
+            return <li key={key}>{to ? <Link to={to}>{card}</Link> : card}</li>;
+          })}
         </ul>
       </section>
 
