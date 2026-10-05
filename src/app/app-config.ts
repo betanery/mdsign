@@ -2,7 +2,18 @@ import { useEffect, useState } from "react";
 
 import { callFunction } from "./api";
 
-export type AuthLevel = "basic" | "reinforced" | "identity" | "high" | "qualified";
+export type AuthLevel =
+  | "basic"
+  | "reinforced"
+  | "reinforced_whatsapp"
+  | "identity"
+  | "identity_datavalid"
+  | "high"
+  | "qualified";
+
+/** Níveis que exigem celular (código por SMS ou WhatsApp). */
+export const needsPhone = (level: AuthLevel) =>
+  level === "reinforced" || level === "reinforced_whatsapp";
 export type AppConfig = { authLevels: AuthLevel[]; foreignSigners: boolean };
 
 const fallback: AppConfig = { authLevels: ["basic", "qualified"], foreignSigners: false };

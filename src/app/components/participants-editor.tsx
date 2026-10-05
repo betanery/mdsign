@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import type { AppConfig, AuthLevel } from "../app-config";
+import { needsPhone, type AppConfig, type AuthLevel } from "../app-config";
 import { useAuth } from "../auth";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
@@ -60,7 +60,8 @@ export function validateParticipants(
     if (!EMAIL.test(email)) bad.push("email");
     if (p.noCpf ? !config.foreignSigners : !isValidCpf(p.cpf)) bad.push("cpf");
     if (!config.authLevels.includes(p.authLevel)) bad.push("authLevel");
-    if (p.authLevel === "reinforced" && onlyDigits(p.phone).length < 10) bad.push("phone");
+    if (needsPhone(p.authLevel) && onlyDigits(p.phone).length < 10) bad.push("phone");
+    if (p.authLevel === "identity_datavalid" && p.noCpf) bad.push("authLevel");
     if (email && seen.has(email)) bad.push("duplicate");
     seen.add(email);
     if (bad.length) out[i] = bad;

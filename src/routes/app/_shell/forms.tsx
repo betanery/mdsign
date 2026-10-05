@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Copy, ExternalLink, Link2, Plus, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAppConfig, type AuthLevel } from "@/app/app-config";
+import { needsPhone, useAppConfig, type AuthLevel } from "@/app/app-config";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
@@ -364,7 +364,7 @@ function CreateFormDialog({
               className={`${selectClass} h-10`}
             >
               {config.authLevels
-                .filter((l) => l !== "reinforced")
+                .filter((l) => !needsPhone(l))
                 .map((l) => (
                   <option key={l} value={l}>
                     {t.participants.levels[l]}

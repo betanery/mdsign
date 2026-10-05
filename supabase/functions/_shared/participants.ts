@@ -2,11 +2,19 @@
 
 import { AppError } from "./http.ts";
 
-export type AuthLevel = "basic" | "reinforced" | "identity" | "high" | "qualified";
+export type AuthLevel =
+  | "basic"
+  | "reinforced"
+  | "reinforced_whatsapp"
+  | "identity"
+  | "identity_datavalid"
+  | "high"
+  | "qualified";
 
 /**
- * Métodos contratados/ativos na instância (segredo SIGNDOC_AUTH_METHODS, ex.: "sms,selfie").
- * Sem configuração, só e-mail e certificado. "Não prometer método não confirmado" (PRD §10).
+ * Métodos contratados/ativos na instância (segredo SIGNDOC_AUTH_METHODS, ex.:
+ * "sms,whatsapp,selfie,datavalid"; "liveness" libera a prova de vida). Sem configuração, só
+ * e-mail e certificado. "Não prometer método não confirmado" (PRD §10).
  */
 const methods = new Set(
   (Deno.env.get("SIGNDOC_AUTH_METHODS") ?? "")
@@ -18,42 +26,32 @@ const methods = new Set(
 /** Participantes sem CPF exigem General.CountryIdentifierMode=Nullable no motor. */
 export const identifierOptional = Deno.env.get("SIGNDOC_IDENTIFIER_OPTIONAL") === "true";
 
+/** Cada nível usa um método do motor (nomes conferidos no Swagger do SignDoc 2.9). */
+const levelMethods: [AuthLevel, string, Record<string, boolean>][] = [
+  ["reinforced", "sms", { requireSmsAuthenticationToSignElectronically: true }],
+  ["reinforced_whatsapp", "whatsapp", { requireWhatsappAuthenticationToSignElectronically: true }],
+  ["identity", "selfie", { requireSelfieAuthenticationToSignElectronically: true }],
+  ["identity_datavalid", "datavalid", { requireDatavalidAuthenticationToSignElectronically: true }],
+  ["high", "liveness", { requireLivenessAuthenticationToSignElectronically: true }],
+];
+
 export function availableAuthLevels(): AuthLevel[] {
-  const levels: AuthLevel[] = ["basic"];
-  if (methods.has("sms") || methods.has("whatsapp")) levels.push("reinforced");
-  if (methods.has("selfie") || methods.has("datavalid")) levels.push("identity");
-  if (methods.has("liveness")) levels.push("high");
-  levels.push("qualified");
-  return levels;
+  return [
+    "basic",
+    ...levelMethods.filter(([, method]) => methods.has(method)).map(([level]) => level),
+    "qualified",
+  ];
 }
+
+/** Níveis que exigem celular do participante. */
+export const needsPhone = (level: AuthLevel) =>
+  level === "reinforced" || level === "reinforced_whatsapp";
 
 /** Flags do motor para cada nível. */
 export function authFlags(level: AuthLevel): Record<string, boolean> {
-  switch (level) {
-    case "qualified":
-      return { allowElectronicSignature: false };
-    case "reinforced":
-      return methods.has("sms")
-        ? { allowElectronicSignature: true, requireSmsAuthenticationToSignElectronically: true }
-        : {
-            allowElectronicSignature: true,
-            requireWhatsappAuthenticationToSignElectronically: true,
-          };
-    case "identity":
-      return methods.has("selfie")
-        ? { allowElectronicSignature: true, requireSelfieAuthenticationToSignElectronically: true }
-        : {
-            allowElectronicSignature: true,
-            requireDatavalidAuthenticationToSignElectronically: true,
-          };
-    case "high":
-      return {
-        allowElectronicSignature: true,
-        requireLivenessAuthenticationToSignElectronically: true,
-      };
-    default:
-      return { allowElectronicSignature: true };
-  }
+  if (level === "qualified") return { allowElectronicSignature: false };
+  const extra = levelMethods.find(([l]) => l === level)?.[2] ?? {};
+  return { allowElectronicSignature: true, ...extra };
 }
 
 export function isValidCpf(value: string): boolean {
@@ -113,8 +111,10 @@ export function cleanParticipants(
     if (p.noCpf ? !identifierOptional : !isValidCpf(cpf ?? ""))
       problems.push({ index, field: "cpf" });
     if (!levels.includes(authLevel)) problems.push({ index, field: "authLevel" });
-    if (authLevel === "reinforced" && String(p.phone ?? "").replace(/\D/g, "").length < 10)
+    if (needsPhone(authLevel) && String(p.phone ?? "").replace(/\D/g, "").length < 10)
       problems.push({ index, field: "phone" });
+    // Datavalid consulta a base do governo pelo CPF: não serve para estrangeiros.
+    if (authLevel === "identity_datavalid" && p.noCpf) problems.push({ index, field: "authLevel" });
     if (seen.has(email)) problems.push({ index, field: "duplicate" });
     seen.add(email);
     return {

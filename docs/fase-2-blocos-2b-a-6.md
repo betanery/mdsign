@@ -25,8 +25,10 @@ Processos, Integrações e Relatórios continuam como "em breve" (próximas fase
   entitlements, nunca o nome do plano. O percentual de alerta vem da política `usage_alert`.
 - **Participantes**: CPF validado; estrangeiro sem CPF só quando a instância permite
   (`SIGNDOC_IDENTIFIER_OPTIONAL=true`, depende de `General.CountryIdentifierMode=Nullable` no
-  SignDoc). Autenticação reforçada por SMS exige celular. Os níveis oferecidos vêm de
-  `SIGNDOC_AUTH_METHODS` (ex.: `sms,selfie`); sem configuração: e-mail e certificado ICP-Brasil.
+  SignDoc). Os níveis oferecidos vêm de `SIGNDOC_AUTH_METHODS` (hoje
+  `sms,whatsapp,selfie,datavalid`; acrescentar `liveness` libera a prova de vida, que já está
+  pronta no código). Opções: e-mail, código por SMS, código por WhatsApp (ambos exigem
+  celular), selfie, Datavalid (exige CPF), prova de vida e certificado ICP-Brasil.
 - **Modelos**: texto com `# título`, `## subtítulo`, `- lista`, `**negrito**` e `{{campos}}`;
   o PDF é gerado na função (pdf-lib, Helvetica). A biblioteca MDSign é só leitura (duplicar para
   adaptar) e deve ser revisada pelo jurídico antes do uso.
@@ -62,8 +64,7 @@ Testes: `bash scripts/test-rls.sh` (RLS, planos, modelos, links, lotes e Super A
    em chat). Sem o webhook, o status é atualizado ao abrir o documento e pelo agendador.
 2. **Estrangeiros**: ligar `General.CountryIdentifierMode = Nullable` no SignDoc e então
    `SIGNDOC_IDENTIFIER_OPTIONAL=true` nas funções.
-3. **Autenticação reforçada**: confirmar quais métodos estão contratados (SMS, selfie,
-   Datavalid, prova de vida) e definir `SIGNDOC_AUTH_METHODS`.
+3. **Prova de vida**: quando contratada, acrescentar `liveness` em `SIGNDOC_AUTH_METHODS`.
 4. **SMTP próprio** no Supabase (e-mails de conta); GTM; domínio de produção.
 5. O plano Cedro tem 5 documentos no total — para testes maiores, trocar o plano da organização
    no Super Admin.
