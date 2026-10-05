@@ -13,6 +13,7 @@ import {
   toFlowAction,
   toObserver,
   type ParticipantInput,
+  witnessTitle,
 } from "../_shared/participants.ts";
 import {
   cleanBox,
@@ -173,6 +174,8 @@ Deno.serve(async (req) => {
       return {
         flowActionId: p.engine_flow_action_id,
         step: p.step,
+        // Editar sem o título apaga o título no SignDoc: a testemunha sempre o reenvia.
+        ...(p.role === "witness" ? { title: witnessTitle[lang] ?? witnessTitle["pt"] } : {}),
         ...(email ? { participantEmailAddress: email } : {}),
         ...(phone ? { participantPhoneNumber: phone } : {}),
       };

@@ -157,7 +157,11 @@ export function cleanParticipants(
 export const notificationLanguage: Record<string, string> = { pt: "Pt", en: "En", es: "Es" };
 
 /** No SignDoc a testemunha é um signatário com título (aparece no registro da assinatura). */
-const witnessTitle: Record<string, string> = { pt: "Testemunha", en: "Witness", es: "Testigo" };
+export const witnessTitle: Record<string, string> = {
+  pt: "Testemunha",
+  en: "Witness",
+  es: "Testigo",
+};
 
 export type ObserverInput = { name: string; email: string; cpf: string | null };
 
