@@ -6,8 +6,8 @@ import { checkRow, cleanOptions, processBulk, type BulkRow } from "../_shared/bu
 import { admin } from "../_shared/auth.ts";
 import { createDocument } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
-import { availableAuthLevels } from "../_shared/participants.ts";
-import { loadTemplate, pdfFilename, renderTemplate } from "../_shared/templates.ts";
+import { availableAuthLevels, cleanParticipants } from "../_shared/participants.ts";
+import { firstSlot, loadTemplate, pdfFilename, renderTemplate } from "../_shared/templates.ts";
 
 const MAX_ROWS = 1000;
 
@@ -39,6 +39,19 @@ Deno.serve(async (req) => {
         caller.profile.locale,
       );
       if (!availableAuthLevels().includes(options.authLevel)) throw new AppError("invalid_request");
+      // Modelo com papéis: os papéis além do 1º precisam de pessoas fixas válidas.
+      const others = template.participants.filter((r) => r.slot !== firstSlot(template));
+      if (others.length) {
+        const people = options.rolePeople ?? {};
+        cleanParticipants(
+          others.map((r) => ({
+            ...(people[String(r.slot)] ?? { name: "", email: "" }),
+            role: r.role,
+            authLevel: people[String(r.slot)]?.authLevel ?? r.authLevel,
+          })),
+          false,
+        );
+      }
       const rows = body["rows"] as BulkRow[];
       if (!Array.isArray(rows) || rows.length === 0) throw new AppError("bulk_empty");
       if (rows.length > MAX_ROWS) throw new AppError("bulk_too_many", 422, { max: MAX_ROWS });
@@ -131,7 +144,9 @@ Deno.serve(async (req) => {
         actorName: profile.full_name,
         kind: "send",
         name,
-        pdf: await renderTemplate(template, (first?.data as BulkRow).values),
+        pdf: await renderTemplate(template, (first?.data as BulkRow).values, {
+          skipSlotFields: true,
+        }),
         filename: pdfFilename(name),
         participants: [
           {

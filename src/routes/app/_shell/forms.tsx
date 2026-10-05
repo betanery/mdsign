@@ -9,10 +9,18 @@ import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import {
   FieldInput,
+  fillableFields,
   templateSelect,
   validateValues,
   type TemplateRow,
 } from "@/app/components/template-fields";
+import {
+  newParticipant,
+  ParticipantsEditor,
+  toPayload,
+  validateParticipants,
+  type ParticipantDraft,
+} from "@/app/components/participants-editor";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { selectClass } from "@/app/ui";
@@ -240,6 +248,20 @@ function CreateFormDialog({
   }, [current]);
 
   const tpl = useMemo(() => templates.find((x) => x.id === templateId), [templates, templateId]);
+  // Modelo com papéis: quem responde ocupa o 1º; os demais são pessoas fixas.
+  const roles = useMemo(
+    () => [...(tpl?.participants ?? [])].sort((a, b) => a.slot - b.slot),
+    [tpl],
+  );
+  const otherRoles = roles.slice(1);
+  const [people, setPeople] = useState<ParticipantDraft[]>([]);
+  const [peopleProblems, setPeopleProblems] = useState<Record<number, string[]>>({});
+  useEffect(() => {
+    setPeople(
+      otherRoles.map((r) => ({ ...newParticipant(), role: r.role, authLevel: r.authLevel })),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tpl]);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -254,6 +276,9 @@ function CreateFormDialog({
     setBad(invalid);
     if (invalid.length) return setError(t.errors["invalid_fields"]!);
     if (redirectUrl && !/^https:\/\//.test(redirectUrl)) return setError(t.forms.redirectInvalid);
+    const pp = validateParticipants(people, config);
+    setPeopleProblems(pp);
+    if (Object.keys(pp).length) return setError(t.errors["invalid_participants"]!);
     setBusy(true);
     const { data, error: err } = await supabase
       .from("forms")
@@ -263,6 +288,9 @@ function CreateFormDialog({
         created_by: user?.id ?? null,
         name: name.trim() || tpl.name,
         fixed_values: filled,
+        role_people: Object.fromEntries(
+          toPayload(people).map((p, i) => [String(otherRoles[i]!.slot), p]),
+        ),
         expires_at: expiresAt ? new Date(`${expiresAt}T23:59:59`).toISOString() : null,
         max_responses: maxResponses ? Math.max(1, Number(maxResponses)) : null,
         redirect_url: redirectUrl.trim() || null,
@@ -314,11 +342,26 @@ function CreateFormDialog({
               onChange={(e) => setName(e.target.value)}
             />
           </div>
+          {otherRoles.length > 0 && (
+            <fieldset className="grid gap-3 rounded-xl border p-3">
+              <legend className="px-1 font-medium">{t.pdf.otherRoles}</legend>
+              <p className="text-xs text-muted-foreground">
+                {t.pdf.otherRolesHint.replace("{role}", roles[0]!.label)}
+              </p>
+              <ParticipantsEditor
+                labels={otherRoles.map((r) => r.label)}
+                value={people}
+                onChange={setPeople}
+                config={config}
+                problems={peopleProblems}
+              />
+            </fieldset>
+          )}
           {tpl && tpl.fields.length > 0 && (
             <fieldset className="grid gap-3 rounded-xl border p-3">
               <legend className="px-1 font-medium">{t.forms.fixedValues}</legend>
               <p className="text-xs text-muted-foreground">{t.forms.fixedHint}</p>
-              {tpl.fields
+              {fillableFields(tpl.fields)
                 .filter((fl) => fl.source !== "signer")
                 .map((fl) => (
                   <FieldInput

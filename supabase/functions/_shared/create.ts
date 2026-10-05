@@ -4,6 +4,7 @@
 import { admin } from "./auth.ts";
 import { AppError } from "./http.ts";
 import { toFlowAction, type CleanParticipant } from "./participants.ts";
+import { loadPdf, pageSizes, toEngineMarks, type RelMark } from "./pdf.ts";
 import { signdoc } from "./signdoc.ts";
 
 export type CreateInput = {
@@ -26,6 +27,8 @@ export type CreateInput = {
   origin: string;
   /** Salva os participantes nos contatos da organização. */
   saveContacts?: boolean;
+  /** Assinatura/rubrica posicionadas, por participante (mesmo índice de `participants`). */
+  marks?: (RelMark[] | undefined)[];
 };
 
 export type Created = { documentId: string; engineDocumentId: string; participantIds: string[] };
@@ -48,6 +51,7 @@ export async function createDocument(input: CreateInput): Promise<Created> {
   if (allowed === false) throw new AppError("plan_limit_reached", 402);
 
   try {
+    const sizes = input.marks?.some((m) => m?.length) ? pageSizes(await loadPdf(input.pdf)) : [];
     const upload = await signdoc.uploadBytes(toBase64(input.pdf));
     const [created] = await signdoc.createDocuments({
       files: [
@@ -58,7 +62,13 @@ export async function createDocument(input: CreateInput): Promise<Created> {
           contentType: "application/pdf",
         },
       ],
-      flowActions: input.participants.map((p) => toFlowAction(p, input.locale)),
+      flowActions: input.participants.map((p, i) => {
+        const marks = p.role === "signer" ? (input.marks?.[i] ?? []) : [];
+        return {
+          ...toFlowAction(p, input.locale),
+          ...(marks.length ? { prePositionedMarks: toEngineMarks(marks, sizes) } : {}),
+        };
+      }),
       ...(input.message ? { description: input.message } : {}),
       ...(input.expiresAt ? { expirationDate: input.expiresAt } : {}),
       disablePendingActionNotifications: !input.notify,

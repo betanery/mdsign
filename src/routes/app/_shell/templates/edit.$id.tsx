@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/app/components/app-shell";
+import { PdfTemplateEditor } from "@/app/components/pdf-template-editor";
 import { TemplateEditor } from "@/app/components/template-editor";
 import { templateSelect, type TemplateRow } from "@/app/components/template-fields";
 import { useAppI18n } from "@/app/i18n";
@@ -30,6 +31,8 @@ function EditTemplate() {
         <p>{t.common.loading}</p>
       ) : row === null || row.scope === "mdsign" ? (
         <p>{t.errors["template_not_found"]}</p>
+      ) : row.kind === "pdf" ? (
+        <PdfTemplateEditor initial={row} id={row.id} />
       ) : (
         <TemplateEditor initial={row} id={row.id} />
       )}

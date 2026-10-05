@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { AppMessages } from "@/i18n/app/pt";
+import type { AuthLevel } from "../app-config";
 import { selectClass } from "../ui";
 import { formatCpf, isValidCnpj, isValidCpf, onlyDigits } from "../validation";
 
@@ -19,13 +20,48 @@ export const fieldTypes = [
 ] as const;
 export type FieldType = (typeof fieldTypes)[number];
 
+/** Origem do valor (preenchimento manual, signatário, remetente, contato, planilha, API, HCM). */
+export const fieldSources = [
+  "manual",
+  "signer",
+  "sender",
+  "contact",
+  "excel",
+  "api",
+  "hcm",
+] as const;
+export type FieldSource = (typeof fieldSources)[number];
+
+/** Posição relativa à página (frações 0–1, origem no canto superior esquerdo; página 1 = 1). */
+export type RelBox = { page: number; x: number; y: number; w: number; h: number };
+
 export type TemplateField = {
   key: string;
   label: string;
   type: FieldType;
   required?: boolean;
-  source?: "sender" | "signer";
+  source?: FieldSource;
   options?: string[];
+  /** Modelo PDF: onde o valor aparece e/ou campo de formulário do próprio PDF. */
+  boxes?: RelBox[];
+  pdfField?: string;
+  /** Preenchido com o dado de quem ocupa o papel (ex.: nome do Signatário 2). */
+  slot?: number | undefined;
+  slotAttr?: "name" | "email" | "cpf" | "phone" | undefined;
+};
+
+export type TemplateRole = {
+  slot: number;
+  label: string;
+  role: "signer" | "approver";
+  authLevel: AuthLevel;
+};
+export type MarkType = "signature" | "initials" | "stamp";
+export type TemplateMark = RelBox & { slot: number; type: MarkType };
+export type TemplateFlow = {
+  sequential?: boolean;
+  message?: string;
+  reminders?: { enabled: boolean; firstDays: number; everyDays: number; max: number };
 };
 
 export type TemplateRow = {
@@ -40,10 +76,20 @@ export type TemplateRow = {
   body: string;
   fields: TemplateField[];
   updated_at: string;
+  kind: "text" | "pdf";
+  file_path: string | null;
+  page_count: number | null;
+  participants: TemplateRole[];
+  flow: TemplateFlow;
+  marks: TemplateMark[];
 };
 
 export const templateSelect =
-  "id, organization_id, owner_id, scope, category, locale, name, description, body, fields, updated_at";
+  "id, organization_id, owner_id, scope, category, locale, name, description, body, fields, updated_at, kind, file_path, page_count, participants, flow, marks";
+
+/** Campos que quem envia/responde preenche (os de papel vêm das pessoas escolhidas). */
+export const fillableFields = (fields: TemplateField[]) =>
+  fields.filter((f) => !(f.slot && f.slotAttr));
 
 /** Campos {{chave}} usados no texto (mesma regra do gerador de PDF). */
 export function placeholders(body: string): string[] {

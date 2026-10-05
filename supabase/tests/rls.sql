@@ -308,4 +308,26 @@ do $$ begin
 end $$;
 reset role;
 
+-- Modelos PDF: arquivo obrigatório e sempre na pasta da própria organização; buckets sem políticas
+do $$ begin
+  assert not exists (select 1 from pg_policies where schemaname = 'storage'
+    and (coalesce(qual, '') || coalesce(with_check, '')) ~ '(templates|bulk-sources)'),
+    'buckets de PDF não têm políticas para usuários';
+  assert (select not public from storage.buckets where id = 'templates'), 'bucket templates privado';
+  assert (select not public from storage.buckets where id = 'bulk-sources'), 'bucket bulk-sources privado';
+end $$;
+do $$ begin
+  insert into public.templates (organization_id, scope, name, body, kind)
+    values ((select v from t_ids where k = 'orgA'), 'organization', 'PDF sem arquivo', '', 'pdf');
+  assert false, 'modelo PDF exige arquivo';
+exception when check_violation then null;
+end $$;
+do $$ begin
+  insert into public.templates (organization_id, scope, name, body, kind, file_path)
+    values ((select v from t_ids where k = 'orgA'), 'organization', 'PDF de outra pasta', '', 'pdf',
+            (select v from t_ids where k = 'orgB')::text || '/' || gen_random_uuid()::text || '.pdf');
+  assert false, 'arquivo do modelo fica na pasta da organização';
+exception when check_violation then null;
+end $$;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

@@ -7,7 +7,13 @@ import { ApiError, callFunction } from "@/app/api";
 import { useAppConfig, type AuthLevel } from "@/app/app-config";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
-import { newParticipant, validateParticipants } from "@/app/components/participants-editor";
+import {
+  newParticipant,
+  ParticipantsEditor,
+  toPayload,
+  validateParticipants,
+  type ParticipantDraft,
+} from "@/app/components/participants-editor";
 import { Stepper } from "@/app/components/pdf-drop";
 import {
   defaultSendOptions,
@@ -16,6 +22,7 @@ import {
   type SendOptionsValue,
 } from "@/app/components/send-options";
 import {
+  fillableFields,
   normalizeValue,
   templateSelect,
   validateValues,
@@ -111,7 +118,21 @@ function NewBulk() {
       .then(({ data }) => setTemplates((data as TemplateRow[] | null) ?? []));
   }, [current]);
 
-  const fields = useMemo(() => tpl?.fields ?? [], [tpl]);
+  const fields = useMemo(() => fillableFields(tpl?.fields ?? []), [tpl]);
+  // Modelo com papéis: cada linha ocupa o 1º papel; os demais são pessoas fixas do lote.
+  const roles = useMemo(
+    () => [...(tpl?.participants ?? [])].sort((a, b) => a.slot - b.slot),
+    [tpl],
+  );
+  const otherRoles = roles.slice(1);
+  const [people, setPeople] = useState<ParticipantDraft[]>([]);
+  const [peopleProblems, setPeopleProblems] = useState<Record<number, string[]>>({});
+  useEffect(() => {
+    setPeople(
+      otherRoles.map((r) => ({ ...newParticipant(), role: r.role, authLevel: r.authLevel })),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tpl]);
 
   // Problemas de cada linha: participante + campos do modelo.
   const problems = useMemo(() => {
@@ -212,6 +233,12 @@ function NewBulk() {
   async function ensureJob(): Promise<string | null> {
     if (jobId) return jobId;
     if (!current || !tpl) return null;
+    const pp = validateParticipants(people, config);
+    setPeopleProblems(pp);
+    if (Object.keys(pp).length) {
+      setError(t.errors["invalid_participants"]!);
+      return null;
+    }
     try {
       const r = await callFunction<{ jobId: string }>("bulk-jobs", {
         action: "create",
@@ -219,7 +246,13 @@ function NewBulk() {
         templateId: tpl.id,
         name: jobName.trim() || `${tpl.name} — ${fileName}`,
         mapping,
-        options: { ...sendOptionsPayload(options), authLevel },
+        options: {
+          ...sendOptionsPayload(options),
+          authLevel,
+          rolePeople: Object.fromEntries(
+            toPayload(people).map((p, i) => [String(otherRoles[i]!.slot), p]),
+          ),
+        },
         rows: rows.map((r) => ({
           name: r.name,
           email: r.email,
@@ -562,6 +595,24 @@ function NewBulk() {
                 </select>
               </div>
             </div>
+            {otherRoles.length > 0 && (
+              <fieldset
+                disabled={Boolean(jobId)}
+                className="grid gap-3 rounded-xl border bg-white p-4"
+              >
+                <legend className="px-1 font-medium">{t.pdf.otherRoles}</legend>
+                <p className="text-xs text-muted-foreground">
+                  {t.pdf.otherRolesHint.replace("{role}", roles[0]!.label)}
+                </p>
+                <ParticipantsEditor
+                  labels={otherRoles.map((r) => r.label)}
+                  value={people}
+                  onChange={setPeople}
+                  config={config}
+                  problems={peopleProblems}
+                />
+              </fieldset>
+            )}
             <fieldset disabled={Boolean(jobId)} className="contents">
               <SendOptions value={options} onChange={setOptions} />
             </fieldset>

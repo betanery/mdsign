@@ -24,6 +24,7 @@ import { SigningFrame } from "@/app/components/signing-frame";
 import {
   FieldInput,
   templateSelect,
+  fillableFields,
   validateValues,
   type TemplateRow,
 } from "@/app/components/template-fields";
@@ -72,7 +73,22 @@ function UseTemplate() {
       .then(({ data }) => {
         const row = data as TemplateRow | null;
         setTpl(row);
-        if (row) setName(row.name);
+        if (!row) return;
+        setName(row.name);
+        // Modelo com papéis: uma pessoa por papel, com a autenticação definida no modelo.
+        const roles = [...(row.participants ?? [])].sort((a, b) => a.slot - b.slot);
+        if (roles.length) {
+          setParticipants(
+            roles.map((r) => ({ ...newParticipant(), role: r.role, authLevel: r.authLevel })),
+          );
+          if (roles.length > 1) setHow("send");
+        }
+        if (row.flow?.sequential !== undefined) setSequential(row.flow.sequential);
+        setOptions((o) => ({
+          ...o,
+          message: row.flow?.message ?? o.message,
+          reminders: row.flow?.reminders ?? o.reminders,
+        }));
       });
   }, [id]);
 
@@ -87,6 +103,8 @@ function UseTemplate() {
   if (tpl === undefined) return <p>{t.common.loading}</p>;
   if (tpl === null) return <p>{t.errors["template_not_found"]}</p>;
   const template = tpl;
+  const roles = [...(template.participants ?? [])].sort((a, b) => a.slot - b.slot);
+  const fillable = fillableFields(template.fields);
 
   const base = () => ({
     organizationId: current.id,
@@ -96,7 +114,7 @@ function UseTemplate() {
   });
 
   function check() {
-    const missing = validateValues(template.fields, values);
+    const missing = validateValues(fillable, values);
     setBad(missing);
     if (missing.length) setError(t.errors["invalid_fields"]!);
     return missing.length === 0;
@@ -178,7 +196,13 @@ function UseTemplate() {
         ...base(),
         mode: "send",
         sequential,
-        participants: toPayload(participants),
+        ...(roles.length
+          ? {
+              roles: Object.fromEntries(
+                toPayload(participants).map((p, i) => [String(roles[i]!.slot), p]),
+              ),
+            }
+          : { participants: toPayload(participants) }),
         ...sendOptionsPayload(options),
       });
       setResult(r);
@@ -237,7 +261,7 @@ function UseTemplate() {
               />
             </div>
             <h2 className="font-display text-lg font-semibold">{t.templates.fill.values}</h2>
-            {template.fields.map((field) => (
+            {fillable.map((field) => (
               <FieldInput
                 key={field.key}
                 field={field}
@@ -256,29 +280,32 @@ function UseTemplate() {
                   ["send", Send, t.templates.fill.send, t.templates.fill.sendText],
                   ["self", FilePen, t.templates.fill.self, t.templates.fill.selfText],
                 ] as const
-              ).map(([value, Icon, label, text]) => (
-                <label
-                  key={value}
-                  className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-xl border bg-white p-4",
-                    how === value && "border-brand bg-brand-soft",
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="how"
-                    value={value}
-                    checked={how === value}
-                    onChange={() => setHow(value)}
-                    className="mt-1 accent-[var(--color-brand)]"
-                  />
-                  <Icon className="mt-0.5 size-5 text-brand" aria-hidden />
-                  <span>
-                    <span className="block font-medium">{label}</span>
-                    <span className="text-sm text-muted-foreground">{text}</span>
-                  </span>
-                </label>
-              ))}
+              )
+                // "Só eu assino" não se aplica a modelos com mais de um participante.
+                .filter(([value]) => value === "send" || roles.length <= 1)
+                .map(([value, Icon, label, text]) => (
+                  <label
+                    key={value}
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-xl border bg-white p-4",
+                      how === value && "border-brand bg-brand-soft",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="how"
+                      value={value}
+                      checked={how === value}
+                      onChange={() => setHow(value)}
+                      className="mt-1 accent-[var(--color-brand)]"
+                    />
+                    <Icon className="mt-0.5 size-5 text-brand" aria-hidden />
+                    <span>
+                      <span className="block font-medium">{label}</span>
+                      <span className="text-sm text-muted-foreground">{text}</span>
+                    </span>
+                  </label>
+                ))}
             </fieldset>
             {error && <FormMessage kind="error">{error}</FormMessage>}
             <div className="flex flex-wrap gap-3">
@@ -323,6 +350,7 @@ function UseTemplate() {
           <section className="grid gap-3">
             <h2 className="font-display text-lg font-semibold">{t.participants.title}</h2>
             <ParticipantsEditor
+              labels={roles.length ? roles.map((r) => r.label) : undefined}
               value={participants}
               onChange={setParticipants}
               config={config}
@@ -332,6 +360,7 @@ function UseTemplate() {
           <section className="grid gap-3">
             <h2 className="font-display text-lg font-semibold">{t.send.steps[2]}</h2>
             <FlowEditor
+              fixedOrder={roles.length > 0}
               value={participants}
               onChange={setParticipants}
               sequential={sequential}

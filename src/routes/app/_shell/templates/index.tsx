@@ -3,9 +3,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Copy, Info, LayoutTemplate, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { callFunction } from "@/app/api";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { templateSelect, type TemplateRow } from "@/app/components/template-fields";
+import { errorText } from "@/app/errors";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { friendlyError } from "@/app/validation";
@@ -41,10 +43,24 @@ function TemplatesPage() {
 
   async function remove(tpl: TemplateRow) {
     if (!window.confirm(f(t.templates.removeConfirm, { name: tpl.name }))) return;
-    const { error } = await supabase.from("templates").delete().eq("id", tpl.id);
-    if (error) {
-      toast.error(error.code === "23503" ? t.templates.inUse : friendlyError(error, t));
-      return;
+    if (tpl.kind === "pdf" && current) {
+      // Modelo PDF: a função apaga o modelo e o arquivo guardado.
+      try {
+        await callFunction("templates-pdf", {
+          action: "delete",
+          organizationId: current.id,
+          templateId: tpl.id,
+        });
+      } catch (e) {
+        toast.error(errorText(t, e));
+        return;
+      }
+    } else {
+      const { error } = await supabase.from("templates").delete().eq("id", tpl.id);
+      if (error) {
+        toast.error(error.code === "23503" ? t.templates.inUse : friendlyError(error, t));
+        return;
+      }
     }
     toast.success(t.templates.removed);
     void load();
@@ -111,7 +127,14 @@ function TemplatesPage() {
                         <LayoutTemplate className="size-5 text-brand" aria-hidden />
                       </span>
                       <div className="min-w-0">
-                        <h2 className="font-display font-semibold">{tpl.name}</h2>
+                        <h2 className="font-display font-semibold">
+                          {tpl.name}
+                          {tpl.kind === "pdf" && (
+                            <span className="ml-2 rounded bg-brand-soft px-1.5 py-0.5 align-middle text-[10px] font-semibold text-brand">
+                              {t.pdf.badge}
+                            </span>
+                          )}
+                        </h2>
                         <p className="text-xs text-muted-foreground">
                           {t.templates.categories[tpl.category] ?? tpl.category} ·{" "}
                           {f(t.templates.fieldsCount, { n: String(tpl.fields.length) })}

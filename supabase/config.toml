@@ -453,3 +453,6 @@ verify_jwt = false
 
 [functions.reminders-run]
 verify_jwt = false
+
+[functions.templates-pdf]
+verify_jwt = false

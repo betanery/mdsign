@@ -1,4 +1,6 @@
-// Criar documento a partir de modelo (PRD §13): prévia do PDF, "Só eu assino" ou envio.
+// Criar documento a partir de modelo (PRD §13): prévia, teste de rascunho, "Só eu assino" ou
+// envio. Modelos com papéis (ex.: Colaborador, Gestor, RH) recebem uma pessoa por papel; as
+// variáveis do papel e as marcas de assinatura/rubrica seguem quem ocupa o papel.
 
 import { requirePermission, requireUser } from "../_shared/auth.ts";
 import { createDocument } from "../_shared/create.ts";
@@ -7,24 +9,45 @@ import { cleanExpiration, cleanLocale, cleanMessage, cleanReminders } from "../_
 import {
   cleanParticipants,
   identifierOptional,
+  type CleanParticipant,
   type ParticipantInput,
 } from "../_shared/participants.ts";
 import { signdoc } from "../_shared/signdoc.ts";
-import { cleanValues, loadTemplate, pdfFilename, renderTemplate } from "../_shared/templates.ts";
+import {
+  cleanValues,
+  loadTemplate,
+  marksFor,
+  normalizeTemplate,
+  pdfFilename,
+  renderTemplate,
+  roleParticipants,
+  slotValues,
+} from "../_shared/templates.ts";
 
 type Payload = {
   organizationId: string;
-  templateId: string;
-  mode: "preview" | "self" | "send";
+  templateId?: string;
+  /** Modelo ainda não salvo ("Testar modelo"): só gera a prévia. */
+  draft?: Record<string, unknown>;
+  mode: "preview" | "test" | "self" | "send";
   values: Record<string, unknown>;
   name?: string;
+  /** Modelo sem papéis: lista livre de participantes. */
   participants?: ParticipantInput[];
+  /** Modelo com papéis: uma pessoa por papel ({ "1": {...}, "2": {...} }). */
+  roles?: Record<string, ParticipantInput>;
   sequential?: boolean;
   message?: string;
   expiresAt?: string | null;
   locale?: string;
   reminders?: { enabled: boolean; firstDays: number; everyDays: number; max: number };
 };
+
+const pdfResponse = (pdf: Uint8Array, origin: string | null) =>
+  new Response(new Uint8Array(pdf), {
+    status: 200,
+    headers: { ...corsHeaders(origin), "Content-Type": "application/pdf" },
+  });
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
@@ -40,23 +63,50 @@ Deno.serve(async (req) => {
     }
     if (!p.organizationId) throw new AppError("organization_required");
     await requirePermission(caller, p.organizationId, "documents.create");
+    const values = cleanValues(p.values);
+
+    // Teste de rascunho: nada é criado, enviado ou consumido do plano.
+    if (p.mode === "test") {
+      if (!p.draft) throw new AppError("invalid_request");
+      const draft = normalizeTemplate({ ...p.draft, organization_id: p.organizationId });
+      const test = p.roles ?? {};
+      const people = new Map<number, CleanParticipant>();
+      for (const r of draft.participants) {
+        const person = test[String(r.slot)];
+        if (person?.name)
+          people.set(r.slot, {
+            name: String(person.name),
+            email: String(person.email ?? ""),
+            cpf: person.cpf ? String(person.cpf) : null,
+            noCpf: Boolean(person.noCpf),
+            phone: person.phone ? String(person.phone) : null,
+            role: r.role,
+            authLevel: r.authLevel,
+            step: r.slot,
+          });
+      }
+      const pdf = await renderTemplate(draft, slotValues(draft, values, people), {
+        previewMarks: true,
+      });
+      return pdfResponse(pdf, origin);
+    }
+
     const template = await loadTemplate(
       caller.asUser,
       String(p.templateId ?? ""),
       p.organizationId,
     );
-    const values = cleanValues(p.values);
-    const pdf = await renderTemplate(template, values);
     const name =
       String(p.name ?? "")
         .trim()
         .slice(0, 200) || template.name;
+    const withRoles = template.participants.length > 0;
 
     if (p.mode === "preview")
-      return new Response(new Uint8Array(pdf), {
-        status: 200,
-        headers: { ...corsHeaders(origin), "Content-Type": "application/pdf" },
-      });
+      return pdfResponse(
+        await renderTemplate(template, values, { previewMarks: true, skipSlotFields: true }),
+        origin,
+      );
 
     const { profile, user } = caller;
     const base = {
@@ -64,7 +114,6 @@ Deno.serve(async (req) => {
       createdBy: user.id,
       actorName: profile.full_name ?? user.email ?? "",
       name,
-      pdf,
       filename: pdfFilename(name),
       origin: "template",
     };
@@ -73,23 +122,27 @@ Deno.serve(async (req) => {
       if (!profile.full_name?.trim() || (!profile.cpf && !profile.no_cpf))
         throw new AppError("profile_incomplete");
       if (!profile.cpf && !identifierOptional) throw new AppError("foreign_not_enabled");
+      // "Só eu assino" só serve para modelos de um papel (ou sem papéis).
+      if (template.participants.length > 1) throw new AppError("template_needs_participants");
+      const me: CleanParticipant = {
+        name: profile.full_name,
+        email: user.email!.toLowerCase(),
+        cpf: profile.cpf,
+        noCpf: profile.no_cpf,
+        phone: null,
+        role: "signer",
+        authLevel: "basic",
+        step: 1,
+      };
+      const slot = template.participants[0]?.slot ?? 1;
       const created = await createDocument({
         ...base,
         kind: "self",
+        pdf: await renderTemplate(template, slotValues(template, values, new Map([[slot, me]]))),
         locale: profile.locale,
         notify: false,
-        participants: [
-          {
-            name: profile.full_name,
-            email: user.email!.toLowerCase(),
-            cpf: profile.cpf,
-            noCpf: profile.no_cpf,
-            phone: null,
-            role: "signer",
-            authLevel: "basic",
-            step: 1,
-          },
-        ],
+        participants: [me],
+        marks: withRoles ? marksFor(template, [slot]) : undefined,
       });
       const action = await signdoc.actionUrl(created.engineDocumentId, {
         emailAddress: user.email!,
@@ -99,16 +152,31 @@ Deno.serve(async (req) => {
     }
 
     if (p.mode !== "send") throw new AppError("invalid_request");
+    const sequential = p.sequential ?? template.flow.sequential ?? true;
+    let participants: CleanParticipant[];
+    let pdf: Uint8Array;
+    let marks: ReturnType<typeof marksFor> | undefined;
+    if (withRoles) {
+      const r = roleParticipants(template, p.roles ?? {}, Boolean(sequential));
+      participants = r.list;
+      pdf = await renderTemplate(template, slotValues(template, values, r.bySlot));
+      marks = marksFor(template, r.slots);
+    } else {
+      participants = cleanParticipants(p.participants ?? [], Boolean(sequential));
+      pdf = await renderTemplate(template, values);
+    }
     const created = await createDocument({
       ...base,
       kind: "send",
-      participants: cleanParticipants(p.participants ?? [], Boolean(p.sequential)),
+      pdf,
+      participants,
+      marks,
       locale: cleanLocale(p.locale, profile.locale),
-      message: cleanMessage(p.message),
+      message: cleanMessage(p.message ?? template.flow.message),
       expiresAt: cleanExpiration(p.expiresAt),
       notify: true,
       saveContacts: true,
-      reminders: cleanReminders(p.reminders),
+      reminders: cleanReminders(p.reminders ?? template.flow.reminders),
     });
     return json({ documentId: created.documentId }, 200, origin);
   } catch (error) {

@@ -19,9 +19,14 @@ import {
 } from "./participants.ts";
 import {
   cleanValues,
+  fillableFields,
+  firstSlot,
   loadTemplate,
+  marksFor,
   pdfFilename,
   renderTemplate,
+  roleParticipants,
+  slotValues,
   type Template,
 } from "./templates.ts";
 import { validateValues } from "./render.ts";
@@ -34,6 +39,8 @@ export type BulkOptions = {
   message: string | null;
   expiresAt: string | null;
   reminders?: Reminders | undefined;
+  /** Modelo com papéis: pessoas fixas dos demais papéis (a linha ocupa o 1º papel). */
+  rolePeople?: Record<string, ParticipantInput>;
 };
 
 export function cleanOptions(
@@ -46,6 +53,10 @@ export function cleanOptions(
     message: cleanMessage(o?.["message"]),
     expiresAt: cleanExpiration(o?.["expiresAt"]),
     reminders: cleanReminders(o?.["reminders"] as Partial<Reminders> | undefined),
+    rolePeople:
+      o?.["rolePeople"] && typeof o["rolePeople"] === "object"
+        ? (o["rolePeople"] as Record<string, ParticipantInput>)
+        : {},
   };
 }
 
@@ -61,7 +72,7 @@ export function checkRow(row: BulkRow, template: Template, authLevel: AuthLevel)
     else throw e;
   }
   const values = cleanValues(row.values);
-  for (const key of validateValues(template.fields, values)) fields.push(`values.${key}`);
+  for (const key of validateValues(fillableFields(template), values)) fields.push(`values.${key}`);
   return { participant, values, problems: fields };
 }
 
@@ -94,15 +105,32 @@ export async function processBulk(jobId: string, n = 5) {
         const { participant, values, problems } = checkRow(item.data, template, options.authLevel);
         if (!participant || problems.length) throw new AppError("invalid_row", 422, problems);
         const name = documentName(template, participant);
+        let participants = [participant];
+        let pdfValues = values;
+        let marks;
+        if (template.participants.length) {
+          const r = roleParticipants(
+            template,
+            {
+              ...(options.rolePeople ?? {}),
+              [String(firstSlot(template))]: { ...item.data, authLevel: options.authLevel },
+            },
+            template.flow.sequential ?? true,
+          );
+          participants = r.list;
+          pdfValues = slotValues(template, values, r.bySlot);
+          marks = marksFor(template, r.slots);
+        }
         const created = await createDocument({
           organizationId: job.organization_id,
           createdBy: job.created_by,
           actorName: creator?.full_name ?? "",
           kind: "send",
           name,
-          pdf: await renderTemplate(template, values),
+          pdf: await renderTemplate(template, pdfValues),
           filename: pdfFilename(name),
-          participants: [participant],
+          participants,
+          marks,
           locale: options.locale,
           message: options.message,
           expiresAt: options.expiresAt,

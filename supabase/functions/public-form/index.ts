@@ -5,9 +5,24 @@
 import { admin } from "../_shared/auth.ts";
 import { createDocument } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
-import { cleanParticipants, identifierOptional, type AuthLevel } from "../_shared/participants.ts";
+import {
+  cleanParticipants,
+  identifierOptional,
+  type AuthLevel,
+  type ParticipantInput,
+} from "../_shared/participants.ts";
 import { signdoc } from "../_shared/signdoc.ts";
-import { cleanValues, loadTemplate, pdfFilename, renderTemplate } from "../_shared/templates.ts";
+import {
+  cleanValues,
+  fillableFields,
+  firstSlot,
+  loadTemplate,
+  marksFor,
+  pdfFilename,
+  renderTemplate,
+  roleParticipants,
+  slotValues,
+} from "../_shared/templates.ts";
 
 const PER_IP_PER_HOUR = 5;
 
@@ -21,7 +36,7 @@ async function loadForm(token: string) {
   const { data: form } = await admin
     .from("forms")
     .select(
-      "id, organization_id, template_id, created_by, name, active, expires_at, max_responses, responses_count, redirect_url, auth_level, fixed_values, organizations (name)",
+      "id, organization_id, template_id, created_by, name, active, expires_at, max_responses, responses_count, redirect_url, auth_level, fixed_values, role_people, organizations (name)",
     )
     .eq("token", token)
     .maybeSingle();
@@ -49,7 +64,7 @@ Deno.serve(async (req) => {
     const { form, template } = await loadForm(String(body["token"] ?? ""));
     const fixed = cleanValues(form.fixed_values);
     // Quem responde só preenche os campos que não foram fixados por quem criou o link.
-    const fields = template.fields.filter((f) => !(f.key in fixed));
+    const fields = fillableFields(template).filter((f) => !(f.key in fixed));
     const org = form.organizations as unknown as { name: string } | null;
 
     if (body["action"] === "config")
@@ -87,20 +102,35 @@ Deno.serve(async (req) => {
     if ((count ?? 0) >= PER_IP_PER_HOUR) throw new AppError("rate_limited", 429);
 
     const signer = (body["signer"] ?? {}) as Record<string, unknown>;
-    const [participant] = cleanParticipants(
-      [
-        {
-          name: String(signer["name"] ?? ""),
-          email: String(signer["email"] ?? ""),
-          cpf: String(signer["cpf"] ?? ""),
-          noCpf: Boolean(signer["noCpf"]),
-          authLevel: form.auth_level as AuthLevel,
-        },
-      ],
-      false,
-    );
+    const signerInput = {
+      name: String(signer["name"] ?? ""),
+      email: String(signer["email"] ?? ""),
+      cpf: String(signer["cpf"] ?? ""),
+      noCpf: Boolean(signer["noCpf"]),
+      authLevel: form.auth_level as AuthLevel,
+    };
     const values = { ...cleanValues(body["values"]), ...fixed };
-    const pdf = await renderTemplate(template, values);
+    let participants;
+    let pdf: Uint8Array;
+    let marks;
+    if (template.participants.length) {
+      // Quem responde ocupa o 1º papel; os demais são as pessoas fixas do link.
+      const others = (form.role_people ?? {}) as Record<string, ParticipantInput>;
+      const r = roleParticipants(
+        template,
+        { ...others, [String(firstSlot(template))]: signerInput },
+        template.flow.sequential ?? true,
+      );
+      participants = r.list;
+      pdf = await renderTemplate(template, slotValues(template, values, r.bySlot));
+      marks = marksFor(template, r.slots);
+    } else {
+      participants = cleanParticipants([signerInput], false);
+      pdf = await renderTemplate(template, values);
+    }
+    const participant = participants.find(
+      (x) => x.email === signerInput.email.trim().toLowerCase(),
+    )!;
 
     const { data: claimed } = await admin.rpc("claim_form_slot", { target: form.id });
     if (!claimed) throw new AppError("form_closed", 410);
@@ -114,10 +144,11 @@ Deno.serve(async (req) => {
         name,
         pdf,
         filename: pdfFilename(name),
-        participants: [participant!],
+        participants,
+        marks,
         locale: template.locale,
-        // Assina agora na página; o motor só avisa quando concluir.
-        notify: false,
+        // Quem responde assina agora na página. Com outros papéis, eles recebem o convite.
+        notify: participants.length > 1,
         origin: "form",
         saveContacts: true,
       });

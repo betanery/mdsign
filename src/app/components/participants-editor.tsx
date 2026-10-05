@@ -122,15 +122,19 @@ export function ParticipantsEditor({
   onChange,
   config,
   problems,
+  labels,
 }: {
   value: ParticipantDraft[];
   onChange: (next: ParticipantDraft[]) => void;
   config: AppConfig;
   problems: Record<number, string[]>;
+  /** Papéis fixos do modelo (um bloco por papel, sem adicionar/remover). */
+  labels?: string[] | undefined;
 }) {
   const { t } = useAppI18n();
   const { user } = useAuth();
   const contacts = useContacts();
+  const fixed = Boolean(labels);
   const listId = useId();
 
   const update = (i: number, patch: Partial<ParticipantDraft>) =>
@@ -193,9 +197,18 @@ export function ParticipantsEditor({
                 <span className="flex size-6 items-center justify-center rounded-full bg-brand-soft text-xs text-brand">
                   {i + 1}
                 </span>
-                {p.name || t.participants.title}
+                {labels?.[i] ? (
+                  <>
+                    {labels[i]}
+                    {p.name && (
+                      <span className="font-normal text-muted-foreground"> · {p.name}</span>
+                    )}
+                  </>
+                ) : (
+                  p.name || t.participants.title
+                )}
               </span>
-              {value.length > 1 && (
+              {!fixed && value.length > 1 && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -278,7 +291,7 @@ export function ParticipantsEditor({
       {contacts.length > 0 && (
         <p className="text-xs text-muted-foreground">{t.participants.contactsHint}</p>
       )}
-      <div className="flex flex-wrap gap-2">
+      <div className={fixed ? "hidden" : "flex flex-wrap gap-2"}>
         <Button
           type="button"
           variant="outline"
@@ -305,6 +318,7 @@ export function FlowEditor({
   onSequentialChange,
   config,
   problems,
+  fixedOrder,
 }: {
   value: ParticipantDraft[];
   onChange: (next: ParticipantDraft[]) => void;
@@ -312,6 +326,8 @@ export function FlowEditor({
   onSequentialChange: (v: boolean) => void;
   config: AppConfig;
   problems: Record<number, string[]>;
+  /** Papéis do modelo: a ordem e o papel (assina/aprova) vêm do modelo. */
+  fixedOrder?: boolean | undefined;
 }) {
   const { t } = useAppI18n();
   const update = (i: number, patch: Partial<ParticipantDraft>) =>
@@ -349,7 +365,7 @@ export function FlowEditor({
                 <span className="flex size-7 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand">
                   {sequential ? i + 1 : "•"}
                 </span>
-                {sequential && (
+                {sequential && !fixedOrder && (
                   <>
                     <Button
                       type="button"
@@ -382,6 +398,7 @@ export function FlowEditor({
                 <span className="font-medium">{t.participants.role}</span>
                 <select
                   value={p.role}
+                  disabled={fixedOrder}
                   onChange={(e) => update(i, { role: e.target.value as ParticipantDraft["role"] })}
                   className={selectClass}
                 >
