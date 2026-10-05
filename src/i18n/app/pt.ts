@@ -631,6 +631,9 @@ const pt = {
     name: "Nome do envio",
     test: "Enviar teste para mim",
     testSent: "Teste enviado para o seu e-mail. Confira antes de enviar para todos.",
+    testConfirmTitle: "Enviar teste para você",
+    testConfirmText:
+      "Será criado um documento real com os dados do primeiro destinatário e enviado para o seu e-mail. Isso consome 1 documento do seu plano.",
     start: "Enviar para todos",
     confirmTitle: "Confirmar envio em massa",
     confirmText:
@@ -723,7 +726,7 @@ const pt = {
       manual: "Preenchimento manual",
       signer: "Signatário",
       sender: "Remetente",
-      contact: "Contato",
+      contact: "Contato (em breve)",
       excel: "Planilha",
       api: "Integração/API (em breve)",
       hcm: "HCM/RH (em breve)",

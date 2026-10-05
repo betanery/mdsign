@@ -643,6 +643,9 @@ const es: AppMessages = {
     name: "Nombre del envío",
     test: "Enviarme una prueba",
     testSent: "Prueba enviada a tu correo. Revísala antes de enviar a todos.",
+    testConfirmTitle: "Enviarte una prueba",
+    testConfirmText:
+      "Se creará un documento real con los datos del primer destinatario y se enviará a tu correo. Esto consume 1 documento de tu plan.",
     start: "Enviar a todos",
     confirmTitle: "Confirmar envío masivo",
     confirmText:
@@ -735,10 +738,10 @@ const es: AppMessages = {
       manual: "Llenado manual",
       signer: "Firmante",
       sender: "Remitente",
-      contact: "Contacto",
+      contact: "Contacto (próximamente)",
       excel: "Planilla",
-      api: "Integración/API",
-      hcm: "HCM/RR. HH.",
+      api: "Integración/API (próximamente)",
+      hcm: "HCM/RR. HH. (próximamente)",
     } as Record<string, string>,
     roleOf: "Participante",
     fillWith: "Completar con",
@@ -840,12 +843,16 @@ const es: AppMessages = {
     } as Record<string, string>,
     reasons: {
       ok: "Identificado con seguridad por un identificador verificable.",
-      name_only: "Solo se encontró el nombre. Revisa el documento y confirma el destinatario.",
-      multiple: "Más de una persona posible. Elige el destinatario correcto.",
-      conflict: "Este documento tiene identificadores de personas distintas. Revisa con atención.",
-      not_found: "No se encontró ningún identificador. Elige el destinatario o exclúyelo del lote.",
+      name_only:
+        "Solo se encontró el nombre (sin CPF, matrícula ni correo). Por seguridad, el envío no es automático: revisa el documento y confirma el destinatario manualmente.",
+      multiple:
+        "CPF o identificador duplicado: más de una persona de la planilla/contactos coincide con este documento. Elige manualmente el destinatario correcto.",
+      conflict:
+        "Este documento contiene identificadores de personas distintas. Revisa con atención y asígnalo manualmente o separa las páginas.",
+      not_found:
+        "Identificador ausente: no se encontró ningún CPF, matrícula ni correo en el documento. Asigna el destinatario manualmente o exclúyelo del lote.",
       no_contact:
-        "Encontramos un identificador, pero no está en la planilla ni en los contactos. Elige el destinatario.",
+        "Encontramos un identificador, pero no está en la planilla ni en los contactos. Asigna el destinatario manualmente.",
       unlinked_pages:
         "Hay páginas sin identificación en este documento. Revisa si todas son de esta persona o sepáralo.",
     } as Record<string, string>,

@@ -99,8 +99,13 @@ const colIndex = (ref: string) => {
   return n - 1;
 };
 
+// Por nome local: alguns sistemas gravam o XML com prefixo (<x:row>, <x:c>).
+const tags = (el: Document | Element, name: string) => [...el.getElementsByTagNameNS("*", name)];
+
 const textOf = (el: Element) =>
-  [...el.getElementsByTagName("t")].map((t) => t.textContent ?? "").join("");
+  tags(el, "t")
+    .map((t) => t.textContent ?? "")
+    .join("");
 
 export async function parseXlsx(buffer: ArrayBuffer): Promise<Sheet> {
   const files = await unzip(buffer);
@@ -111,11 +116,13 @@ export async function parseXlsx(buffer: ArrayBuffer): Promise<Sheet> {
   const workbook = files.get("xl/workbook.xml");
   const rels = files.get("xl/_rels/workbook.xml.rels");
   if (workbook && rels) {
-    const first = xml(await workbook()).getElementsByTagName("sheet")[0];
-    const rid = first?.getAttribute("r:id");
-    const rel = [...xml(await rels()).getElementsByTagName("Relationship")].find(
-      (r) => r.getAttribute("Id") === rid,
-    );
+    const first = tags(xml(await workbook()), "sheet")[0];
+    const rid =
+      first?.getAttributeNS(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        "id",
+      ) ?? first?.getAttribute("r:id");
+    const rel = tags(xml(await rels()), "Relationship").find((r) => r.getAttribute("Id") === rid);
     const target = rel?.getAttribute("Target");
     if (target) sheetPath = target.startsWith("/") ? target.slice(1) : `xl/${target}`;
   }
@@ -124,14 +131,14 @@ export async function parseXlsx(buffer: ArrayBuffer): Promise<Sheet> {
 
   const shared: string[] = [];
   const sst = files.get("xl/sharedStrings.xml");
-  if (sst) for (const si of xml(await sst()).getElementsByTagName("si")) shared.push(textOf(si));
+  if (sst) for (const si of tags(xml(await sst()), "si")) shared.push(textOf(si));
 
   const matrix: string[][] = [];
-  for (const row of xml(await sheetFile()).getElementsByTagName("row")) {
+  for (const row of tags(xml(await sheetFile()), "row")) {
     const cells: string[] = [];
-    for (const c of row.getElementsByTagName("c")) {
+    for (const c of tags(row, "c")) {
       const type = c.getAttribute("t");
-      const v = c.getElementsByTagName("v")[0]?.textContent ?? "";
+      const v = tags(c, "v")[0]?.textContent ?? "";
       const value =
         type === "s"
           ? (shared[Number(v)] ?? "")

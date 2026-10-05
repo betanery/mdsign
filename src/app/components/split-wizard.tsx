@@ -40,6 +40,7 @@ import {
 import { selectClass } from "../ui";
 import { formatCpf, isValidCpf, onlyDigits } from "../validation";
 import { FormMessage } from "./auth-layout";
+import { useConfirm } from "./confirm-dialog";
 import { PdfDrop, Stepper } from "./pdf-drop";
 import { PdfPlacer, type PlacedBox } from "./pdf-placer";
 import {
@@ -78,6 +79,7 @@ export type SplitPreset = {
 /** Fluxo "Tenho um PDF com vários documentos": Enviar → Separar → Identificar → Conferir → Assinatura → Revisar. */
 export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
   const { t, f, locale } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const { current } = useOrg();
   const config = useAppConfig();
   const navigate = useNavigate();
@@ -419,12 +421,12 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
   }
 
   async function sendTest() {
-    if (
-      !window.confirm(
-        "Isto vai criar um documento real e enviar uma notificação para o seu e-mail. Deseja continuar?",
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: t.bulk.testConfirmTitle,
+      text: t.bulk.testConfirmText,
+      action: t.bulk.test,
+    });
+    if (!ok) return;
     setBusy("test");
     setError(null);
     const id = await ensureJob();
@@ -439,7 +441,12 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
   }
 
   async function start() {
-    if (!window.confirm(f(t.bulk.confirmText, { n: String(ready.length) }))) return;
+    const ok = await confirm({
+      title: t.bulk.confirmTitle,
+      text: f(t.bulk.confirmText, { n: String(ready.length) }),
+      action: t.bulk.confirm,
+    });
+    if (!ok) return;
     setBusy("start");
     setError(null);
     const id = await ensureJob();
@@ -481,6 +488,7 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
 
   return (
     <>
+      {confirmDialog}
       <Stepper
         steps={t.split.steps}
         current={step}

@@ -27,6 +27,14 @@ describe("planilhas do envio em massa", () => {
     expect(excelSerialToIso("46300")).toBe("2026-10-05");
   });
 
+  it("lê XLSX com prefixo de namespace (<x:row>), texto inline e aba fora de ordem nos vínculos", async () => {
+    const bytes = Buffer.from(readFileSync("src/test/fixtures-sheet-ns.b64", "utf8"), "base64");
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    const sheet = await parseXlsx(buffer);
+    expect(sheet.headers).toEqual(["nome", "email", "pagina"]);
+    expect(sheet.rows).toEqual([["Ana Souza", "ana@exemplo.com", "1"]]);
+  });
+
   it("normaliza cabeçalhos para o mapeamento automático", () => {
     expect(normalizeHeader("E-mail")).toBe("email");
     expect(normalizeHeader("Data Início")).toBe("datainicio");

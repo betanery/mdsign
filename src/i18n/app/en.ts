@@ -633,6 +633,9 @@ const en: AppMessages = {
     name: "Send name",
     test: "Send me a test",
     testSent: "Test sent to your email. Check it before sending to everyone.",
+    testConfirmTitle: "Send a test to yourself",
+    testConfirmText:
+      "A real document will be created with the first recipient's data and sent to your email. This uses 1 document from your plan.",
     start: "Send to everyone",
     confirmTitle: "Confirm bulk send",
     confirmText:
@@ -726,10 +729,10 @@ const en: AppMessages = {
       manual: "Manual entry",
       signer: "Signer",
       sender: "Sender",
-      contact: "Contact",
+      contact: "Contact (coming soon)",
       excel: "Spreadsheet",
-      api: "Integration/API",
-      hcm: "HCM/HR",
+      api: "Integration/API (coming soon)",
+      hcm: "HCM/HR (coming soon)",
     } as Record<string, string>,
     roleOf: "Participant",
     fillWith: "Fill with",
@@ -827,12 +830,16 @@ const en: AppMessages = {
     } as Record<string, string>,
     reasons: {
       ok: "Safely identified by a verifiable identifier.",
-      name_only: "Only the name was found. Check the document and confirm the recipient.",
-      multiple: "More than one possible person. Choose the right recipient.",
-      conflict: "This document has identifiers of different people. Check carefully.",
-      not_found: "No identifier found. Choose the recipient or exclude it from the batch.",
+      name_only:
+        "Only the name was found (no CPF, employee ID or email). For safety, this is not sent automatically: check the document and confirm the recipient manually.",
+      multiple:
+        "Duplicate CPF or identifier: more than one person in the spreadsheet/contacts matches this document. Choose the right recipient manually.",
+      conflict:
+        "This document contains identifiers of different people. Check carefully and assign it manually or split the pages.",
+      not_found:
+        "Missing identifier: no CPF, employee ID or email was found in the document. Assign the recipient manually or exclude it from the batch.",
       no_contact:
-        "We found an identifier, but it is not in the spreadsheet or contacts. Choose the recipient.",
+        "We found an identifier, but it is not in the spreadsheet or contacts. Assign the recipient manually.",
       unlinked_pages:
         "Some pages in this document have no identification. Check they all belong to this person, or split it.",
     } as Record<string, string>,

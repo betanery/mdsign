@@ -15,6 +15,7 @@ import { ApiError, callFunction, callFunctionBlob } from "@/app/api";
 import { useAppConfig, type AuthLevel } from "@/app/app-config";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import {
   newParticipant,
   ParticipantsEditor,
@@ -224,6 +225,7 @@ function TemplateBulk({
   initialOptions?: ProcessConfig["options"] | undefined;
 }) {
   const { t, f, locale } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const { current } = useOrg();
   const config = useAppConfig();
   const navigate = useNavigate();
@@ -437,12 +439,12 @@ function TemplateBulk({
   }
 
   async function sendTest() {
-    if (
-      !window.confirm(
-        "Isto vai criar um documento real e enviar uma notificação para o seu e-mail. Deseja continuar?",
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: t.bulk.testConfirmTitle,
+      text: t.bulk.testConfirmText,
+      action: t.bulk.test,
+    });
+    if (!ok) return;
     setBusy("test");
     setError(null);
     const id = await ensureJob();
@@ -457,7 +459,12 @@ function TemplateBulk({
   }
 
   async function start() {
-    if (!window.confirm(f(t.bulk.confirmText, { n: String(rows.length) }))) return;
+    const ok = await confirm({
+      title: t.bulk.confirmTitle,
+      text: f(t.bulk.confirmText, { n: String(rows.length) }),
+      action: t.bulk.confirm,
+    });
+    if (!ok) return;
     setBusy("start");
     setError(null);
     const id = await ensureJob();
@@ -515,6 +522,7 @@ function TemplateBulk({
 
   return (
     <>
+      {confirmDialog}
       <PageHeader title={t.bulk.new} subtitle={t.bulk.subtitle} />
       <Stepper
         steps={t.bulk.steps}
