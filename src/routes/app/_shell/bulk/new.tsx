@@ -437,6 +437,12 @@ function TemplateBulk({
   }
 
   async function sendTest() {
+    if (
+      !window.confirm(
+        "Isto vai criar um documento real e enviar uma notificação para o seu e-mail. Deseja continuar?",
+      )
+    )
+      return;
     setBusy("test");
     setError(null);
     const id = await ensureJob();
