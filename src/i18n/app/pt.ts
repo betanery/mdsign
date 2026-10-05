@@ -746,7 +746,9 @@ const pt = {
     noSignatureWarn:
       "{role} ainda não tem posição de assinatura. Sem ela, o SignDoc posiciona automaticamente.",
     testTitle: "Testar modelo",
-    testHint: "Use dados fictícios. Nada é enviado nem consumido do seu plano.",
+    testHint:
+      "Use dados fictícios. Nada é enviado nem consumido do seu plano. Campos em branco saem vazios na prévia.",
+    testFix: "Confira o formato destes campos do teste:",
     testRun: "Gerar prévia",
     smallScreen: "Para posicionar campos e assinaturas, use uma tela maior (computador ou tablet).",
     badge: "PDF",

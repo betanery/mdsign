@@ -175,9 +175,11 @@ export function marksFor(t: Template, slots: number[]): RelMark[][] {
 export async function renderTemplate(
   t: Template,
   values: Record<string, string>,
-  opts: { previewMarks?: boolean; skipSlotFields?: boolean } = {},
+  /** `optional`: teste de rascunho — campos vazios saem em branco; o formato continua conferido. */
+  opts: { previewMarks?: boolean; skipSlotFields?: boolean; optional?: boolean } = {},
 ) {
-  const fields = opts.skipSlotFields ? fillableFields(t) : t.fields;
+  const base = opts.skipSlotFields ? fillableFields(t) : t.fields;
+  const fields = opts.optional ? base.map((f) => ({ ...f, required: false })) : base;
   if (t.kind === "pdf") {
     if (!t.file_path || !t.organization_id) throw new AppError("template_not_found", 404);
     const labels = new Map(t.participants.map((r) => [r.slot, r.label]));

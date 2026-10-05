@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { callFunction, callFunctionBlob } from "../api";
 import { useAppConfig, type AuthLevel } from "../app-config";
 import { useAuth } from "../auth";
-import { errorText } from "../errors";
+import { errorText, fieldProblems } from "../errors";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
 import { selectClass } from "../ui";
@@ -122,6 +122,7 @@ export function PdfTemplateEditor({
   const [tool, setTool] = useState<PlacerTool | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [testValues, setTestValues] = useState<Record<string, string>>({});
+  const [testProblems, setTestProblems] = useState<string[]>([]);
   const [testPeople, setTestPeople] = useState<
     Record<string, { name: string; email: string; cpf: string }>
   >({});
@@ -337,6 +338,7 @@ export function PdfTemplateEditor({
     if (!current) return;
     setBusy("test");
     setError(null);
+    setTestProblems([]);
     try {
       const blob = await callFunctionBlob("documents-from-template", {
         organizationId: current.id,
@@ -350,7 +352,14 @@ export function PdfTemplateEditor({
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(URL.createObjectURL(blob));
     } catch (e) {
-      setError(errorText(t, e));
+      // Diz quais campos estão com formato errado (os vazios não impedem o teste).
+      const bad = fieldProblems(e);
+      setTestProblems(bad);
+      setError(
+        bad.length
+          ? `${t.pdf.testFix} ${bad.map((k) => fields.find((f) => f.key === k)?.label || k).join(", ")}`
+          : errorText(t, e),
+      );
     } finally {
       setBusy(null);
     }
@@ -913,7 +922,11 @@ export function PdfTemplateEditor({
               return (
                 <fieldset
                   key={r.slot}
-                  className="grid gap-2 rounded-xl border bg-white p-3 sm:grid-cols-3"
+                  className={cn(
+                    "grid gap-2 rounded-xl border bg-white p-3 sm:grid-cols-3",
+                    fields.some((f) => f.slot === r.slot && testProblems.includes(f.key)) &&
+                      "border-destructive",
+                  )}
                 >
                   <legend className="px-1 text-sm font-semibold">{roleLabel(r.slot)}</legend>
                   <Input
@@ -943,7 +956,7 @@ export function PdfTemplateEditor({
                 field={{ ...f, required: false }}
                 value={testValues[f.key] ?? ""}
                 onChange={(v) => setTestValues({ ...testValues, [f.key]: v })}
-                invalid={false}
+                invalid={testProblems.includes(f.key)}
                 t={t}
                 idPrefix="test"
               />

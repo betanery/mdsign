@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
       }
       const pdf = await renderTemplate(draft, slotValues(draft, values, people), {
         previewMarks: true,
+        optional: true,
       });
       return pdfResponse(pdf, origin);
     }

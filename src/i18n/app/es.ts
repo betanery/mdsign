@@ -758,7 +758,9 @@ const es: AppMessages = {
     noSignatureWarn:
       "{role} aún no tiene posición de firma. Sin ella, SignDoc la posiciona automáticamente.",
     testTitle: "Probar plantilla",
-    testHint: "Usa datos ficticios. No se envía nada ni se consume de tu plan.",
+    testHint:
+      "Usa datos ficticios. No se envía nada ni se consume de tu plan. Los campos en blanco quedan vacíos en la vista previa.",
+    testFix: "Revisa el formato de estos campos de la prueba:",
     testRun: "Generar vista previa",
     smallScreen:
       "Para posicionar campos y firmas, usa una pantalla más grande (computadora o tableta).",

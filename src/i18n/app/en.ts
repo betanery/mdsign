@@ -746,7 +746,9 @@ const en: AppMessages = {
     noSignatureWarn:
       "{role} has no signature position yet. Without it, SignDoc places it automatically.",
     testTitle: "Test template",
-    testHint: "Use fictitious data. Nothing is sent or deducted from your plan.",
+    testHint:
+      "Use fictitious data. Nothing is sent or deducted from your plan. Blank fields stay empty in the preview.",
+    testFix: "Check the format of these test fields:",
     testRun: "Generate preview",
     smallScreen: "To place fields and signatures, use a larger screen (computer or tablet).",
     badge: "PDF",
