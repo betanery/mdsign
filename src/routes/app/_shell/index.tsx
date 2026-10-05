@@ -155,19 +155,24 @@ function Dashboard() {
       />
 
       <section aria-label={t.nav.newAction}>
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {/* No celular: 2 por linha e sem descrição, para "Precisa da sua atenção" aparecer logo. */}
+        <ul className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {journeys.map(({ key, icon: Icon, to }) => (
             <li key={key}>
               <Link
                 to={to}
-                className="flex h-full flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm transition-colors hover:border-brand"
+                className="flex h-full flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-colors hover:border-brand sm:gap-3 sm:p-5"
               >
-                <span className="flex size-11 items-center justify-center rounded-xl bg-brand-soft">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-brand-soft sm:size-11">
                   <Icon className="size-5 text-brand" aria-hidden />
                 </span>
                 <div className="flex-1">
-                  <h2 className="font-display text-base font-semibold">{t.actions[key]}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{t.actions[`${key}Text`]}</p>
+                  <h2 className="font-display text-sm font-semibold sm:text-base">
+                    {t.actions[key]}
+                  </h2>
+                  <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
+                    {t.actions[`${key}Text`]}
+                  </p>
                 </div>
               </Link>
             </li>
