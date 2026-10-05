@@ -7,6 +7,7 @@ type DocRow = { id: string; organization_id: string; status: string; engine_docu
 type ParticipantRow = {
   id: string;
   name: string;
+  email: string;
   status: string;
   engine_flow_action_id: string | null;
 };
@@ -19,7 +20,7 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
   const current = engine ?? (await signdoc.getDocument(doc.engine_document_id));
   const { data: participants } = await admin
     .from("document_participants")
-    .select("id, name, status, engine_flow_action_id")
+    .select("id, name, email, status, engine_flow_action_id")
     .eq("document_id", doc.id);
 
   const events: { type: string; actor_name?: string; data?: Record<string, unknown>; occurred_at?: string }[] = [];
@@ -27,6 +28,16 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
   for (const action of current.flowActions ?? []) {
     const row = (participants as ParticipantRow[] | null)?.find((p) => p.engine_flow_action_id === action.id);
     if (!row) continue;
+    // O SignDoc identifica a pessoa pelo CPF e pode usar o e-mail do cadastro que já existe
+    // nele: o MDSign mostra sempre o endereço que o motor está usando de fato.
+    const engineEmail = (action.user?.email ?? "").toLowerCase();
+    if (engineEmail && engineEmail !== row.email) {
+      const { data: userId } = await admin.rpc("user_id_by_email", { target: engineEmail });
+      await admin
+        .from("document_participants")
+        .update({ email: engineEmail, user_id: (userId as string | null) ?? null })
+        .eq("id", row.id);
+    }
     const next = participantStatus(action.status);
     if (next === row.status) continue;
     await admin
