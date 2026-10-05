@@ -27,6 +27,7 @@ export type EngineDocument = {
   updateDate: string;
   expirationDate?: string | null;
   flowActions: EngineFlowAction[];
+  observers?: { id: string; user?: { name?: string; email?: string } }[];
 };
 
 async function call<T>(
@@ -92,6 +93,14 @@ export const signdoc = {
   /** Link temporário para baixar uma versão (Signatures = PDF assinado; PrinterFriendlyVersion = com manifesto). */
   ticket(id: string, type: "Original" | "PrinterFriendlyVersion" | "Signatures") {
     return call<{ location: string }>("GET", `/api/documents/${id}/ticket?type=${type}`);
+  },
+  /** Adiciona, altera ou remove participantes/observadores ainda pendentes. */
+  editFlow(id: string, body: Record<string, unknown>) {
+    return call<null>("POST", `/api/documents/${id}/flow`, body);
+  },
+  /** Nova versão do arquivo: o fluxo de assinatura recomeça. */
+  addVersion(id: string, body: Record<string, unknown>) {
+    return call<null>("POST", `/api/documents/${id}/versions`, body);
   },
   cancel(id: string, reason: string) {
     return call<null>("POST", `/api/documents/${id}/cancellation`, { reason });

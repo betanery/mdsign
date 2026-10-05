@@ -84,3 +84,29 @@ Etapas: Enviar → Separar → Identificar → Conferir → Assinatura → Revis
 - `20261005195000_papeis_links.sql`: `forms.role_people`.
 - `20261005200000_massa_pdf_processos.sql`: `bulk_jobs.source/source_folder/source_sha256/
   source_pages/split`, `bulk_items.page_from/page_to/match`, tabela `processes`.
+
+## Posição da assinatura, testemunhas, observadores e edição após o envio
+- **Posicionar assinatura, rubrica e carimbo** (componente `MarksEditor`) em todos os fluxos:
+  - **Só eu assino**: opcional, antes de assinar.
+  - **Enviar para assinatura**: nova etapa "Assinaturas".
+  - **Usar modelo**: sobre a prévia, quando o modelo não tem posições próprias.
+  - **Envio em massa por modelo**: primeira ou última página de cada documento.
+  - **PDF com vários documentos** e **modelos PDF**: já tinham.
+
+  Link público com modelo de texto: posição automática do SignDoc (ou use um modelo PDF com
+  posições).
+- **Testemunha**: papel próprio no MDSign. No SignDoc é um signatário com o título
+  "Testemunha" (o motor não tem um tipo "testemunha"). Pode ter autenticação e posição.
+- **Observadores**: acompanham e recebem as notificações do SignDoc, sem assinar.
+  - Disponíveis no envio, no envio por modelo, no envio em massa e no Só eu assino.
+  - Se o observador tiver conta MDSign, ele vê o documento (`document_observers` +
+    `can_view_document`).
+- **Editar depois de enviado** (documento pendente; quem criou ou `documents.manage`):
+  - **Editar participantes**: trocar e-mail/celular de quem ainda não assinou, remover,
+    incluir participante ou testemunha (entram depois do último passo), incluir ou remover
+    observadores (`POST /documents/{id}/flow`).
+  - **Substituir documento**: nova versão do PDF, com posições opcionais. O SignDoc reinicia
+    o fluxo e todos assinam a nova versão (`POST /documents/{id}/versions`).
+  - Tudo vai para a timeline (`participant.added/removed/updated`, `observer.added/removed`,
+    `document.version_added`) e para a auditoria (`document.flow_edited`,
+    `document.version_added`).

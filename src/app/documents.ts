@@ -7,8 +7,9 @@ export type ParticipantRow = {
   user_id: string | null;
   name: string;
   email: string;
-  role: "signer" | "approver";
+  role: "signer" | "approver" | "witness";
   step: number;
+  phone?: string | null;
   status: "created" | "pending" | "completed" | "refused";
 };
 
@@ -25,7 +26,7 @@ export type DocumentRow = {
 };
 
 export const documentSelect =
-  "id, name, kind, status, created_at, updated_at, concluded_at, created_by, document_participants (id, user_id, name, email, role, step, status)";
+  "id, name, kind, status, created_at, updated_at, concluded_at, created_by, document_participants (id, user_id, name, email, phone, role, step, status)";
 
 /** Status em linguagem humana (PRD §26): "Aguardando assinatura de João Silva". */
 export function humanStatus(

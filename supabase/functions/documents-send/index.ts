@@ -5,7 +5,12 @@ import { requirePermission, requireUser } from "../_shared/auth.ts";
 import { createDocument, readPdf } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import { cleanExpiration, cleanLocale, cleanMessage, cleanReminders } from "../_shared/options.ts";
-import { cleanParticipants, type ParticipantInput } from "../_shared/participants.ts";
+import {
+  cleanObservers,
+  cleanParticipants,
+  type ParticipantInput,
+} from "../_shared/participants.ts";
+import { cleanParticipantMarks } from "../_shared/pdf.ts";
 
 type Payload = {
   organizationId: string;
@@ -16,6 +21,9 @@ type Payload = {
   locale?: string;
   participants: ParticipantInput[];
   reminders?: { enabled: boolean; firstDays: number; everyDays: number; max: number };
+  /** Posições de assinatura/rubrica por participante (mesma ordem de `participants`). */
+  marks?: unknown;
+  observers?: unknown;
 };
 
 Deno.serve(async (req) => {
@@ -57,6 +65,8 @@ Deno.serve(async (req) => {
       origin: "send",
       saveContacts: true,
       reminders: cleanReminders(payload.reminders),
+      marks: cleanParticipantMarks(payload.marks, participants.length),
+      observers: cleanObservers(payload.observers),
     });
     return json({ documentId: created.documentId }, 200, origin);
   } catch (error) {

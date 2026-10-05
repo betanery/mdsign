@@ -12,8 +12,10 @@ import {
   type Reminders,
 } from "./options.ts";
 import {
+  cleanObservers,
   cleanParticipants,
   type AuthLevel,
+  type ObserverInput,
   type CleanParticipant,
   type ParticipantInput,
 } from "./participants.ts";
@@ -43,6 +45,7 @@ export type BulkOptions = {
   reminders?: Reminders | undefined;
   /** Modelo com papéis: pessoas fixas dos demais papéis (a linha ocupa o 1º papel). */
   rolePeople?: Record<string, ParticipantInput>;
+  observers?: ObserverInput[];
 };
 
 export function cleanOptions(
@@ -55,6 +58,7 @@ export function cleanOptions(
     message: cleanMessage(o?.["message"]),
     expiresAt: cleanExpiration(o?.["expiresAt"]),
     reminders: cleanReminders(o?.["reminders"] as Partial<Reminders> | undefined),
+    observers: cleanObservers(o?.["observers"]),
     rolePeople:
       o?.["rolePeople"] && typeof o["rolePeople"] === "object"
         ? (o["rolePeople"] as Record<string, ParticipantInput>)
@@ -168,7 +172,7 @@ export async function processBulk(jobId: string, n = 5) {
           if (!participant || problems.length) throw new AppError("invalid_row", 422, problems);
           let participants = [participant];
           let pdfValues = values;
-          let marks;
+          let marks: RelMark[][] | undefined;
           if (template.participants.length) {
             const r = roleParticipants(
               template,
@@ -182,6 +186,12 @@ export async function processBulk(jobId: string, n = 5) {
             pdfValues = slotValues(template, values, r.bySlot);
             marks = marksFor(template, r.slots);
           }
+          // Sem marcas no modelo: posição escolhida no lote (primeira ou última página).
+          const lotMarks = (options as BulkOptions & { marks?: PdfBulkMark[] }).marks ?? [];
+          if (!marks?.some((m) => m.length) && lotMarks.length)
+            marks = [
+              lotMarks.map(({ pageRef, ...m }) => ({ ...m, page: pageRef === "first" ? 1 : 0 })),
+            ];
           doc = {
             name: documentName(template, participant),
             pdf: await renderTemplate(template, pdfValues),
@@ -204,6 +214,7 @@ export async function processBulk(jobId: string, n = 5) {
           expiresAt: options.expiresAt,
           notify: true,
           reminders: options.reminders,
+          observers: options.observers,
           origin: "bulk",
           saveContacts: true,
         });

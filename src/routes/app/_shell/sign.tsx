@@ -6,6 +6,15 @@ import { callFunction, documentAction } from "@/app/api";
 import { errorText as apiErrorText } from "@/app/errors";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import {
+  MarksEditor,
+  marksPayload,
+  ObserversEditor,
+  observersPayload,
+  observersValid,
+  type MarksByPerson,
+  type ObserverDraft,
+} from "@/app/components/marks-editor";
 import { SigningFrame } from "@/app/components/signing-frame";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
@@ -25,6 +34,10 @@ function SelfSign() {
   const { current } = useOrg();
   const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
+  const [fileBytes, setFileBytes] = useState<ArrayBuffer | null>(null);
+  const [marks, setMarks] = useState<MarksByPerson>({});
+  const [observers, setObservers] = useState<ObserverDraft[]>([]);
+  const [extras, setExtras] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
@@ -40,6 +53,8 @@ function SelfSign() {
       return setError(errorText("file_not_pdf"));
     if (f.size > MAX_BYTES) return setError(errorText("file_too_large"));
     setFile(f);
+    setMarks({});
+    void f.arrayBuffer().then(setFileBytes);
     setName(f.name.replace(/\.pdf$/i, ""));
   }
 
@@ -51,6 +66,12 @@ function SelfSign() {
     form.append("organizationId", current.id);
     form.append("displayName", name.trim());
     form.append("file", file);
+    form.append("marks", JSON.stringify(marksPayload(["me"], marks)));
+    if (!observersValid(observers)) {
+      setStep("upload");
+      return setError(t.errors["invalid_observers"]!);
+    }
+    form.append("observers", JSON.stringify(observersPayload(observers)));
     try {
       const result = await callFunction<{ documentId: string; embedUrl: string }>(
         "documents-self-sign",
@@ -106,7 +127,7 @@ function SelfSign() {
       />
 
       {(step === "upload" || step === "preparing") && (
-        <div className="grid max-w-2xl gap-4">
+        <div className={extras ? "grid max-w-5xl gap-4" : "grid max-w-2xl gap-4"}>
           <div
             role="button"
             tabIndex={0}
@@ -159,6 +180,26 @@ function SelfSign() {
                 required
               />
             </div>
+          )}
+          {file && (
+            <details
+              open={extras}
+              onToggle={(e) => setExtras((e.target as HTMLDetailsElement).open)}
+              className="rounded-xl border bg-white p-4"
+            >
+              <summary className="cursor-pointer font-medium">{t.marks.optional}</summary>
+              {extras && (
+                <div className="mt-4 grid gap-4">
+                  <MarksEditor
+                    source={fileBytes}
+                    people={[{ key: "me", label: t.marks.me }]}
+                    value={marks}
+                    onChange={setMarks}
+                  />
+                  <ObserversEditor value={observers} onChange={setObservers} />
+                </div>
+              )}
+            </details>
           )}
           {error && <FormMessage kind="error">{error}</FormMessage>}
           <Button

@@ -21,7 +21,7 @@ export type ParticipantDraft = {
   cpf: string;
   noCpf: boolean;
   phone: string;
-  role: "signer" | "approver";
+  role: "signer" | "approver" | "witness";
   authLevel: AuthLevel;
 };
 
@@ -33,14 +33,14 @@ type Contact = {
   phone: string | null;
 };
 
-export const newParticipant = (): ParticipantDraft => ({
+export const newParticipant = (role: ParticipantDraft["role"] = "signer"): ParticipantDraft => ({
   key: crypto.randomUUID(),
   name: "",
   email: "",
   cpf: "",
   noCpf: false,
   phone: "",
-  role: "signer",
+  role,
   authLevel: "basic",
 });
 
@@ -207,6 +207,11 @@ export function ParticipantsEditor({
                 ) : (
                   p.name || t.participants.title
                 )}
+                {p.role === "witness" && (
+                  <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 uppercase">
+                    {t.participants.roles.witness}
+                  </span>
+                )}
               </span>
               {!fixed && value.length > 1 && (
                 <Button
@@ -300,6 +305,15 @@ export function ParticipantsEditor({
         >
           <Plus aria-hidden />
           {t.participants.add}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onChange([...value, newParticipant("witness")])}
+          disabled={value.length >= 30}
+        >
+          <Plus aria-hidden />
+          {t.participants.addWitness}
         </Button>
         <Button type="button" variant="ghost" onClick={() => void addMe()}>
           <UserRound aria-hidden />
@@ -404,6 +418,7 @@ export function FlowEditor({
                 >
                   <option value="signer">{t.participants.roles.signer}</option>
                   <option value="approver">{t.participants.roles.approver}</option>
+                  <option value="witness">{t.participants.roles.witness}</option>
                 </select>
               </label>
               <label className="grid gap-1 text-sm">

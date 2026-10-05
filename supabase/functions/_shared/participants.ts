@@ -95,7 +95,7 @@ export type ParticipantInput = {
   cpf?: string | null;
   noCpf?: boolean;
   phone?: string | null;
-  role?: "signer" | "approver";
+  role?: "signer" | "approver" | "witness";
   authLevel?: AuthLevel;
 };
 
@@ -105,7 +105,7 @@ export type CleanParticipant = {
   cpf: string | null;
   noCpf: boolean;
   phone: string | null;
-  role: "signer" | "approver";
+  role: "signer" | "approver" | "witness";
   authLevel: AuthLevel;
   step: number;
 };
@@ -145,7 +145,7 @@ export function cleanParticipants(
       cpf: cpf || null,
       noCpf: Boolean(p.noCpf),
       phone,
-      role: p.role === "approver" ? "approver" : "signer",
+      role: p.role === "approver" ? "approver" : p.role === "witness" ? "witness" : "signer",
       authLevel,
       step: sequential ? index + 1 : 1,
     } as CleanParticipant;
@@ -155,6 +155,37 @@ export function cleanParticipants(
 }
 
 export const notificationLanguage: Record<string, string> = { pt: "Pt", en: "En", es: "Es" };
+
+/** No SignDoc a testemunha é um signatário com título (aparece no registro da assinatura). */
+const witnessTitle: Record<string, string> = { pt: "Testemunha", en: "Witness", es: "Testigo" };
+
+export type ObserverInput = { name: string; email: string };
+
+/** Observadores: acompanham e recebem as notificações, sem assinar. */
+export function cleanObservers(list: unknown): ObserverInput[] {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set<string>();
+  const out: ObserverInput[] = [];
+  for (const o of list.slice(0, 20)) {
+    const email = String(o?.email ?? "")
+      .trim()
+      .toLowerCase();
+    const name =
+      String(o?.name ?? "")
+        .trim()
+        .slice(0, 160) || email;
+    if (!EMAIL.test(email)) throw new AppError("invalid_observers", 422, { email });
+    if (seen.has(email)) continue;
+    seen.add(email);
+    out.push({ name, email });
+  }
+  return out;
+}
+
+export const toObserver = (o: ObserverInput, locale: string) => ({
+  user: { name: o.name, email: o.email },
+  notificationLanguage: notificationLanguage[locale] ?? "Pt",
+});
 
 /** Monta o flowAction do motor para um participante. */
 export function toFlowAction(p: CleanParticipant, locale: string) {
@@ -167,7 +198,8 @@ export function toFlowAction(p: CleanParticipant, locale: string) {
       ...(p.cpf ? { identifier: p.cpf } : {}),
       ...(p.phone ? { phone: p.phone } : {}),
     },
-    ...(p.role === "signer" ? authFlags(p.authLevel) : {}),
+    ...(p.role !== "approver" ? authFlags(p.authLevel) : {}),
+    ...(p.role === "witness" ? { title: witnessTitle[locale] ?? witnessTitle["pt"] } : {}),
     notificationLanguage: notificationLanguage[locale] ?? "Pt",
   };
 }

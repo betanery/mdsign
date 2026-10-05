@@ -389,7 +389,7 @@ export function PdfTemplateEditor({
   }
 
   const missingSignature = roles.filter(
-    (r) => r.role === "signer" && !marks.some((m) => m.slot === r.slot && m.type === "signature"),
+    (r) => r.role !== "approver" && !marks.some((m) => m.slot === r.slot && m.type === "signature"),
   );
 
   // ---------------- telas ----------------
@@ -553,6 +553,7 @@ export function PdfTemplateEditor({
                   >
                     <option value="signer">{t.participants.roles.signer}</option>
                     <option value="approver">{t.participants.roles.approver}</option>
+                    <option value="witness">{t.participants.roles.witness}</option>
                   </select>
                 </label>
                 <label className="grid gap-1 text-sm">
@@ -697,7 +698,7 @@ export function PdfTemplateEditor({
                   {roleLabel(r.slot)}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {(r.role === "signer" ? markTypes : []).map((type) => {
+                  {(r.role !== "approver" ? markTypes : []).map((type) => {
                     const key = `mark:${type}:${r.slot}`;
                     return (
                       <button
@@ -828,7 +829,7 @@ export function PdfTemplateEditor({
                     className={selectClass}
                   >
                     {roles
-                      .filter((r) => r.role === "signer")
+                      .filter((r) => r.role !== "approver")
                       .map((r) => (
                         <option key={r.slot} value={r.slot}>
                           {roleLabel(r.slot)}

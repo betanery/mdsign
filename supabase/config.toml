@@ -456,3 +456,6 @@ verify_jwt = false
 
 [functions.templates-pdf]
 verify_jwt = false
+
+[functions.documents-edit]
+verify_jwt = false

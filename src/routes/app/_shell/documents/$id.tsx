@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bell, Download, Loader2, PenLine, RefreshCw, XCircle } from "lucide-react";
+import { Bell, Download, FileUp, Loader2, PenLine, RefreshCw, Users, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { documentAction } from "@/app/api";
 import { errorText } from "@/app/errors";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
+import {
+  EditFlowDialog,
+  ReplaceDocumentDialog,
+  type ObserverRow,
+} from "@/app/components/document-edit";
 import { SigningFrame } from "@/app/components/signing-frame";
 import {
   documentSelect,
@@ -35,6 +40,8 @@ function DocumentDetail() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [observers, setObservers] = useState<ObserverRow[]>([]);
+  const [editing, setEditing] = useState<"flow" | "replace" | null>(null);
 
   const load = useCallback(async () => {
     const [d, e] = await Promise.all([
@@ -45,6 +52,12 @@ function DocumentDetail() {
         .eq("document_id", id)
         .order("occurred_at", { ascending: true }),
     ]);
+    const obs = await supabase
+      .from("document_observers")
+      .select("id, name, email")
+      .eq("document_id", id)
+      .order("created_at");
+    setObservers((obs.data as ObserverRow[] | null) ?? []);
     setDoc((d.data as DocumentRow | null) ?? null);
     setEvents((e.data as EventRow[] | null) ?? []);
   }, [id]);
@@ -163,6 +176,22 @@ function DocumentDetail() {
           {t.documents.actions.refresh}
         </Button>
         {manage && doc.status === "pending" && (
+          <>
+            <Button variant="outline" disabled={busy !== null} onClick={() => setEditing("flow")}>
+              <Users aria-hidden />
+              {t.docEdit.edit}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={busy !== null}
+              onClick={() => setEditing("replace")}
+            >
+              <FileUp aria-hidden />
+              {t.docEdit.replace}
+            </Button>
+          </>
+        )}
+        {manage && doc.status === "pending" && (
           <Button
             variant="ghost"
             className="text-destructive"
@@ -204,7 +233,14 @@ function DocumentDetail() {
                   {p.step}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{p.name}</p>
+                  <p className="truncate font-medium">
+                    {p.name}
+                    {p.role !== "signer" && (
+                      <span className="ml-2 rounded bg-sky-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-sky-800 uppercase">
+                        {t.participants.roles[p.role]}
+                      </span>
+                    )}
+                  </p>
                   <p className="truncate text-sm text-muted-foreground">{p.email}</p>
                 </div>
                 <span className="text-sm text-muted-foreground">
@@ -230,6 +266,18 @@ function DocumentDetail() {
               </li>
             ))}
           </ul>
+          {observers.length > 0 && (
+            <div className="mt-4 rounded-2xl border bg-white p-4 shadow-sm">
+              <h2 className="font-display font-semibold">{t.documents.observers}</h2>
+              <ul className="mt-2 grid gap-1 text-sm">
+                {observers.map((o) => (
+                  <li key={o.id} className="truncate">
+                    {o.name} <span className="text-muted-foreground">· {o.email}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </TabsContent>
         <TabsContent value="timeline">
           <ol className="rounded-2xl border bg-white p-4 shadow-sm">
@@ -250,6 +298,29 @@ function DocumentDetail() {
           </ol>
         </TabsContent>
       </Tabs>
+      {editing === "flow" && (
+        <EditFlowDialog
+          documentId={id}
+          participants={parts}
+          observers={observers}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            void load();
+          }}
+        />
+      )}
+      {editing === "replace" && (
+        <ReplaceDocumentDialog
+          documentId={id}
+          participants={parts}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            void load();
+          }}
+        />
+      )}
     </>
   );
 }

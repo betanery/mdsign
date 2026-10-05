@@ -7,11 +7,13 @@ import { createDocument } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import { cleanExpiration, cleanLocale, cleanMessage, cleanReminders } from "../_shared/options.ts";
 import {
+  cleanObservers,
   cleanParticipants,
   identifierOptional,
   type CleanParticipant,
   type ParticipantInput,
 } from "../_shared/participants.ts";
+import { cleanParticipantMarks } from "../_shared/pdf.ts";
 import { signdoc } from "../_shared/signdoc.ts";
 import {
   cleanValues,
@@ -41,6 +43,9 @@ type Payload = {
   expiresAt?: string | null;
   locale?: string;
   reminders?: { enabled: boolean; firstDays: number; everyDays: number; max: number };
+  /** Modelos sem marcas definidas: posições escolhidas no envio, por participante. */
+  marks?: unknown;
+  observers?: unknown;
 };
 
 const pdfResponse = (pdf: Uint8Array, origin: string | null) =>
@@ -142,7 +147,11 @@ Deno.serve(async (req) => {
         locale: profile.locale,
         notify: false,
         participants: [me],
-        marks: withRoles ? marksFor(template, [slot]) : undefined,
+        marks:
+          withRoles && template.marks.length
+            ? marksFor(template, [slot])
+            : cleanParticipantMarks(p.marks, 1),
+        observers: cleanObservers(p.observers),
       });
       const action = await signdoc.actionUrl(created.engineDocumentId, {
         emailAddress: user.email!,
@@ -165,6 +174,8 @@ Deno.serve(async (req) => {
       participants = cleanParticipants(p.participants ?? [], Boolean(sequential));
       pdf = await renderTemplate(template, values);
     }
+    // Sem marcas no modelo, valem as posições escolhidas no envio.
+    if (!marks?.some((m) => m.length)) marks = cleanParticipantMarks(p.marks, participants.length);
     const created = await createDocument({
       ...base,
       kind: "send",
@@ -177,6 +188,7 @@ Deno.serve(async (req) => {
       notify: true,
       saveContacts: true,
       reminders: cleanReminders(p.reminders ?? template.flow.reminders),
+      observers: cleanObservers(p.observers),
     });
     return json({ documentId: created.documentId }, 200, origin);
   } catch (error) {

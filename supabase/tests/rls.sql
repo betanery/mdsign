@@ -360,4 +360,26 @@ do $$ begin
 exception when check_violation then null;
 end $$;
 
+-- Testemunha é um papel válido; observador com conta vê o documento
+insert into public.documents (organization_id, created_by, kind, name, engine_document_id)
+  values ((select v from t_ids where k = 'orgB'), '00000000-0000-0000-0000-00000000000b', 'send', 'Doc observado', '00000000-0000-0000-0000-0000000000e1');
+insert into t_ids values ('docObs', (select id from public.documents where engine_document_id = '00000000-0000-0000-0000-0000000000e1'));
+insert into public.document_participants (document_id, organization_id, role, step, name, email)
+  values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'), 'witness', 2, 'Testemunha Um', 'test1@teste.mdsign');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert not public.can_view_document((select v from t_ids where k = 'docObs')), 'Carla ainda não vê o documento da Empresa B';
+end $$;
+reset role;
+insert into public.document_observers (document_id, organization_id, user_id, name, email)
+  values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'),
+          '00000000-0000-0000-0000-00000000000c', 'Carla', 'carla@teste.mdsign');
+set local role authenticated;
+do $$ begin
+  assert public.can_view_document((select v from t_ids where k = 'docObs')), 'observadora vê o documento';
+  assert (select count(*) from public.document_observers) = 1, 'observadora vê a lista de observadores';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

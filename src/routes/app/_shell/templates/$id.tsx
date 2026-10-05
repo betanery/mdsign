@@ -20,6 +20,7 @@ import {
   sendOptionsPayload,
   type SendOptionsValue,
 } from "@/app/components/send-options";
+import { MarksEditor, marksPayload, type MarksByPerson } from "@/app/components/marks-editor";
 import { SigningFrame } from "@/app/components/signing-frame";
 import {
   FieldInput,
@@ -63,6 +64,8 @@ function UseTemplate() {
   const [problems, setProblems] = useState<Record<number, string[]>>({});
   const [result, setResult] = useState<{ documentId: string; embedUrl?: string } | null>(null);
   const preview = useRef<string | null>(null);
+  // Posições de assinatura escolhidas no envio (modelos sem posições definidas).
+  const [marks, setMarks] = useState<MarksByPerson>({});
 
   useEffect(() => {
     supabase
@@ -105,6 +108,7 @@ function UseTemplate() {
   const template = tpl;
   const roles = [...(template.participants ?? [])].sort((a, b) => a.slot - b.slot);
   const fillable = fillableFields(template.fields);
+  const hasTemplateMarks = (template.marks ?? []).length > 0;
 
   const base = () => ({
     organizationId: current.id,
@@ -166,6 +170,8 @@ function UseTemplate() {
     if (!check()) return;
     if (how === "send") {
       suggestParticipant();
+      // A prévia serve de base para posicionar as assinaturas.
+      if (!previewUrl && !hasTemplateMarks) await refreshPreview();
       setPhase("participants");
       return;
     }
@@ -173,7 +179,11 @@ function UseTemplate() {
     try {
       const r = await callFunction<{ documentId: string; embedUrl: string }>(
         "documents-from-template",
-        { ...base(), mode: "self" },
+        {
+          ...base(),
+          mode: "self",
+          ...(hasTemplateMarks ? {} : { marks: marksPayload(["me"], marks) }),
+        },
       );
       setResult(r);
       setPhase("signing");
@@ -195,6 +205,14 @@ function UseTemplate() {
       const r = await callFunction<{ documentId: string }>("documents-from-template", {
         ...base(),
         mode: "send",
+        ...(hasTemplateMarks
+          ? {}
+          : {
+              marks: marksPayload(
+                participants.map((p) => p.key),
+                marks,
+              ),
+            }),
         sequential,
         ...(roles.length
           ? {
@@ -330,6 +348,19 @@ function UseTemplate() {
                 {t.templates.fill.preview}
               </Button>
             </div>
+            {how === "self" && !hasTemplateMarks && previewUrl && (
+              <details className="rounded-xl border bg-white p-4">
+                <summary className="cursor-pointer font-medium">{t.marks.optional}</summary>
+                <div className="mt-4">
+                  <MarksEditor
+                    source={previewUrl}
+                    people={[{ key: "me", label: t.marks.me }]}
+                    value={marks}
+                    onChange={setMarks}
+                  />
+                </div>
+              </details>
+            )}
           </div>
           <div className="min-h-[60svh] overflow-hidden rounded-2xl border bg-white shadow-sm">
             {previewUrl ? (
@@ -346,7 +377,7 @@ function UseTemplate() {
       )}
 
       {phase === "participants" && (
-        <div className="grid max-w-3xl gap-6">
+        <div className={hasTemplateMarks ? "grid max-w-3xl gap-6" : "grid max-w-5xl gap-6"}>
           <section className="grid gap-3">
             <h2 className="font-display text-lg font-semibold">{t.participants.title}</h2>
             <ParticipantsEditor
@@ -373,6 +404,19 @@ function UseTemplate() {
             <h2 className="font-display text-lg font-semibold">{t.send.steps[3]}</h2>
             <SendOptions value={options} onChange={setOptions} />
           </section>
+          {!hasTemplateMarks && previewUrl && (
+            <section className="grid gap-3">
+              <h2 className="font-display text-lg font-semibold">{t.marks.title}</h2>
+              <MarksEditor
+                source={previewUrl}
+                people={participants
+                  .filter((p) => p.role !== "approver")
+                  .map((p) => ({ key: p.key, label: p.name || p.email }))}
+                value={marks}
+                onChange={setMarks}
+              />
+            </section>
+          )}
           <p className="text-sm text-muted-foreground">{t.send.review.consumption}</p>
           {error && <FormMessage kind="error">{error}</FormMessage>}
           <div className="flex flex-wrap gap-3">

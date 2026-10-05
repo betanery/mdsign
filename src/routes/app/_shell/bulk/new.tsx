@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { ApiError, callFunction } from "@/app/api";
+import { ApiError, callFunction, callFunctionBlob } from "@/app/api";
 import { useAppConfig, type AuthLevel } from "@/app/app-config";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
@@ -22,6 +22,7 @@ import {
   validateParticipants,
   type ParticipantDraft,
 } from "@/app/components/participants-editor";
+import { MarksEditor, type MarksByPerson } from "@/app/components/marks-editor";
 import { Stepper } from "@/app/components/pdf-drop";
 import { SplitWizard, type SplitPreset } from "@/app/components/split-wizard";
 import {
@@ -269,6 +270,9 @@ function TemplateBulk({
   );
   const otherRoles = roles.slice(1);
   const [people, setPeople] = useState<ParticipantDraft[]>([]);
+  // Posição da assinatura de cada destinatário (modelos sem posições definidas).
+  const [marks, setMarks] = useState<MarksByPerson>({});
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [peopleProblems, setPeopleProblems] = useState<Record<number, string[]>>({});
   useEffect(() => {
     setPeople(
@@ -392,6 +396,14 @@ function TemplateBulk({
         options: {
           ...sendOptionsPayload(options),
           authLevel,
+          marks: (marks["row"] ?? []).map(({ type, x, y, w, h, page }) => ({
+            type,
+            x,
+            y,
+            w,
+            h,
+            pageRef: page === 1 ? "first" : "last",
+          })),
           rolePeople: Object.fromEntries(
             toPayload(people).map((p, i) => [String(otherRoles[i]!.slot), p]),
           ),
@@ -709,7 +721,7 @@ function TemplateBulk({
         )}
 
         {step === 4 && (
-          <div className="grid max-w-3xl gap-5">
+          <div className="grid max-w-5xl gap-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label htmlFor="job-name">{t.bulk.name}</Label>
@@ -755,6 +767,39 @@ function TemplateBulk({
                   problems={peopleProblems}
                 />
               </fieldset>
+            )}
+            {tpl && !(tpl.marks ?? []).length && rows[0] && (
+              <details className="rounded-xl border bg-white p-4">
+                <summary className="cursor-pointer font-medium">{t.marks.optional}</summary>
+                <div className="mt-3 grid gap-3">
+                  <p className="text-xs text-muted-foreground">{t.bulk.marksHint}</p>
+                  {!previewUrl ? (
+                    <Button
+                      variant="outline"
+                      className="w-fit"
+                      onClick={() =>
+                        void callFunctionBlob("documents-from-template", {
+                          organizationId: current.id,
+                          templateId: tpl.id,
+                          mode: "preview",
+                          values: rows[0]!.values,
+                        })
+                          .then((b) => setPreviewUrl(URL.createObjectURL(b)))
+                          .catch((e) => setError(errorText(t, e)))
+                      }
+                    >
+                      {t.templates.fill.preview}
+                    </Button>
+                  ) : (
+                    <MarksEditor
+                      source={previewUrl}
+                      people={[{ key: "row", label: t.bulk.eachRecipient }]}
+                      value={marks}
+                      onChange={setMarks}
+                    />
+                  )}
+                </div>
+              </details>
             )}
             <fieldset disabled={Boolean(jobId)} className="contents">
               <SendOptions value={options} onChange={setOptions} />

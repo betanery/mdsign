@@ -18,7 +18,7 @@ import { renderPdfTemplate, renderTemplatePdf, type TemplateField } from "./rend
 export type TemplateRole = {
   slot: number;
   label: string;
-  role: "signer" | "approver";
+  role: "signer" | "approver" | "witness";
   authLevel: AuthLevel;
 };
 export type TemplateMark = RelMark & { slot: number };
@@ -79,7 +79,7 @@ export function normalizeTemplate(raw: Record<string, unknown>): Template {
       .map((r) => ({
         slot: r.slot,
         label: String(r.label ?? "").slice(0, 60),
-        role: r.role === "approver" ? "approver" : "signer",
+        role: r.role === "approver" ? "approver" : r.role === "witness" ? "witness" : "signer",
         authLevel: (r.authLevel ?? "basic") as AuthLevel,
       })),
     flow: (raw["flow"] && typeof raw["flow"] === "object" ? raw["flow"] : {}) as TemplateFlow,

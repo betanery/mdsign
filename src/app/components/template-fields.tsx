@@ -53,7 +53,7 @@ export type TemplateField = {
 export type TemplateRole = {
   slot: number;
   label: string;
-  role: "signer" | "approver";
+  role: "signer" | "approver" | "witness";
   authLevel: AuthLevel;
 };
 export type MarkType = "signature" | "initials" | "stamp";

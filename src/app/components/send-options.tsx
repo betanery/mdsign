@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { locales, localeNames, type Locale } from "@/i18n";
 import { useAppI18n } from "../i18n";
+import { ObserversEditor, observersPayload, type ObserverDraft } from "./marks-editor";
 import { selectClass } from "../ui";
 
 export type SendOptionsValue = {
@@ -11,6 +12,7 @@ export type SendOptionsValue = {
   expiresAt: string;
   locale: Locale;
   reminders: { enabled: boolean; firstDays: number; everyDays: number; max: number };
+  observers: ObserverDraft[];
 };
 
 export const defaultSendOptions = (locale: Locale): SendOptionsValue => ({
@@ -18,6 +20,7 @@ export const defaultSendOptions = (locale: Locale): SendOptionsValue => ({
   expiresAt: "",
   locale,
   reminders: { enabled: true, firstDays: 2, everyDays: 3, max: 3 },
+  observers: [],
 });
 
 export const sendOptionsPayload = (o: SendOptionsValue) => ({
@@ -25,6 +28,7 @@ export const sendOptionsPayload = (o: SendOptionsValue) => ({
   expiresAt: o.expiresAt || null,
   locale: o.locale,
   reminders: o.reminders,
+  observers: observersPayload(o.observers),
 });
 
 const tomorrow = () => {
@@ -130,6 +134,10 @@ export function SendOptions({
           </div>
         )}
       </div>
+      <ObserversEditor
+        value={value.observers}
+        onChange={(observers) => onChange({ ...value, observers })}
+      />
     </div>
   );
 }

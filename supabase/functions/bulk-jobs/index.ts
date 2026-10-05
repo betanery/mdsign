@@ -70,10 +70,10 @@ Deno.serve(async (req) => {
         String(body["templateId"] ?? ""),
         organizationId,
       );
-      const options = cleanOptions(
-        body["options"] as Record<string, unknown>,
-        caller.profile.locale,
-      );
+      const options = {
+        ...cleanOptions(body["options"] as Record<string, unknown>, caller.profile.locale),
+        marks: cleanMarks((body["options"] as Record<string, unknown>)?.["marks"]),
+      };
       if (!availableAuthLevels().includes(options.authLevel)) throw new AppError("invalid_request");
       // Modelo com papéis: os papéis além do 1º precisam de pessoas fixas válidas.
       const others = template.participants.filter((r) => r.slot !== firstSlot(template));

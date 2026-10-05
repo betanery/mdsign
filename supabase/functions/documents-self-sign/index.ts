@@ -4,8 +4,17 @@
 import { requirePermission, requireUser } from "../_shared/auth.ts";
 import { createDocument, readPdf } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
-import { identifierOptional } from "../_shared/participants.ts";
+import { cleanObservers, identifierOptional } from "../_shared/participants.ts";
+import { cleanParticipantMarks } from "../_shared/pdf.ts";
 import { signdoc } from "../_shared/signdoc.ts";
+
+const jsonField = (v: FormDataEntryValue | null) => {
+  try {
+    return typeof v === "string" && v ? JSON.parse(v) : undefined;
+  } catch {
+    return undefined;
+  }
+};
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
@@ -39,6 +48,8 @@ Deno.serve(async (req) => {
       locale: profile.locale,
       notify: false,
       origin: "self",
+      marks: cleanParticipantMarks(jsonField(form.get("marks")), 1),
+      observers: cleanObservers(jsonField(form.get("observers"))),
       participants: [
         {
           name: profile.full_name,

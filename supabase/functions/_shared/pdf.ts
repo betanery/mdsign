@@ -95,9 +95,10 @@ export function fillFormField(doc: PDFDocument, name: string, value: string, che
 
 const clamp = (v: number) => Math.min(Math.max(Number(v) || 0, 0), 1);
 
+/** `page` 0 = última página (documentos gerados, cujo número de páginas varia). */
 export function cleanBox(b: Partial<RelBox>, pageCount: number): RelBox | null {
   const page = Math.trunc(Number(b.page));
-  if (!(page >= 1 && page <= pageCount)) return null;
+  if (!(page === 0 || (page >= 1 && page <= pageCount))) return null;
   const x = clamp(b.x ?? 0);
   const y = clamp(b.y ?? 0);
   const w = Math.min(clamp(b.w ?? 0), 1 - x);
@@ -119,6 +120,7 @@ export function boxToPdfRect(page: PDFPage, b: RelBox) {
 /** Marcas no formato do SignDoc (topLeftX/Y em pontos, a partir do canto superior esquerdo). */
 export function toEngineMarks(marks: RelMark[], sizes: PageSize[]) {
   return marks
+    .map((m) => (m.page === 0 ? { ...m, page: sizes.length } : m))
     .filter((m) => sizes[m.page - 1])
     .map((m) => {
       const s = sizes[m.page - 1]!;
@@ -149,4 +151,21 @@ export async function extractPages(
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", bytes as BufferSource);
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Marcas por participante vindas do navegador: [[{ type, page, x, y, w, h }], ...]. */
+export function cleanParticipantMarks(raw: unknown, count: number): RelMark[][] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const types: MarkType[] = ["signature", "initials", "stamp"];
+  return Array.from({ length: count }, (_, i) =>
+    (Array.isArray(raw[i]) ? (raw[i] as Partial<RelMark>[]) : [])
+      .slice(0, 200)
+      .map((m) => {
+        const box = cleanBox(m, MAX_TEMPLATE_PAGES);
+        return box && types.includes(m.type as MarkType)
+          ? { ...box, type: m.type as MarkType }
+          : null;
+      })
+      .filter((m): m is RelMark => m !== null),
+  );
 }

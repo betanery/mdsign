@@ -77,10 +77,11 @@ export function loadPdfJs(): Promise<PdfJs> {
 
 export async function openPdf(source: ArrayBuffer | Uint8Array | string): Promise<PdfDocument> {
   const lib = await loadPdfJs();
+  // O pdf.js transfere o buffer para o worker: sempre uma cópia, para poder abrir de novo.
   const src =
     typeof source === "string"
       ? { url: source }
-      : { data: source instanceof Uint8Array ? source : new Uint8Array(source) };
+      : { data: (source instanceof Uint8Array ? source : new Uint8Array(source)).slice() };
   return lib.getDocument(src).promise;
 }
 

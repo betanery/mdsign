@@ -3,7 +3,12 @@
 
 import { admin } from "./auth.ts";
 import { AppError } from "./http.ts";
-import { toFlowAction, type CleanParticipant } from "./participants.ts";
+import {
+  toFlowAction,
+  toObserver,
+  type CleanParticipant,
+  type ObserverInput,
+} from "./participants.ts";
 import { loadPdf, pageSizes, toEngineMarks, type RelMark } from "./pdf.ts";
 import { signdoc } from "./signdoc.ts";
 
@@ -29,6 +34,8 @@ export type CreateInput = {
   saveContacts?: boolean;
   /** Assinatura/rubrica posicionadas, por participante (mesmo índice de `participants`). */
   marks?: (RelMark[] | undefined)[];
+  /** Observadores: acompanham e recebem as notificações, sem assinar. */
+  observers?: ObserverInput[] | undefined;
 };
 
 export type Created = { documentId: string; engineDocumentId: string; participantIds: string[] };
@@ -63,7 +70,7 @@ export async function createDocument(input: CreateInput): Promise<Created> {
         },
       ],
       flowActions: input.participants.map((p, i) => {
-        const marks = p.role === "signer" ? (input.marks?.[i] ?? []) : [];
+        const marks = p.role !== "approver" ? (input.marks?.[i] ?? []) : [];
         return {
           ...toFlowAction(p, input.locale),
           ...(marks.length ? { prePositionedMarks: toEngineMarks(marks, sizes) } : {}),
@@ -72,6 +79,9 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       ...(input.message ? { description: input.message } : {}),
       ...(input.expiresAt ? { expirationDate: input.expiresAt } : {}),
       disablePendingActionNotifications: !input.notify,
+      ...(input.observers?.length
+        ? { observers: input.observers.map((o) => toObserver(o, input.locale)) }
+        : {}),
     });
     if (!created) throw new AppError("engine_rejected", 422);
     const engine = await signdoc.getDocument(created.documentId);
@@ -121,6 +131,8 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       });
     }
     const { data: inserted } = await admin.from("document_participants").insert(rows).select("id");
+    if (input.observers?.length)
+      await saveObservers(doc.id, input.organizationId, input.observers, engine);
 
     await admin.from("document_events").insert({
       document_id: doc.id,
@@ -175,4 +187,29 @@ export async function readPdf(
   if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-")
     throw new AppError("file_not_pdf");
   return { bytes, name: file.name.slice(0, 200) };
+}
+
+/** Registra os observadores do documento (ligando à conta MDSign e ao id no motor). */
+export async function saveObservers(
+  documentId: string,
+  organizationId: string,
+  observers: ObserverInput[],
+  engine: { observers?: { id: string; user?: { email?: string } }[] },
+) {
+  const rows = [];
+  for (const o of observers) {
+    const { data: userId } = await admin.rpc("user_id_by_email", { target: o.email });
+    const match = (engine.observers ?? []).find(
+      (e) => (e.user?.email ?? "").toLowerCase() === o.email,
+    );
+    rows.push({
+      document_id: documentId,
+      organization_id: organizationId,
+      user_id: (userId as string | null) ?? null,
+      name: o.name,
+      email: o.email,
+      engine_observer_id: match?.id ?? null,
+    });
+  }
+  await admin.from("document_observers").upsert(rows, { onConflict: "document_id,email" });
 }

@@ -16,6 +16,12 @@ import {
   validateParticipants,
   type ParticipantDraft,
 } from "@/app/components/participants-editor";
+import {
+  MarksEditor,
+  marksPayload,
+  observersValid,
+  type MarksByPerson,
+} from "@/app/components/marks-editor";
 import { PdfDrop, Stepper } from "@/app/components/pdf-drop";
 import {
   defaultSendOptions,
@@ -39,6 +45,8 @@ function SendPage() {
   const config = useAppConfig();
   const [step, setStep] = useState(0);
   const [file, setFile] = useState<File | null>(null);
+  const [fileBytes, setFileBytes] = useState<ArrayBuffer | null>(null);
+  const [marks, setMarks] = useState<MarksByPerson>({});
   const [name, setName] = useState("");
   const [participants, setParticipants] = useState<ParticipantDraft[]>([newParticipant()]);
   const [sequential, setSequential] = useState(true);
@@ -58,6 +66,8 @@ function SendPage() {
       setProblems(relevant);
       if (Object.keys(relevant).length) return setError(t.errors["invalid_participants"]!);
     }
+    if (step === 4 && !observersValid(options.observers))
+      return setError(t.errors["invalid_observers"]!);
     setStep((s) => s + 1);
   }
 
@@ -73,6 +83,10 @@ function SendPage() {
         name: name.trim(),
         sequential,
         participants: toPayload(participants),
+        marks: marksPayload(
+          participants.map((p) => p.key),
+          marks,
+        ),
         ...sendOptionsPayload(options),
       }),
     );
@@ -88,7 +102,7 @@ function SendPage() {
         const identity = Object.values(p).some((l) => l.some((f) => identityFields.includes(f)));
         setStep(identity ? 1 : 2);
       }
-      if (errorCode(e) === "invalid_expiration") setStep(3);
+      if (errorCode(e) === "invalid_expiration" || errorCode(e) === "invalid_observers") setStep(4);
     } finally {
       setSending(false);
     }
@@ -133,13 +147,15 @@ function SendPage() {
     <>
       <PageHeader title={t.send.title} subtitle={t.send.subtitle} />
       <Stepper steps={t.send.steps} current={step} />
-      <div className="grid max-w-3xl gap-5">
+      <div className={step === 3 ? "grid gap-5" : "grid max-w-3xl gap-5"}>
         {step === 0 && (
           <>
             <PdfDrop
               file={file}
               onFile={(f) => {
                 setFile(f);
+                setMarks({});
+                void f.arrayBuffer().then(setFileBytes);
                 setError(null);
                 setName((n) => n || f.name.replace(/\.pdf$/i, ""));
               }}
@@ -176,8 +192,18 @@ function SendPage() {
             problems={problems}
           />
         )}
-        {step === 3 && <SendOptions value={options} onChange={setOptions} />}
-        {step === 4 && (
+        {step === 3 && (
+          <MarksEditor
+            source={fileBytes}
+            people={participants
+              .filter((p) => p.role !== "approver")
+              .map((p) => ({ key: p.key, label: p.name || p.email }))}
+            value={marks}
+            onChange={setMarks}
+          />
+        )}
+        {step === 4 && <SendOptions value={options} onChange={setOptions} />}
+        {step === 5 && (
           <dl className="grid gap-4 rounded-2xl border bg-white p-5 text-sm shadow-sm sm:grid-cols-[10rem_1fr]">
             <dt className="font-medium text-muted-foreground">{t.send.review.document}</dt>
             <dd>{name || file?.name}</dd>
@@ -193,6 +219,17 @@ function SendPage() {
                 ))}
               </ol>
             </dd>
+            {options.observers.some((o) => o.email.trim()) && (
+              <>
+                <dt className="font-medium text-muted-foreground">{t.observers.title}</dt>
+                <dd>
+                  {options.observers
+                    .filter((o) => o.email.trim())
+                    .map((o) => o.name || o.email)
+                    .join(", ")}
+                </dd>
+              </>
+            )}
             <dt className="font-medium text-muted-foreground">{t.send.review.order}</dt>
             <dd>{sequential ? t.send.review.sequential : t.send.review.parallel}</dd>
             <dt className="font-medium text-muted-foreground">{t.send.review.expiration}</dt>
@@ -229,7 +266,7 @@ function SendPage() {
               {t.send.back}
             </Button>
           )}
-          {step < 4 ? (
+          {step < 5 ? (
             <Button className="bg-brand hover:bg-brand-strong" onClick={next}>
               {t.send.next}
             </Button>
