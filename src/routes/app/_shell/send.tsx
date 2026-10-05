@@ -146,7 +146,14 @@ function SendPage() {
   return (
     <>
       <PageHeader title={t.send.title} subtitle={t.send.subtitle} />
-      <Stepper steps={t.send.steps} current={step} />
+      <Stepper
+        steps={t.send.steps}
+        current={step}
+        onStep={(i) => {
+          setError(null);
+          setStep(i);
+        }}
+      />
       <div className={step === 3 ? "grid gap-5" : "grid max-w-3xl gap-5"}>
         {step === 0 && (
           <>

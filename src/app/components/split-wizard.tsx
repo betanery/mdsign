@@ -119,6 +119,9 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
   const [sampleUrl, setSampleUrl] = useState<string | null>(null);
   const [sampleBytes, setSampleBytes] = useState<ArrayBuffer | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  // Dados com que o lote de teste foi criado e com que a conferência foi montada.
+  const [jobSig, setJobSig] = useState("");
+  const [identifiedFrom, setIdentifiedFrom] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -186,6 +189,8 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
       ]);
       await doc.destroy();
       setFile(f);
+      setDocs([]);
+      setIdentifiedFrom("");
       setTexts(txt);
       setHash(sha);
       setSplitter(sp);
@@ -219,9 +224,38 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
   }
 
   function identifyNow() {
+    // Nada mudou (voltou só para conferir): mantém a conferência como estava.
+    const sig = JSON.stringify([hash, rule, identify, people]);
+    if (sig === identifiedFrom && docs.length) {
+      setError(null);
+      setStep(3);
+      return;
+    }
     const result = buildDocs(texts, rule, identify, people);
     if (!result) return setError(t.split.rangesInvalid);
-    setDocs(result);
+    // Mudou a separação ou a regra de identificação (mesmo PDF e mesmas pessoas): refaz, mas
+    // guarda as decisões da conferência para os documentos com as mesmas páginas. Se o PDF ou
+    // a planilha mudaram, começa do zero — uma confirmação antiga nunca vai para outra pessoa.
+    const samePeople =
+      identifiedFrom !== "" &&
+      JSON.stringify([hash, people]) ===
+        JSON.stringify([JSON.parse(identifiedFrom)[0], JSON.parse(identifiedFrom)[3]]);
+    const previous = new Map((samePeople ? docs : []).map((d) => [`${d.from}-${d.to}`, d]));
+    setDocs(
+      result.map((d) => {
+        const old = previous.get(`${d.from}-${d.to}`);
+        if (!old || (!old.confirmed && !old.excluded)) return d;
+        return {
+          ...d,
+          confirmed: old.confirmed,
+          excluded: old.excluded,
+          ...(old.confirmed && old.personKey && byKey.has(old.personKey)
+            ? { personKey: old.personKey, method: old.method, value: old.value }
+            : {}),
+        };
+      }),
+    );
+    setIdentifiedFrom(sig);
     setError(null);
     setStep(3);
   }
@@ -283,12 +317,22 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
 
   /** Separa, envia as partes ao armazenamento privado e cria o lote (uma vez). */
   async function ensureJob(): Promise<string | null> {
-    if (jobId) return jobId;
     if (!current || !splitter || !file) return null;
     if (pending.length) {
       setError(t.errors["unsafe_association"]!);
       return null;
     }
+    // Mesmo lote do teste se nada mudou; se a pessoa voltou e editou, descarta o rascunho.
+    const sig = JSON.stringify([
+      hash,
+      ready.map((d) => [d.from, d.to, byKey.get(d.personKey!), d.method, d.value, d.confirmed]),
+      options,
+      authLevel,
+      docName,
+      mark,
+    ]);
+    if (jobId && sig === jobSig) return jobId;
+    if (jobId) await callFunction("bulk-jobs", { action: "cancel", jobId }).catch(() => undefined);
     try {
       const items = ready;
       let folder: string | undefined;
@@ -364,6 +408,7 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
         }),
       });
       setJobId(r.jobId);
+      setJobSig(sig);
       return r.jobId;
     } catch (e) {
       setError(errorText(t, e));
@@ -430,7 +475,14 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
 
   return (
     <>
-      <Stepper steps={t.split.steps} current={step} />
+      <Stepper
+        steps={t.split.steps}
+        current={step}
+        onStep={(i) => {
+          setError(null);
+          setStep(i);
+        }}
+      />
 
       {step === 0 && (
         <div className="grid max-w-2xl gap-4">
@@ -900,7 +952,7 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
         </div>
       )}
       <div className="mt-5 flex flex-wrap gap-3">
-        {step > 0 && !jobId && (
+        {step > 0 && (
           <Button variant="outline" onClick={() => setStep(step - 1)} disabled={busy !== null}>
             {t.send.back}
           </Button>

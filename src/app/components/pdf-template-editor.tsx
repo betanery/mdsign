@@ -395,7 +395,15 @@ export function PdfTemplateEditor({
   // ---------------- telas ----------------
   return (
     <>
-      <Stepper steps={t.pdf.steps} current={step} />
+      <Stepper
+        steps={t.pdf.steps}
+        current={step}
+        onStep={(i) => {
+          setError(null);
+          setTool(null);
+          setStep(i);
+        }}
+      />
       {step === 0 && (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="grid content-start gap-4">

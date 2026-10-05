@@ -77,27 +77,51 @@ export function PdfDrop({
 }
 
 /** Indicador de passos do assistente. */
-export function Stepper({ steps, current }: { steps: readonly string[]; current: number }) {
+export function Stepper({
+  steps,
+  current,
+  onStep,
+}: {
+  steps: readonly string[];
+  current: number;
+  /** Passos já concluídos ficam clicáveis para voltar e editar. */
+  onStep?: ((step: number) => void) | undefined;
+}) {
   const { t } = useAppI18n();
   return (
     <ol className="mb-6 flex flex-wrap gap-2 text-sm" aria-label={t.common.steps}>
-      {steps.map((label, i) => (
-        <li
-          key={label}
-          aria-current={i === current ? "step" : undefined}
-          className={cn(
-            "flex items-center gap-2 rounded-full border px-3 py-1",
-            i === current && "border-brand bg-brand-soft font-semibold text-brand-strong",
-            i < current && "border-success/40 text-success",
-            i > current && "text-muted-foreground",
-          )}
-        >
-          <span className="flex size-5 items-center justify-center rounded-full bg-white text-xs font-semibold">
-            {i + 1}
-          </span>
-          {label}
-        </li>
-      ))}
+      {steps.map((label, i) => {
+        const className = cn(
+          "flex items-center gap-2 rounded-full border px-3 py-1",
+          i === current && "border-brand bg-brand-soft font-semibold text-brand-strong",
+          i < current && "border-success/40 text-success",
+          i > current && "text-muted-foreground",
+        );
+        const content = (
+          <>
+            <span className="flex size-5 items-center justify-center rounded-full bg-white text-xs font-semibold">
+              {i + 1}
+            </span>
+            {label}
+          </>
+        );
+        return (
+          <li key={label} aria-current={i === current ? "step" : undefined}>
+            {onStep && i < current ? (
+              <button
+                type="button"
+                onClick={() => onStep(i)}
+                className={cn(className, "hover:bg-success/10")}
+                title={`${t.common.back}: ${label}`}
+              >
+                {content}
+              </button>
+            ) : (
+              <span className={className}>{content}</span>
+            )}
+          </li>
+        );
+      })}
     </ol>
   );
 }

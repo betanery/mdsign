@@ -244,6 +244,10 @@ function TemplateBulk({
   }));
   const [jobName, setJobName] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
+  // Dados com que o lote de teste foi criado (para saber se a pessoa voltou e editou).
+  const [jobSig, setJobSig] = useState("");
+  // Planilha + mapeamento usados para montar a conferência (não refaz se nada mudou).
+  const [builtFrom, setBuiltFrom] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -378,7 +382,6 @@ function TemplateBulk({
     setRows((list) => list.map((r) => (r.key === key ? { ...r, ...patch } : r)));
 
   async function ensureJob(): Promise<string | null> {
-    if (jobId) return jobId;
     if (!current || !tpl) return null;
     const pp = validateParticipants(people, config);
     setPeopleProblems(pp);
@@ -386,37 +389,44 @@ function TemplateBulk({
       setError(t.errors["invalid_participants"]!);
       return null;
     }
-    try {
-      const r = await callFunction<{ jobId: string }>("bulk-jobs", {
-        action: "create",
-        organizationId: current.id,
-        templateId: tpl.id,
-        name: jobName.trim() || `${tpl.name} — ${fileName}`,
-        mapping,
-        options: {
-          ...sendOptionsPayload(options),
-          authLevel,
-          marks: (marks["row"] ?? []).map(({ type, x, y, w, h, page }) => ({
-            type,
-            x,
-            y,
-            w,
-            h,
-            pageRef: page === 1 ? "first" : "last",
-          })),
-          rolePeople: Object.fromEntries(
-            toPayload(people).map((p, i) => [String(otherRoles[i]!.slot), p]),
-          ),
-        },
-        rows: rows.map((r) => ({
-          name: r.name,
-          email: r.email,
-          cpf: onlyDigits(r.cpf) || null,
-          noCpf: !onlyDigits(r.cpf) && config.foreignSigners,
-          phone: r.phone || null,
-          values: r.values,
+    const payload = {
+      action: "create",
+      organizationId: current.id,
+      templateId: tpl.id,
+      name: jobName.trim() || `${tpl.name} — ${fileName}`,
+      mapping,
+      options: {
+        ...sendOptionsPayload(options),
+        authLevel,
+        marks: (marks["row"] ?? []).map(({ type, x, y, w, h, page }) => ({
+          type,
+          x,
+          y,
+          w,
+          h,
+          pageRef: page === 1 ? "first" : "last",
         })),
-      });
+        rolePeople: Object.fromEntries(
+          toPayload(people).map((p, i) => [String(otherRoles[i]!.slot), p]),
+        ),
+      },
+      rows: rows.map((r) => ({
+        name: r.name,
+        email: r.email,
+        cpf: onlyDigits(r.cpf) || null,
+        noCpf: !onlyDigits(r.cpf) && config.foreignSigners,
+        phone: r.phone || null,
+        values: r.values,
+      })),
+    };
+    // Nada mudou desde o teste: usa o mesmo lote. Mudou algo (voltou e editou): descarta o
+    // rascunho anterior e cria outro com os dados atuais.
+    const sig = JSON.stringify(payload);
+    if (jobId && sig === jobSig) return jobId;
+    if (jobId) await callFunction("bulk-jobs", { action: "cancel", jobId }).catch(() => undefined);
+    try {
+      const r = await callFunction<{ jobId: string }>("bulk-jobs", payload);
+      setJobSig(sig);
       setJobId(r.jobId);
       return r.jobId;
     } catch (e) {
@@ -460,7 +470,13 @@ function TemplateBulk({
     setError(null);
     if (step === 0 && !tpl) return setError(t.bulk.chooseTemplate);
     if (step === 1 && !sheet) return setError(t.bulk.upload);
-    if (step === 2) buildRows();
+    if (step === 2) {
+      const sig = JSON.stringify([tpl?.id, fileName, sheet?.rows.length, mapping]);
+      if (sig !== builtFrom) {
+        buildRows();
+        setBuiltFrom(sig);
+      }
+    }
     if (step === 3) {
       if (rows.length === 0) return setError(t.errors["bulk_empty"]!);
       if (issues) return setError(t.errors["invalid_rows"]!);
@@ -494,7 +510,14 @@ function TemplateBulk({
   return (
     <>
       <PageHeader title={t.bulk.new} subtitle={t.bulk.subtitle} />
-      <Stepper steps={t.bulk.steps} current={step} />
+      <Stepper
+        steps={t.bulk.steps}
+        current={step}
+        onStep={(i) => {
+          setError(null);
+          setStep(i);
+        }}
+      />
       <div className="grid gap-5">
         {step === 0 && (
           <fieldset className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -729,7 +752,6 @@ function TemplateBulk({
                   id="job-name"
                   value={jobName}
                   maxLength={160}
-                  disabled={Boolean(jobId)}
                   onChange={(e) => setJobName(e.target.value)}
                 />
               </div>
@@ -738,7 +760,6 @@ function TemplateBulk({
                 <select
                   id="job-auth"
                   value={authLevel}
-                  disabled={Boolean(jobId)}
                   onChange={(e) => setAuthLevel(e.target.value as AuthLevel)}
                   className={cn(selectClass, "h-10")}
                 >
@@ -751,10 +772,7 @@ function TemplateBulk({
               </div>
             </div>
             {otherRoles.length > 0 && (
-              <fieldset
-                disabled={Boolean(jobId)}
-                className="grid gap-3 rounded-xl border bg-white p-4"
-              >
+              <fieldset className="grid gap-3 rounded-xl border bg-white p-4">
                 <legend className="px-1 font-medium">{t.pdf.otherRoles}</legend>
                 <p className="text-xs text-muted-foreground">
                   {t.pdf.otherRolesHint.replace("{role}", roles[0]!.label)}
@@ -801,7 +819,7 @@ function TemplateBulk({
                 </div>
               </details>
             )}
-            <fieldset disabled={Boolean(jobId)} className="contents">
+            <fieldset className="contents">
               <SendOptions value={options} onChange={setOptions} />
             </fieldset>
             <p className="text-sm text-muted-foreground">
@@ -812,7 +830,7 @@ function TemplateBulk({
 
         {error && <FormMessage kind="error">{error}</FormMessage>}
         <div className="flex flex-wrap gap-3">
-          {step > 0 && !jobId && (
+          {step > 0 && (
             <Button
               variant="outline"
               onClick={() => setStep((s) => s - 1)}
