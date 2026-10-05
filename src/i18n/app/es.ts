@@ -385,7 +385,7 @@ const es: AppMessages = {
       cpf: "CPF inválido.",
       authLevel: "Autenticación no disponible.",
       duplicate: "Correo repetido.",
-      phone: "Informa el celular para el código por SMS o WhatsApp.",
+      phone: "Celular inválido. Usa código de área + número, ej.: +55 61 99167-0611.",
     } as Record<string, string>,
   },
   sendOptions: {

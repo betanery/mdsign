@@ -12,7 +12,7 @@ import { useAuth } from "../auth";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
 import { selectClass } from "../ui";
-import { formatCpf, isValidCpf, onlyDigits } from "../validation";
+import { formatCpf, isValidCpf, normalizePhone, onlyDigits } from "../validation";
 
 export type ParticipantDraft = {
   key: string;
@@ -60,7 +60,8 @@ export function validateParticipants(
     if (!EMAIL.test(email)) bad.push("email");
     if (p.noCpf ? !config.foreignSigners : !isValidCpf(p.cpf)) bad.push("cpf");
     if (!config.authLevels.includes(p.authLevel)) bad.push("authLevel");
-    if (needsPhone(p.authLevel) && onlyDigits(p.phone).length < 10) bad.push("phone");
+    const phone = normalizePhone(p.phone);
+    if ((p.phone.trim() && !phone) || (needsPhone(p.authLevel) && !phone)) bad.push("phone");
     if (p.authLevel === "identity_datavalid" && p.noCpf) bad.push("authLevel");
     if (email && seen.has(email)) bad.push("duplicate");
     seen.add(email);

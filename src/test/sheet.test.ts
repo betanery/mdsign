@@ -56,3 +56,18 @@ describe("campos de modelo", () => {
     );
   });
 });
+
+describe("celular no formato do motor", () => {
+  it("aceita o número como a pessoa digita", async () => {
+    const { normalizePhone } = await import("@/app/validation");
+    expect(normalizePhone("61991670611")).toBe("+55 61 99167-0611");
+    expect(normalizePhone("061991670611")).toBe("+55 61 99167-0611");
+    expect(normalizePhone("(61) 99167-0611")).toBe("+55 61 99167-0611");
+    expect(normalizePhone("+55 61 99167-0611")).toBe("+55 61 99167-0611");
+    expect(normalizePhone("5561991670611")).toBe("+55 61 99167-0611");
+    expect(normalizePhone("6133334444")).toBe("+55 61 3333-4444");
+    expect(normalizePhone("+1 415 555 0100")).toBe("+14155550100");
+    expect(normalizePhone("123")).toBeNull();
+    expect(normalizePhone("")).toBeNull();
+  });
+});

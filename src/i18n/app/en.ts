@@ -382,7 +382,7 @@ const en: AppMessages = {
       cpf: "Invalid CPF.",
       authLevel: "Authentication unavailable.",
       duplicate: "Repeated email.",
-      phone: "Enter the mobile number for the SMS or WhatsApp code.",
+      phone: "Invalid mobile number. Use area code + number, e.g. +55 61 99167-0611.",
     } as Record<string, string>,
   },
   sendOptions: {

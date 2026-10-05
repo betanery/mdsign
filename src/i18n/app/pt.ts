@@ -381,7 +381,7 @@ const pt = {
       cpf: "CPF inválido.",
       authLevel: "Autenticação indisponível.",
       duplicate: "E-mail repetido.",
-      phone: "Informe o celular para o código por SMS ou WhatsApp.",
+      phone: "Celular inválido. Use DDD + número, ex.: (61) 99167-0611.",
     } as Record<string, string>,
   },
   sendOptions: {

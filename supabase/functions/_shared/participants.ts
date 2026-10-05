@@ -68,6 +68,27 @@ export function isValidCpf(value: string): boolean {
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/**
+ * Celular no formato internacional que o motor exige ("+55 11 91234-5678"). Aceita o número
+ * como a pessoa digita: com ou sem DDI, com 0 na frente do DDD, com pontuação.
+ * Devolve null se não der para entender o número.
+ */
+export function normalizePhone(raw: string | null | undefined): string | null {
+  const value = String(raw ?? "").trim();
+  if (!value) return null;
+  let d = value.replace(/\D/g, "");
+  if (value.startsWith("+") && !d.startsWith("55")) {
+    // Estrangeiro: mantém o DDI informado.
+    return d.length >= 8 && d.length <= 15 ? `+${d}` : null;
+  }
+  if (!value.startsWith("+")) d = d.replace(/^0+/, "");
+  if ((d.length === 12 || d.length === 13) && d.startsWith("55")) d = d.slice(2);
+  if (d.length !== 10 && d.length !== 11) return null;
+  const ddd = d.slice(0, 2);
+  const local = d.slice(2);
+  return `+55 ${ddd} ${local.slice(0, local.length - 4)}-${local.slice(-4)}`;
+}
+
 export type ParticipantInput = {
   name: string;
   email: string;
@@ -111,8 +132,9 @@ export function cleanParticipants(
     if (p.noCpf ? !identifierOptional : !isValidCpf(cpf ?? ""))
       problems.push({ index, field: "cpf" });
     if (!levels.includes(authLevel)) problems.push({ index, field: "authLevel" });
-    if (needsPhone(authLevel) && String(p.phone ?? "").replace(/\D/g, "").length < 10)
-      problems.push({ index, field: "phone" });
+    const phone = normalizePhone(p.phone);
+    if (String(p.phone ?? "").trim() && !phone) problems.push({ index, field: "phone" });
+    else if (needsPhone(authLevel) && !phone) problems.push({ index, field: "phone" });
     // Datavalid consulta a base do governo pelo CPF: não serve para estrangeiros.
     if (authLevel === "identity_datavalid" && p.noCpf) problems.push({ index, field: "authLevel" });
     if (seen.has(email)) problems.push({ index, field: "duplicate" });
@@ -122,7 +144,7 @@ export function cleanParticipants(
       email,
       cpf: cpf || null,
       noCpf: Boolean(p.noCpf),
-      phone: p.phone ? String(p.phone).trim().slice(0, 30) : null,
+      phone,
       role: p.role === "approver" ? "approver" : "signer",
       authLevel,
       step: sequential ? index + 1 : 1,

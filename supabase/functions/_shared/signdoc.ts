@@ -58,6 +58,7 @@ async function call<T>(
       res.status >= 500 ? 502 : 422,
       {
         code: data?.code ?? data?.exceptionCode ?? null,
+        message: typeof data?.message === "string" ? data.message.slice(0, 300) : null,
         errors: data?.errors ?? null,
       },
     );

@@ -7,7 +7,23 @@ export const errorCode = (e: unknown) =>
 /** Mensagem humana para um erro das funções (códigos estáveis do backend). */
 export function errorText(t: AppMessages, e: unknown): string {
   const code = errorCode(e);
-  return t.errors[code] ?? t.common.genericError;
+  const text = t.errors[code] ?? t.common.genericError;
+  // Recusa do motor: mostra o motivo dado pelo SignDoc para facilitar o suporte.
+  if (e instanceof ApiError && code === "engine_rejected" && e.details) {
+    const d = e.details as {
+      code?: string | null;
+      message?: string | null;
+      errors?: Record<string, string[]> | null;
+    };
+    const fields = d.errors
+      ? Object.entries(d.errors)
+          .map(([k, v]) => `${k}: ${[v].flat().join(" ")}`)
+          .join("; ")
+      : "";
+    const reason = [d.code, d.message, fields].filter(Boolean).join(" — ");
+    if (reason) return `${text} (${reason})`;
+  }
+  return text;
 }
 
 /** Problemas por participante devolvidos em invalid_participants: { índice: [campos] }. */

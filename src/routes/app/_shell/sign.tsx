@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Download, FileUp, Loader2 } from "lucide-react";
 
-import { ApiError, callFunction, documentAction } from "@/app/api";
+import { callFunction, documentAction } from "@/app/api";
+import { errorText as apiErrorText } from "@/app/errors";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { SigningFrame } from "@/app/components/signing-frame";
@@ -58,7 +59,7 @@ function SelfSign() {
       setDoc(result);
       setStep("signing");
     } catch (e) {
-      setError(errorText(e instanceof ApiError ? e.code : "internal_error"));
+      setError(apiErrorText(t, e));
       setStep("upload");
     }
   }
@@ -85,7 +86,7 @@ function SelfSign() {
       const { url } = await documentAction<{ url: string }>(doc.documentId, "download");
       window.open(url, "_blank", "noopener");
     } catch (e) {
-      setError(errorText(e instanceof ApiError ? e.code : "internal_error"));
+      setError(apiErrorText(t, e));
     }
   }
 

@@ -3,7 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bell, Download, Loader2, PenLine, RefreshCw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
-import { ApiError, documentAction } from "@/app/api";
+import { documentAction } from "@/app/api";
+import { errorText } from "@/app/errors";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { SigningFrame } from "@/app/components/signing-frame";
@@ -64,8 +65,7 @@ function DocumentDetail() {
       if (success) toast.success(success);
       await load();
     } catch (e) {
-      const code = e instanceof ApiError ? e.code : "internal_error";
-      toast.error(t.errors[code] ?? t.common.genericError);
+      toast.error(errorText(t, e));
     } finally {
       setBusy(null);
     }
