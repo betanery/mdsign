@@ -11,10 +11,14 @@ export function PdfDrop({
   file,
   onFile,
   onError,
+  maxBytes = MAX_BYTES,
+  hint,
 }: {
   file: File | null;
   onFile: (f: File) => void;
   onError: (code: string) => void;
+  maxBytes?: number;
+  hint?: string;
 }) {
   const { t } = useAppI18n();
   const input = useRef<HTMLInputElement>(null);
@@ -24,7 +28,7 @@ export function PdfDrop({
     if (!f) return;
     if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf"))
       return onError("file_not_pdf");
-    if (f.size > MAX_BYTES) return onError("file_too_large");
+    if (f.size > maxBytes) return onError("file_too_large");
     onFile(f);
   }
 
@@ -55,7 +59,7 @@ export function PdfDrop({
       ) : (
         <>
           <p className="font-medium">{t.sign.dropTitle}</p>
-          <p className="text-sm text-muted-foreground">{t.sign.dropHint}</p>
+          <p className="text-sm text-muted-foreground">{hint ?? t.sign.dropHint}</p>
         </>
       )}
       <span className="text-sm font-semibold text-brand">

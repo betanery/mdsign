@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Download, FileSpreadsheet, Loader2, Send } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  Download,
+  FileSpreadsheet,
+  Files,
+  LayoutTemplate,
+  Loader2,
+  Send,
+  Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { ApiError, callFunction } from "@/app/api";
@@ -15,6 +23,7 @@ import {
   type ParticipantDraft,
 } from "@/app/components/participants-editor";
 import { Stepper } from "@/app/components/pdf-drop";
+import { SplitWizard, type SplitPreset } from "@/app/components/split-wizard";
 import {
   defaultSendOptions,
   SendOptions,
@@ -49,7 +58,126 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 // Envio em massa (PRD §17–§19): Modelo → Planilha → Colunas → Conferência → Envio.
-export const Route = createFileRoute("/app/_shell/bulk/new")({ component: NewBulk });
+type Search = {
+  mode?: "template" | "pdf" | undefined;
+  preset?: "payslips" | undefined;
+  process?: string | undefined;
+};
+
+export const Route = createFileRoute("/app/_shell/bulk/new")({
+  validateSearch: (search: Record<string, unknown>): Search => ({
+    mode: search["mode"] === "pdf" || search["mode"] === "template" ? search["mode"] : undefined,
+    preset: search["preset"] === "payslips" ? "payslips" : undefined,
+    process: typeof search["process"] === "string" ? search["process"] : undefined,
+  }),
+  component: NewBulk,
+});
+
+type ProcessConfig = {
+  source?: "pdf" | "template";
+  templateId?: string | null;
+  split?: { rule?: SplitPreset["split"]; identify?: SplitPreset["identify"] };
+  options?: SplitPreset["options"] & { rolePeople?: unknown };
+};
+
+/** "Como estão seus documentos?": modelo + planilha ou PDF com vários documentos. */
+function NewBulk() {
+  const { t } = useAppI18n();
+  const { can } = useOrg();
+  const { mode, preset, process } = Route.useSearch();
+  const [loaded, setLoaded] = useState<{ name: string; config: ProcessConfig } | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  // "Fazer de novo": abre o assistente com a configuração do Processo.
+  useEffect(() => {
+    if (!process) return;
+    supabase
+      .from("processes")
+      .select("name, config")
+      .eq("id", process)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return setLoadError(true);
+        setLoaded({ name: data.name as string, config: (data.config ?? {}) as ProcessConfig });
+        void supabase
+          .from("processes")
+          .update({ last_run_at: new Date().toISOString() })
+          .eq("id", process);
+      });
+  }, [process]);
+
+  if (!can("bulk.send")) return <p>{t.common.forbidden}</p>;
+  if (process && !loaded)
+    return loadError ? <p>{t.common.forbidden}</p> : <p>{t.common.loading}</p>;
+
+  const fromProcess = loaded?.config;
+  const kind = fromProcess
+    ? fromProcess.source === "pdf"
+      ? "pdf"
+      : "template"
+    : preset
+      ? "pdf"
+      : mode;
+
+  if (kind === "pdf") {
+    const payslips: SplitPreset = {
+      split: { mode: "content" },
+      identify: { matricula: true },
+      options: { docName: t.split.payslipsName },
+    };
+    const presetConfig: SplitPreset | undefined = fromProcess
+      ? {
+          ...(fromProcess.split?.rule ? { split: fromProcess.split.rule } : {}),
+          ...(fromProcess.split?.identify ? { identify: fromProcess.split.identify } : {}),
+          ...(fromProcess.options ? { options: fromProcess.options } : {}),
+        }
+      : preset === "payslips"
+        ? payslips
+        : undefined;
+    return (
+      <>
+        <PageHeader title={loaded?.name ?? t.bulk.new} subtitle={t.split.fromPdfText} />
+        <SplitWizard preset={presetConfig} />
+      </>
+    );
+  }
+  if (kind === "template")
+    return (
+      <TemplateBulk
+        initialTemplateId={fromProcess?.templateId ?? undefined}
+        initialOptions={fromProcess?.options}
+      />
+    );
+
+  return (
+    <>
+      <PageHeader title={t.bulk.new} subtitle={t.split.choose} />
+      <ul className="grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {(
+          [
+            [{ mode: "template" }, LayoutTemplate, t.split.fromTemplate, t.split.fromTemplateText],
+            [{ mode: "pdf" }, Files, t.split.fromPdf, t.split.fromPdfText],
+            [{ preset: "payslips" }, Wallet, t.split.payslips, t.split.payslipsText],
+          ] as const
+        ).map(([search, Icon, title, text]) => (
+          <li key={title}>
+            <Link
+              to="/app/bulk/new"
+              search={search}
+              className="flex h-full flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm transition-colors hover:border-brand"
+            >
+              <span className="flex size-11 items-center justify-center rounded-xl bg-brand-soft">
+                <Icon className="size-5 text-brand" aria-hidden />
+              </span>
+              <span className="font-display text-base font-semibold">{title}</span>
+              <span className="text-sm text-muted-foreground">{text}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
 
 type Signer = "name" | "email" | "cpf" | "phone";
 type Mapping = {
@@ -87,7 +215,13 @@ function autoMap(sheet: Sheet, fields: TemplateField[]): Mapping {
   return { signer, fields: fieldMap };
 }
 
-function NewBulk() {
+function TemplateBulk({
+  initialTemplateId,
+  initialOptions,
+}: {
+  initialTemplateId?: string | undefined;
+  initialOptions?: ProcessConfig["options"] | undefined;
+}) {
   const { t, f, locale } = useAppI18n();
   const { current } = useOrg();
   const config = useAppConfig();
@@ -101,8 +235,12 @@ function NewBulk() {
   const [mapping, setMapping] = useState<Mapping | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [onlyIssues, setOnlyIssues] = useState(true);
-  const [authLevel, setAuthLevel] = useState<AuthLevel>("basic");
-  const [options, setOptions] = useState<SendOptionsValue>(() => defaultSendOptions(locale));
+  const [authLevel, setAuthLevel] = useState<AuthLevel>(initialOptions?.authLevel ?? "basic");
+  const [options, setOptions] = useState<SendOptionsValue>(() => ({
+    ...defaultSendOptions(locale),
+    ...(initialOptions?.message ? { message: initialOptions.message } : {}),
+    ...(initialOptions?.reminders ? { reminders: initialOptions.reminders } : {}),
+  }));
   const [jobName, setJobName] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +253,12 @@ function NewBulk() {
       .select(templateSelect)
       .or(`scope.eq.mdsign,organization_id.eq.${current.id}`)
       .order("name")
-      .then(({ data }) => setTemplates((data as TemplateRow[] | null) ?? []));
+      .then(({ data }) => {
+        const list = (data as TemplateRow[] | null) ?? [];
+        setTemplates(list);
+        const initial = list.find((x) => x.id === initialTemplateId);
+        if (initial) setTpl(initial);
+      });
   }, [current]);
 
   const fields = useMemo(() => fillableFields(tpl?.fields ?? []), [tpl]);

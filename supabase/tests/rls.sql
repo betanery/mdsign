@@ -330,4 +330,34 @@ do $$ begin
 exception when check_violation then null;
 end $$;
 
+-- Processos: só quem tem bulk.send na organização; lotes de PDF exigem pasta da própria organização
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+insert into public.processes (organization_id, name, kind, config)
+  values ((select v from t_ids where k = 'orgA'), 'Contracheques mensais', 'bulk_pdf', '{"split":{"mode":"content"}}');
+do $$ begin
+  assert (select count(*) from public.processes) = 1, 'gestora vê o processo da organização';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  -- Bruno é operador da Empresa A (bulk.send): vê; mas não cria processo na Empresa B como outra org.
+  assert (select count(*) from public.processes where organization_id = (select v from t_ids where k = 'orgA')) = 1, 'operador vê o processo';
+end $$;
+reset role;
+do $$ begin
+  insert into public.bulk_jobs (organization_id, name, source, source_folder)
+    values ((select v from t_ids where k = 'orgA'), 'Lote PDF', 'pdf',
+            (select v from t_ids where k = 'orgB')::text || '/' || gen_random_uuid()::text);
+  assert false, 'partes ficam na pasta da organização do lote';
+exception when check_violation then null;
+end $$;
+do $$ begin
+  insert into public.bulk_jobs (organization_id, name, source)
+    values ((select v from t_ids where k = 'orgA'), 'Lote PDF sem pasta', 'pdf');
+  assert false, 'lote de PDF exige a pasta das partes';
+exception when check_violation then null;
+end $$;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

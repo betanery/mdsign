@@ -31,6 +31,7 @@ import { Route as AppShellSectionRouteImport } from './routes/app/_shell/$sectio
 import { Route as AppShellContactsRouteImport } from './routes/app/_shell/contacts'
 import { Route as AppShellFormsRouteImport } from './routes/app/_shell/forms'
 import { Route as AppShellOrganizationRouteImport } from './routes/app/_shell/organization'
+import { Route as AppShellProcessesRouteImport } from './routes/app/_shell/processes'
 import { Route as AppShellSendRouteImport } from './routes/app/_shell/send'
 import { Route as AppShellSettingsRouteImport } from './routes/app/_shell/settings'
 import { Route as AppShellSignRouteImport } from './routes/app/_shell/sign'
@@ -154,6 +155,11 @@ const AppShellOrganizationRoute = AppShellOrganizationRouteImport.update({
   path: '/organization',
   getParentRoute: () => AppShellRoute,
 } as any)
+const AppShellProcessesRoute = AppShellProcessesRouteImport.update({
+  id: '/processes',
+  path: '/processes',
+  getParentRoute: () => AppShellRoute,
+} as any)
 const AppShellSendRoute = AppShellSendRouteImport.update({
   id: '/send',
   path: '/send',
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/app/contacts': typeof AppShellContactsRoute
   '/app/forms': typeof AppShellFormsRoute
   '/app/organization': typeof AppShellOrganizationRoute
+  '/app/processes': typeof AppShellProcessesRoute
   '/app/send': typeof AppShellSendRoute
   '/app/settings': typeof AppShellSettingsRoute
   '/app/sign': typeof AppShellSignRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByTo {
   '/app/contacts': typeof AppShellContactsRoute
   '/app/forms': typeof AppShellFormsRoute
   '/app/organization': typeof AppShellOrganizationRoute
+  '/app/processes': typeof AppShellProcessesRoute
   '/app/send': typeof AppShellSendRoute
   '/app/settings': typeof AppShellSettingsRoute
   '/app/sign': typeof AppShellSignRoute
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/app/_shell/contacts': typeof AppShellContactsRoute
   '/app/_shell/forms': typeof AppShellFormsRoute
   '/app/_shell/organization': typeof AppShellOrganizationRoute
+  '/app/_shell/processes': typeof AppShellProcessesRoute
   '/app/_shell/send': typeof AppShellSendRoute
   '/app/_shell/settings': typeof AppShellSettingsRoute
   '/app/_shell/sign': typeof AppShellSignRoute
@@ -351,6 +360,7 @@ export interface FileRouteTypes {
     | '/app/contacts'
     | '/app/forms'
     | '/app/organization'
+    | '/app/processes'
     | '/app/send'
     | '/app/settings'
     | '/app/sign'
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/app/contacts'
     | '/app/forms'
     | '/app/organization'
+    | '/app/processes'
     | '/app/send'
     | '/app/settings'
     | '/app/sign'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/app/_shell/contacts'
     | '/app/_shell/forms'
     | '/app/_shell/organization'
+    | '/app/_shell/processes'
     | '/app/_shell/send'
     | '/app/_shell/settings'
     | '/app/_shell/sign'
@@ -606,6 +618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShellOrganizationRouteImport
       parentRoute: typeof AppShellRoute
     }
+    '/app/_shell/processes': {
+      id: '/app/_shell/processes'
+      path: '/processes'
+      fullPath: '/app/processes'
+      preLoaderRoute: typeof AppShellProcessesRouteImport
+      parentRoute: typeof AppShellRoute
+    }
     '/app/_shell/send': {
       id: '/app/_shell/send'
       path: '/send'
@@ -721,6 +740,7 @@ interface AppShellRouteChildren {
   AppShellContactsRoute: typeof AppShellContactsRoute
   AppShellFormsRoute: typeof AppShellFormsRoute
   AppShellOrganizationRoute: typeof AppShellOrganizationRoute
+  AppShellProcessesRoute: typeof AppShellProcessesRoute
   AppShellSendRoute: typeof AppShellSendRoute
   AppShellSettingsRoute: typeof AppShellSettingsRoute
   AppShellSignRoute: typeof AppShellSignRoute
@@ -741,6 +761,7 @@ const AppShellRouteChildren: AppShellRouteChildren = {
   AppShellContactsRoute: AppShellContactsRoute,
   AppShellFormsRoute: AppShellFormsRoute,
   AppShellOrganizationRoute: AppShellOrganizationRoute,
+  AppShellProcessesRoute: AppShellProcessesRoute,
   AppShellSendRoute: AppShellSendRoute,
   AppShellSettingsRoute: AppShellSettingsRoute,
   AppShellSignRoute: AppShellSignRoute,

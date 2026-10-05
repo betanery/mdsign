@@ -52,11 +52,12 @@ type NavItem = { key: NavKey; icon: LucideIcon } & (
         | "/app/bulk"
         | "/app/forms"
         | "/app/contacts"
+        | "/app/processes"
         | "/app/organization"
         | "/app/settings";
       section?: never;
     }
-  | { section: "processes" | "integrations" | "reports"; to?: never }
+  | { section: "integrations" | "reports"; to?: never }
 );
 
 /** Navegação desktop do PRD §6, na ordem definida. Itens com `section` ainda não existem. */
@@ -64,7 +65,7 @@ const navItems: NavItem[] = [
   { key: "home", to: "/app", icon: Home },
   { key: "documents", to: "/app/documents", icon: Files },
   { key: "templates", to: "/app/templates", icon: LayoutTemplate },
-  { key: "processes", section: "processes", icon: Workflow },
+  { key: "processes", to: "/app/processes", icon: Workflow },
   { key: "bulk", to: "/app/bulk", icon: FileStack },
   { key: "forms", to: "/app/forms", icon: FormInput },
   { key: "contacts", to: "/app/contacts", icon: Users },
