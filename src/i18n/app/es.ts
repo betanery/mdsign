@@ -645,6 +645,11 @@ const es: AppMessages = {
     name: "Nombre del envío",
     test: "Enviarme una prueba",
     testSent: "Prueba enviada a tu correo. Revísala antes de enviar a todos.",
+    sampleTitle: "Muestra",
+    sampleHint:
+      "Mira el documento de una fila completado, tal como se enviará. No se envía nada ni se consume del plan.",
+    sampleRow: "Fila de la muestra",
+    sampleShow: "Ver muestra",
     testConfirmTitle: "Enviarte una prueba",
     testConfirmText:
       "Se creará un documento real con los datos del primer destinatario y se enviará a tu correo. Esto consume 1 documento de tu plan.",
@@ -763,6 +768,8 @@ const es: AppMessages = {
     testHint:
       "Usa datos ficticios. No se envía nada ni se consume de tu plan. Los campos en blanco quedan vacíos en la vista previa.",
     testFix: "Revisa el formato de estos campos de la prueba:",
+    linkedHint:
+      "Se completa con los datos de {role} al enviar. Para escribirlo o usar otra columna de la planilla, cambia el Origen a Llenado manual o Planilla.",
     testRun: "Generar vista previa",
     smallScreen:
       "Para posicionar campos y firmas, usa una pantalla más grande (computadora o tableta).",

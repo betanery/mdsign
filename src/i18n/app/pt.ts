@@ -633,6 +633,11 @@ const pt = {
     name: "Nome do envio",
     test: "Enviar teste para mim",
     testSent: "Teste enviado para o seu e-mail. Confira antes de enviar para todos.",
+    sampleTitle: "Amostra",
+    sampleHint:
+      "Veja o documento de uma linha preenchido, como será enviado. Nada é enviado nem consumido do plano.",
+    sampleRow: "Linha da amostra",
+    sampleShow: "Visualizar amostra",
     testConfirmTitle: "Enviar teste para você",
     testConfirmText:
       "Será criado um documento real com os dados do primeiro destinatário e enviado para o seu e-mail. Isso consome 1 documento do seu plano.",
@@ -751,6 +756,8 @@ const pt = {
     testHint:
       "Use dados fictícios. Nada é enviado nem consumido do seu plano. Campos em branco saem vazios na prévia.",
     testFix: "Confira o formato destes campos do teste:",
+    linkedHint:
+      "Preenchido com os dados de {role} no envio. Para digitar ou usar outra coluna da planilha, mude a Origem para Preenchimento manual ou Planilha.",
     testRun: "Gerar prévia",
     smallScreen: "Para posicionar campos e assinaturas, use uma tela maior (computador ou tablet).",
     badge: "PDF",

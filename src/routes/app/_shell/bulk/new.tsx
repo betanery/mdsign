@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Download,
+  Eye,
   FileSpreadsheet,
   Files,
   LayoutTemplate,
@@ -288,6 +289,8 @@ function TemplateBulk({
   const [builtFrom, setBuiltFrom] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [sampleRow, setSampleRow] = useState(0);
+  const [sampleUrl, setSampleUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!current) return;
@@ -418,6 +421,44 @@ function TemplateBulk({
 
   const updateRow = (key: number, patch: Partial<Row>) =>
     setRows((list) => list.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+
+  // Amostra: o documento de uma linha, preenchido como será enviado (nada é criado nem consumido).
+  async function showSample() {
+    const r = rows[sampleRow];
+    if (!current || !tpl || !r) return;
+    setBusy("sample");
+    setError(null);
+    try {
+      const signer = {
+        name: r.name,
+        email: r.email,
+        cpf: onlyDigits(r.cpf) || null,
+        phone: r.phone || null,
+      };
+      const blob = await callFunctionBlob("documents-from-template", {
+        organizationId: current.id,
+        templateId: tpl.id,
+        mode: "preview",
+        values: r.values,
+        ...(roles.length
+          ? {
+              roles: {
+                [String(roles[0]!.slot)]: signer,
+                ...Object.fromEntries(
+                  toPayload(people).map((p, i) => [String(otherRoles[i]!.slot), p]),
+                ),
+              },
+            }
+          : {}),
+      });
+      if (sampleUrl) URL.revokeObjectURL(sampleUrl);
+      setSampleUrl(URL.createObjectURL(blob));
+    } catch (e) {
+      setError(errorText(t, e));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function ensureJob(): Promise<string | null> {
     if (!current || !tpl) return null;
@@ -886,6 +927,50 @@ function TemplateBulk({
             <fieldset className="contents">
               <SendOptions value={options} onChange={setOptions} />
             </fieldset>
+            <section className="grid gap-3 rounded-xl border bg-white p-4" aria-labelledby="sample">
+              <div>
+                <h3 id="sample" className="font-medium">
+                  {t.bulk.sampleTitle}
+                </h3>
+                <p className="text-xs text-muted-foreground">{t.bulk.sampleHint}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  aria-label={t.bulk.sampleRow}
+                  value={sampleRow}
+                  onChange={(e) => {
+                    setSampleRow(Number(e.target.value));
+                    setSampleUrl(null);
+                  }}
+                  className={cn(selectClass, "h-10 w-auto max-w-xs")}
+                >
+                  {rows.slice(0, 200).map((r, i) => (
+                    <option key={r.key} value={i}>
+                      {t.bulk.row} {r.key} — {r.name || "—"}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  variant="outline"
+                  onClick={() => void showSample()}
+                  disabled={busy !== null}
+                >
+                  {busy === "sample" ? (
+                    <Loader2 className="animate-spin" aria-hidden />
+                  ) : (
+                    <Eye aria-hidden />
+                  )}
+                  {t.bulk.sampleShow}
+                </Button>
+              </div>
+              {sampleUrl && (
+                <iframe
+                  src={sampleUrl}
+                  title={t.bulk.sampleTitle}
+                  className="h-[70svh] w-full rounded-md border"
+                />
+              )}
+            </section>
             <p className="text-sm text-muted-foreground">
               {f(t.bulk.confirmText, { n: String(rows.length) })}
             </p>

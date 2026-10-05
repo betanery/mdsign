@@ -24,6 +24,7 @@ import {
   renderTemplate,
   roleParticipants,
   slotValues,
+  type Template,
 } from "../_shared/templates.ts";
 
 type Payload = {
@@ -54,6 +55,26 @@ const pdfResponse = (pdf: Uint8Array, origin: string | null) =>
     headers: { ...corsHeaders(origin), "Content-Type": "application/pdf" },
   });
 
+/** Pessoas fictícias/da amostra por papel, só para preencher a prévia (nada é enviado). */
+function previewPeople(t: Template, roles: Record<string, ParticipantInput> | undefined) {
+  const people = new Map<number, CleanParticipant>();
+  for (const r of t.participants) {
+    const person = roles?.[String(r.slot)];
+    if (person?.name)
+      people.set(r.slot, {
+        name: String(person.name),
+        email: String(person.email ?? ""),
+        cpf: person.cpf ? String(person.cpf) : null,
+        noCpf: Boolean(person.noCpf),
+        phone: person.phone ? String(person.phone) : null,
+        role: r.role,
+        authLevel: r.authLevel,
+        step: r.slot,
+      });
+  }
+  return people;
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
@@ -74,22 +95,7 @@ Deno.serve(async (req) => {
     if (p.mode === "test") {
       if (!p.draft) throw new AppError("invalid_request");
       const draft = normalizeTemplate({ ...p.draft, organization_id: p.organizationId });
-      const test = p.roles ?? {};
-      const people = new Map<number, CleanParticipant>();
-      for (const r of draft.participants) {
-        const person = test[String(r.slot)];
-        if (person?.name)
-          people.set(r.slot, {
-            name: String(person.name),
-            email: String(person.email ?? ""),
-            cpf: person.cpf ? String(person.cpf) : null,
-            noCpf: Boolean(person.noCpf),
-            phone: person.phone ? String(person.phone) : null,
-            role: r.role,
-            authLevel: r.authLevel,
-            step: r.slot,
-          });
-      }
+      const people = previewPeople(draft, p.roles);
       const pdf = await renderTemplate(draft, slotValues(draft, values, people), {
         previewMarks: true,
         optional: true,
@@ -108,9 +114,15 @@ Deno.serve(async (req) => {
         .slice(0, 200) || template.name;
     const withRoles = template.participants.length > 0;
 
+    // Prévia: sem pessoas, os campos de papel ficam de fora; com `roles` (amostra do envio
+    // em massa), eles saem preenchidos com quem vai assinar. Nada é criado nem consumido.
     if (p.mode === "preview")
       return pdfResponse(
-        await renderTemplate(template, values, { previewMarks: true, skipSlotFields: true }),
+        await renderTemplate(
+          template,
+          p.roles ? slotValues(template, values, previewPeople(template, p.roles)) : values,
+          { previewMarks: true, skipSlotFields: !p.roles },
+        ),
         origin,
       );
 

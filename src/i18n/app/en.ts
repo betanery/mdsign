@@ -635,6 +635,11 @@ const en: AppMessages = {
     name: "Send name",
     test: "Send me a test",
     testSent: "Test sent to your email. Check it before sending to everyone.",
+    sampleTitle: "Sample",
+    sampleHint:
+      "See one row's document filled in, exactly as it will be sent. Nothing is sent or deducted from your plan.",
+    sampleRow: "Sample row",
+    sampleShow: "Preview sample",
     testConfirmTitle: "Send a test to yourself",
     testConfirmText:
       "A real document will be created with the first recipient's data and sent to your email. This uses 1 document from your plan.",
@@ -751,6 +756,8 @@ const en: AppMessages = {
     testHint:
       "Use fictitious data. Nothing is sent or deducted from your plan. Blank fields stay empty in the preview.",
     testFix: "Check the format of these test fields:",
+    linkedHint:
+      "Filled with {role}'s data when sending. To type it or use another spreadsheet column, change the Source to Manual entry or Spreadsheet.",
     testRun: "Generate preview",
     smallScreen: "To place fields and signatures, use a larger screen (computer or tablet).",
     badge: "PDF",

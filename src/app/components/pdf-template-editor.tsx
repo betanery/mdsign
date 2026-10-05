@@ -57,6 +57,13 @@ const presets = [
   { id: "custom", key: "campo", type: "text" },
 ] as const;
 
+const signerAttrs: Partial<Record<string, "name" | "cpf" | "email" | "phone">> = {
+  name: "name",
+  cpf: "cpf",
+  email: "email",
+  phone: "phone",
+};
+
 const markTypes: MarkType[] = ["signature", "initials", "stamp"];
 const KEY = /^[a-zA-Z0-9_]{1,60}$/;
 
@@ -274,6 +281,10 @@ export function PdfTemplateEditor({
     } else {
       const preset = presets.find((p) => p.id === a) ?? presets[presets.length - 1]!;
       const key = uniqueKey(preset.key, taken);
+      // Nome, CPF, e-mail e celular quase sempre são de quem assina: já nascem ligados ao
+      // 1º papel, para não serem pedidos de novo no teste, no envio e na planilha.
+      const attr = signerAttrs[preset.id];
+      const slot = attr ? roles[0]?.slot : undefined;
       setFields((list) => [
         ...list,
         {
@@ -281,7 +292,7 @@ export function PdfTemplateEditor({
           label: t.pdf.presets[preset.id] ?? preset.key,
           type: preset.type,
           required: true,
-          source: "manual",
+          ...(slot ? { source: "signer", slot, slotAttr: attr } : { source: "manual" }),
           boxes: [box],
         },
       ]);
@@ -1147,6 +1158,11 @@ function FieldProperties({
               ))}
             </select>
           </label>
+          {field.slot && field.slotAttr && (
+            <p className="col-span-2 text-xs text-muted-foreground">
+              {t.pdf.linkedHint.replace("{role}", roleLabel(field.slot))}
+            </p>
+          )}
         </div>
       )}
       <label className="flex items-center gap-2">
