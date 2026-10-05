@@ -11,6 +11,7 @@ import {
 } from "./participants.ts";
 import { loadPdf, pageSizes, toEngineMarks, type RelMark } from "./pdf.ts";
 import { signdoc } from "./signdoc.ts";
+import { deliverDue } from "./webhooks.ts";
 
 export type CreateInput = {
   organizationId: string;
@@ -141,6 +142,8 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       actor_name: input.actorName,
       source: "mdsign",
     });
+    // Webhooks de saída: avisa o sistema do cliente já no envio.
+    await deliverDue(10, input.organizationId).catch(() => undefined);
     await admin.rpc("write_audit_as", {
       org: input.organizationId,
       actor: input.createdBy,

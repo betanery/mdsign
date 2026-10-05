@@ -382,4 +382,44 @@ do $$ begin
 end $$;
 reset role;
 
+-- Integrações: só integrations.manage vê; o segredo do webhook nunca é lido pelo navegador
+insert into public.webhook_endpoints (organization_id, url, secret)
+  values ((select v from t_ids where k = 'orgA'), 'https://exemplo.test/hook', 'segredo-123');
+insert into public.api_keys (organization_id, name, prefix, key_hash)
+  values ((select v from t_ids where k = 'orgA'), 'ERP', 'mds_abc12345', repeat('a', 64));
+insert into public.documents (organization_id, kind, name, engine_document_id)
+  values ((select v from t_ids where k = 'orgA'), 'send', 'Doc webhook', '00000000-0000-0000-0000-0000000000f1');
+insert into public.document_events (document_id, organization_id, type, actor_name)
+  values ((select id from public.documents where name = 'Doc webhook'), (select v from t_ids where k = 'orgA'), 'participant.signed', 'Fulano');
+insert into public.document_events (document_id, organization_id, type)
+  values ((select id from public.documents where name = 'Doc webhook'), (select v from t_ids where k = 'orgA'), 'participant.reminded');
+do $$ begin
+  assert (select count(*) from public.webhook_deliveries where organization_id = (select v from t_ids where k = 'orgA') and event_type = 'participant.signed') = 1, 'evento vira webhook';
+  assert (select count(*) from public.webhook_deliveries where organization_id = (select v from t_ids where k = 'orgA')) = 1, 'eventos internos (lembrete) não viram webhook';
+end $$;
+-- Carla (gestora, sem integrations.manage) não vê; a proprietária vê, mas sem o segredo
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.api_keys) = 0, 'gestora não vê chaves de API';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.api_keys) = 1, 'proprietária vê as chaves (sem o hash)';
+  assert (select count(*) from public.webhook_deliveries) = 1, 'proprietária vê as entregas';
+end $$;
+do $$ begin
+  perform secret from public.webhook_endpoints;
+  assert false, 'segredo do webhook não é legível pelo navegador';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform key_hash from public.api_keys;
+  assert false, 'hash da chave não é legível pelo navegador';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

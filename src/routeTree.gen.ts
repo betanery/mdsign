@@ -30,6 +30,7 @@ import { Route as AppShellIndexRouteImport } from './routes/app/_shell/index'
 import { Route as AppShellSectionRouteImport } from './routes/app/_shell/$section'
 import { Route as AppShellContactsRouteImport } from './routes/app/_shell/contacts'
 import { Route as AppShellFormsRouteImport } from './routes/app/_shell/forms'
+import { Route as AppShellIntegrationsRouteImport } from './routes/app/_shell/integrations'
 import { Route as AppShellOrganizationRouteImport } from './routes/app/_shell/organization'
 import { Route as AppShellProcessesRouteImport } from './routes/app/_shell/processes'
 import { Route as AppShellSendRouteImport } from './routes/app/_shell/send'
@@ -150,6 +151,11 @@ const AppShellFormsRoute = AppShellFormsRouteImport.update({
   path: '/forms',
   getParentRoute: () => AppShellRoute,
 } as any)
+const AppShellIntegrationsRoute = AppShellIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => AppShellRoute,
+} as any)
 const AppShellOrganizationRoute = AppShellOrganizationRouteImport.update({
   id: '/organization',
   path: '/organization',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/app/$section': typeof AppShellSectionRoute
   '/app/contacts': typeof AppShellContactsRoute
   '/app/forms': typeof AppShellFormsRoute
+  '/app/integrations': typeof AppShellIntegrationsRoute
   '/app/organization': typeof AppShellOrganizationRoute
   '/app/processes': typeof AppShellProcessesRoute
   '/app/send': typeof AppShellSendRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/app/$section': typeof AppShellSectionRoute
   '/app/contacts': typeof AppShellContactsRoute
   '/app/forms': typeof AppShellFormsRoute
+  '/app/integrations': typeof AppShellIntegrationsRoute
   '/app/organization': typeof AppShellOrganizationRoute
   '/app/processes': typeof AppShellProcessesRoute
   '/app/send': typeof AppShellSendRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/app/_shell/$section': typeof AppShellSectionRoute
   '/app/_shell/contacts': typeof AppShellContactsRoute
   '/app/_shell/forms': typeof AppShellFormsRoute
+  '/app/_shell/integrations': typeof AppShellIntegrationsRoute
   '/app/_shell/organization': typeof AppShellOrganizationRoute
   '/app/_shell/processes': typeof AppShellProcessesRoute
   '/app/_shell/send': typeof AppShellSendRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/app/$section'
     | '/app/contacts'
     | '/app/forms'
+    | '/app/integrations'
     | '/app/organization'
     | '/app/processes'
     | '/app/send'
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
     | '/app/$section'
     | '/app/contacts'
     | '/app/forms'
+    | '/app/integrations'
     | '/app/organization'
     | '/app/processes'
     | '/app/send'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/app/_shell/$section'
     | '/app/_shell/contacts'
     | '/app/_shell/forms'
+    | '/app/_shell/integrations'
     | '/app/_shell/organization'
     | '/app/_shell/processes'
     | '/app/_shell/send'
@@ -611,6 +623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppShellFormsRouteImport
       parentRoute: typeof AppShellRoute
     }
+    '/app/_shell/integrations': {
+      id: '/app/_shell/integrations'
+      path: '/integrations'
+      fullPath: '/app/integrations'
+      preLoaderRoute: typeof AppShellIntegrationsRouteImport
+      parentRoute: typeof AppShellRoute
+    }
     '/app/_shell/organization': {
       id: '/app/_shell/organization'
       path: '/organization'
@@ -739,6 +758,7 @@ interface AppShellRouteChildren {
   AppShellSectionRoute: typeof AppShellSectionRoute
   AppShellContactsRoute: typeof AppShellContactsRoute
   AppShellFormsRoute: typeof AppShellFormsRoute
+  AppShellIntegrationsRoute: typeof AppShellIntegrationsRoute
   AppShellOrganizationRoute: typeof AppShellOrganizationRoute
   AppShellProcessesRoute: typeof AppShellProcessesRoute
   AppShellSendRoute: typeof AppShellSendRoute
@@ -760,6 +780,7 @@ const AppShellRouteChildren: AppShellRouteChildren = {
   AppShellSectionRoute: AppShellSectionRoute,
   AppShellContactsRoute: AppShellContactsRoute,
   AppShellFormsRoute: AppShellFormsRoute,
+  AppShellIntegrationsRoute: AppShellIntegrationsRoute,
   AppShellOrganizationRoute: AppShellOrganizationRoute,
   AppShellProcessesRoute: AppShellProcessesRoute,
   AppShellSendRoute: AppShellSendRoute,

@@ -2,6 +2,7 @@
 
 import { admin } from "./auth.ts";
 import { mapDocumentStatus, signdoc, type EngineDocument } from "./signdoc.ts";
+import { deliverDue } from "./webhooks.ts";
 
 type DocRow = { id: string; organization_id: string; status: string; engine_document_id: string };
 type ParticipantRow = {
@@ -13,7 +14,13 @@ type ParticipantRow = {
 };
 
 const participantStatus = (s: string) =>
-  s === "Completed" ? "completed" : s === "Refused" ? "refused" : s === "Created" ? "created" : "pending";
+  s === "Completed"
+    ? "completed"
+    : s === "Refused"
+      ? "refused"
+      : s === "Created"
+        ? "created"
+        : "pending";
 
 /** Busca o estado atual no motor (fonte da verdade) e aplica as mudanças. */
 export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
@@ -23,10 +30,17 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
     .select("id, name, email, status, engine_flow_action_id")
     .eq("document_id", doc.id);
 
-  const events: { type: string; actor_name?: string; data?: Record<string, unknown>; occurred_at?: string }[] = [];
+  const events: {
+    type: string;
+    actor_name?: string;
+    data?: Record<string, unknown>;
+    occurred_at?: string;
+  }[] = [];
 
   for (const action of current.flowActions ?? []) {
-    const row = (participants as ParticipantRow[] | null)?.find((p) => p.engine_flow_action_id === action.id);
+    const row = (participants as ParticipantRow[] | null)?.find(
+      (p) => p.engine_flow_action_id === action.id,
+    );
     if (!row) continue;
     // O SignDoc identifica a pessoa pelo CPF e pode usar o e-mail do cadastro que já existe
     // nele: o MDSign mostra sempre o endereço que o motor está usando de fato.
@@ -40,10 +54,18 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
     }
     const next = participantStatus(action.status);
     if (next === row.status) continue;
-    await admin
+    // Atualiza só se ainda não estiver nesse status: com o aviso do SignDoc e uma ação do
+    // MDSign chegando juntos, o evento (e o webhook do cliente) é registrado uma única vez.
+    const { data: changed } = await admin
       .from("document_participants")
-      .update({ status: next, completed_at: next === "completed" ? action.updateDate ?? new Date().toISOString() : null })
-      .eq("id", row.id);
+      .update({
+        status: next,
+        completed_at: next === "completed" ? (action.updateDate ?? new Date().toISOString()) : null,
+      })
+      .eq("id", row.id)
+      .neq("status", next)
+      .select("id");
+    if (!changed?.length) continue;
     if (next === "completed")
       events.push({
         type: action.type === "Approver" ? "participant.approved" : "participant.signed",
@@ -61,15 +83,18 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
 
   const status = mapDocumentStatus(current.status);
   if (status !== doc.status) {
-    await admin
+    const { data: changed } = await admin
       .from("documents")
       .update({
         status,
         concluded_at: status === "concluded" ? current.updateDate : null,
         expires_at: current.expirationDate ?? null,
       })
-      .eq("id", doc.id);
-    if (status !== "pending") events.push({ type: `document.${status}`, occurred_at: current.updateDate });
+      .eq("id", doc.id)
+      .neq("status", status)
+      .select("id");
+    if (changed?.length && status !== "pending")
+      events.push({ type: `document.${status}`, occurred_at: current.updateDate });
   }
 
   if (events.length)
@@ -84,5 +109,6 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
         ...(e.occurred_at ? { occurred_at: e.occurred_at } : {}),
       })),
     );
+  if (events.length) await deliverDue(20, doc.organization_id).catch(() => undefined);
   return { status, engine: current };
 }

@@ -459,3 +459,12 @@ verify_jwt = false
 
 [functions.documents-edit]
 verify_jwt = false
+
+[functions.api]
+verify_jwt = false
+
+[functions.integrations]
+verify_jwt = false
+
+[functions.webhooks-run]
+verify_jwt = false
