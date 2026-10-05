@@ -159,7 +159,7 @@ export const notificationLanguage: Record<string, string> = { pt: "Pt", en: "En"
 /** No SignDoc a testemunha é um signatário com título (aparece no registro da assinatura). */
 const witnessTitle: Record<string, string> = { pt: "Testemunha", en: "Witness", es: "Testigo" };
 
-export type ObserverInput = { name: string; email: string };
+export type ObserverInput = { name: string; email: string; cpf: string | null };
 
 /** Observadores: acompanham e recebem as notificações, sem assinar. */
 export function cleanObservers(list: unknown): ObserverInput[] {
@@ -174,16 +174,20 @@ export function cleanObservers(list: unknown): ObserverInput[] {
       String(o?.name ?? "")
         .trim()
         .slice(0, 160) || email;
+    const cpf = String(o?.cpf ?? "").replace(/\D/g, "") || null;
     if (!EMAIL.test(email)) throw new AppError("invalid_observers", 422, { email });
+    // O SignDoc exige o CPF de todos (inclusive observadores), salvo com estrangeiros liberados.
+    if (cpf ? !isValidCpf(cpf) : !identifierOptional)
+      throw new AppError("invalid_observers", 422, { email, field: "cpf" });
     if (seen.has(email)) continue;
     seen.add(email);
-    out.push({ name, email });
+    out.push({ name, email, cpf });
   }
   return out;
 }
 
 export const toObserver = (o: ObserverInput, locale: string) => ({
-  user: { name: o.name, email: o.email },
+  user: { name: o.name, email: o.email, ...(o.cpf ? { identifier: o.cpf } : {}) },
   notificationLanguage: notificationLanguage[locale] ?? "Pt",
 });
 

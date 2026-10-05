@@ -26,6 +26,7 @@ import { signdoc } from "../_shared/signdoc.ts";
 
 type Doc = {
   id: string;
+  name: string;
   organization_id: string;
   created_by: string | null;
   status: string;
@@ -35,7 +36,7 @@ type Doc = {
 async function loadEditable(caller: Caller, documentId: string): Promise<Doc> {
   const { data: doc } = await admin
     .from("documents")
-    .select("id, organization_id, created_by, status, engine_document_id")
+    .select("id, organization_id, created_by, status, engine_document_id, name")
     .eq("id", documentId)
     .maybeSingle();
   if (!doc) throw new AppError("not_found", 404);
@@ -112,7 +113,7 @@ Deno.serve(async (req) => {
         .filter((m) => m !== null);
       const upload = await signdoc.uploadBytes(toBase64(bytes));
       await signdoc.addVersion(doc.engine_document_id, {
-        file: { id: upload, name, contentType: "application/pdf" },
+        file: { id: upload, name, displayName: doc.name, contentType: "application/pdf" },
         ...(prePositionedMarks.length ? { prePositionedMarks } : {}),
       });
       await event(doc, caller, "document.version_added", caller.profile.full_name, { file: name });

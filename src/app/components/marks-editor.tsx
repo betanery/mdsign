@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAppI18n } from "../i18n";
+import { formatCpf, isValidCpf, onlyDigits } from "../validation";
 import { PdfPlacer, type PlacedBox, type PlacerTool } from "./pdf-placer";
 import type { MarkType, RelBox } from "./template-fields";
 
@@ -174,7 +175,7 @@ export const marksPayload = (keys: string[], value: MarksByPerson) =>
     (value[k] ?? []).map(({ type, page, x, y, w, h }) => ({ type, page, x, y, w, h })),
   );
 
-export type ObserverDraft = { key: string; name: string; email: string };
+export type ObserverDraft = { key: string; name: string; email: string; cpf: string };
 
 /** Observadores: acompanham o documento e recebem as notificações, sem assinar. */
 export function ObserversEditor({
@@ -194,7 +195,7 @@ export function ObserversEditor({
         <p className="text-sm text-muted-foreground">{t.observers.hint}</p>
       </div>
       {value.map((o, i) => (
-        <div key={o.key} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+        <div key={o.key} className="grid gap-2 sm:grid-cols-[1fr_1fr_10rem_auto]">
           <Input
             aria-label={t.participants.name}
             placeholder={t.participants.name}
@@ -207,6 +208,13 @@ export function ObserversEditor({
             placeholder={t.participants.email}
             value={o.email}
             onChange={(e) => set(i, { email: e.target.value })}
+          />
+          <Input
+            aria-label={t.participants.cpf}
+            inputMode="numeric"
+            placeholder={t.participants.cpf}
+            value={o.cpf}
+            onChange={(e) => set(i, { cpf: formatCpf(e.target.value) })}
           />
           <Button
             type="button"
@@ -225,7 +233,9 @@ export function ObserversEditor({
         size="sm"
         className="w-fit"
         disabled={value.length >= 20}
-        onClick={() => onChange([...value, { key: crypto.randomUUID(), name: "", email: "" }])}
+        onClick={() =>
+          onChange([...value, { key: crypto.randomUUID(), name: "", email: "", cpf: "" }])
+        }
       >
         <Plus aria-hidden />
         {t.observers.add}
@@ -238,6 +248,11 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 export const observersPayload = (list: ObserverDraft[]) =>
   list
     .filter((o) => o.email.trim())
-    .map((o) => ({ name: o.name.trim() || o.email.trim(), email: o.email.trim().toLowerCase() }));
+    .map((o) => ({
+      name: o.name.trim() || o.email.trim(),
+      email: o.email.trim().toLowerCase(),
+      cpf: onlyDigits(o.cpf) || null,
+    }));
+/** O SignDoc exige o CPF de cada observador. */
 export const observersValid = (list: ObserverDraft[]) =>
-  list.every((o) => !o.email.trim() || EMAIL.test(o.email.trim()));
+  list.every((o) => !o.email.trim() || (EMAIL.test(o.email.trim()) && isValidCpf(o.cpf)));
