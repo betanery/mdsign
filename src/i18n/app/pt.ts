@@ -725,8 +725,8 @@ const pt = {
       sender: "Remetente",
       contact: "Contato",
       excel: "Planilha",
-      api: "Integração/API",
-      hcm: "HCM/RH",
+      api: "Integração/API (em breve)",
+      hcm: "HCM/RH (em breve)",
     } as Record<string, string>,
     roleOf: "Participante",
     fillWith: "Preencher com",
@@ -827,12 +827,16 @@ const pt = {
     } as Record<string, string>,
     reasons: {
       ok: "Identificado com segurança por um identificador verificável.",
-      name_only: "Só o nome foi encontrado. Confira o documento e confirme o destinatário.",
-      multiple: "Mais de uma pessoa possível. Escolha o destinatário certo.",
-      conflict: "Há identificadores de pessoas diferentes neste documento. Confira com atenção.",
-      not_found: "Nenhum identificador encontrado. Escolha o destinatário ou exclua do lote.",
+      name_only:
+        "Só o nome foi encontrado (sem CPF, matrícula ou e-mail). Por segurança, o envio não é automático: confira o documento e confirme o destinatário manualmente.",
+      multiple:
+        "CPF ou identificador duplicado: mais de uma pessoa da planilha/contatos corresponde a este documento. Escolha manualmente o destinatário certo.",
+      conflict:
+        "Este documento contém identificadores de pessoas diferentes. Confira com atenção e associe manualmente ou separe as páginas.",
+      not_found:
+        "Identificador ausente: nenhum CPF, matrícula ou e-mail foi encontrado no documento. Associe manualmente o destinatário ou exclua do lote.",
       no_contact:
-        "Encontramos um identificador, mas ele não está na planilha nem nos contatos. Escolha o destinatário.",
+        "Encontramos um identificador, mas ele não está na planilha nem nos contatos. Associe manualmente o destinatário.",
       unlinked_pages:
         "Há páginas sem identificação neste documento. Confira se todas são desta pessoa ou separe.",
     } as Record<string, string>,
