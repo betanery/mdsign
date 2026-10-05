@@ -12,7 +12,13 @@ import { useAuth } from "../auth";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
 import { selectClass } from "../ui";
-import { formatCpf, isValidCpf, normalizePhone, onlyDigits } from "../validation";
+import {
+  formatCpf,
+  isValidCpf,
+  normalizePhone,
+  onlyDigits,
+  reservedEmailDomain,
+} from "../validation";
 
 export type ParticipantDraft = {
   key: string;
@@ -58,6 +64,7 @@ export function validateParticipants(
     const email = p.email.trim().toLowerCase();
     if (p.name.trim().length < 2) bad.push("name");
     if (!EMAIL.test(email)) bad.push("email");
+    else if (reservedEmailDomain(email)) bad.push("email_domain");
     if (p.noCpf ? !config.foreignSigners : !isValidCpf(p.cpf)) bad.push("cpf");
     if (!config.authLevels.includes(p.authLevel)) bad.push("authLevel");
     const phone = normalizePhone(p.phone);
@@ -234,9 +241,14 @@ export function ParticipantsEditor({
                 autoComplete="off"
                 value={p.email}
                 onChange={(e) => fromContact(i, e.target.value)}
-                aria-invalid={bad?.includes("email") || bad?.includes("duplicate")}
+                aria-invalid={
+                  bad?.includes("email") ||
+                  bad?.includes("email_domain") ||
+                  bad?.includes("duplicate")
+                }
               />
               <FieldError fields={bad} field="email" />
+              <FieldError fields={bad} field="email_domain" />
               <FieldError fields={bad} field="duplicate" />
             </div>
             <div className="grid gap-1.5">

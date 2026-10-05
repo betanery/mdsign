@@ -414,6 +414,8 @@ const pt = {
     fieldErrors: {
       name: "Informe o nome completo.",
       email: "E-mail inválido.",
+      email_domain:
+        "Este e-mail é de exemplo (ex.: @example.com) e não recebe mensagens. Use o e-mail real.",
       cpf: "CPF inválido.",
       authLevel: "Autenticação indisponível.",
       duplicate: "E-mail repetido.",
@@ -767,6 +769,17 @@ const pt = {
     payslips: "Contracheques / documentos por colaborador",
     payslipsText: "Atalho para RH: separa pelo conteúdo e identifica por CPF ou matrícula.",
     payslipsName: "Contracheques",
+    filledQuestion: "Seus documentos já estão preenchidos com os dados de cada pessoa?",
+    blankTitle: "Ainda não: tenho um modelo e uma planilha com os dados",
+    blankHint:
+      "O MDSign preenche o modelo com cada linha da planilha e gera um documento por pessoa.",
+    createFromPdf: "Seu modelo é um PDF em branco? Crie o modelo a partir do PDF",
+    filledTitle: "Sim: já tenho um PDF com o documento de cada pessoa",
+    filledHint:
+      "Ex.: PDF exportado da folha. O MDSign separa e identifica cada pessoa pelo CPF, matrícula ou e-mail.",
+    blankPdfWarn:
+      "Nenhuma página tem CPF, matrícula ou e-mail. Se este PDF é um modelo em branco para preencher com a planilha, crie um modelo a partir dele e use “Gerar a partir de um modelo”.",
+    blankPdfAction: "Criar modelo a partir do PDF",
     steps: ["Enviar", "Separar", "Identificar", "Conferir", "Assinatura", "Revisar"],
     uploadHint: "Somente PDF, até 50 MB e 1.000 páginas.",
     uploadFirst: "Envie o PDF para continuar.",

@@ -97,3 +97,9 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   const local = d.slice(2);
   return `+55 ${ddd} ${local.slice(0, local.length - 4)}-${local.slice(-4)}`;
 }
+
+/** Domínios reservados para exemplos e testes (RFC 2606/6761): não recebem e-mail. */
+export const reservedEmailDomain = (email: string) =>
+  /@(?:[^@\s]+\.)?(?:example\.(?:com|net|org)|[^@\s]+\.(?:example|test|invalid|localhost))$/i.test(
+    email.trim(),
+  );

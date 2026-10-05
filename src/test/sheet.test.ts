@@ -79,3 +79,13 @@ describe("celular no formato do motor", () => {
     expect(normalizePhone("")).toBeNull();
   });
 });
+
+describe("e-mails que não recebem mensagens", () => {
+  it("reconhece domínios reservados para exemplos e testes", async () => {
+    const { reservedEmailDomain } = await import("@/app/validation");
+    for (const e of ["ana@example.com", "a@mail.example.org", "b@homologacao.test", "c@x.invalid"])
+      expect(reservedEmailDomain(e)).toBe(true);
+    for (const e of ["ana@gmail.com", "rh@empresa.com.br", "x@examples.com", "y@test.com"])
+      expect(reservedEmailDomain(e)).toBe(false);
+  });
+});

@@ -414,6 +414,8 @@ const en: AppMessages = {
     fieldErrors: {
       name: "Enter the full name.",
       email: "Invalid email.",
+      email_domain:
+        "This is an example email (e.g. @example.com) and does not receive messages. Use the real email.",
       cpf: "Invalid CPF.",
       authLevel: "Authentication unavailable.",
       duplicate: "Repeated email.",
@@ -767,6 +769,17 @@ const en: AppMessages = {
     payslips: "Payslips / documents per employee",
     payslipsText: "HR shortcut: splits by content and identifies by CPF or employee ID.",
     payslipsName: "Payslips",
+    filledQuestion: "Are your documents already filled in with each person's data?",
+    blankTitle: "Not yet: I have a template and a spreadsheet with the data",
+    blankHint:
+      "MDSign fills the template with each spreadsheet row and generates one document per person.",
+    createFromPdf: "Is your template a blank PDF? Create the template from the PDF",
+    filledTitle: "Yes: I already have a PDF with each person's document",
+    filledHint:
+      "E.g. a PDF exported from payroll. MDSign splits it and identifies each person by CPF, employee ID or email.",
+    blankPdfWarn:
+      "No page has a CPF, employee ID or email. If this PDF is a blank template to fill with the spreadsheet, create a template from it and use “Generate from a template”.",
+    blankPdfAction: "Create template from the PDF",
     steps: ["Upload", "Split", "Identify", "Review", "Signature", "Confirm"],
     uploadHint: "PDF only, up to 50 MB and 1,000 pages.",
     uploadFirst: "Upload the PDF to continue.",

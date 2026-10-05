@@ -418,6 +418,8 @@ const es: AppMessages = {
     fieldErrors: {
       name: "Informa el nombre completo.",
       email: "Correo inválido.",
+      email_domain:
+        "Este correo es de ejemplo (ej.: @example.com) y no recibe mensajes. Usa el correo real.",
       cpf: "CPF inválido.",
       authLevel: "Autenticación no disponible.",
       duplicate: "Correo repetido.",
@@ -780,6 +782,17 @@ const es: AppMessages = {
     payslips: "Recibos de sueldo / documentos por colaborador",
     payslipsText: "Atajo para RR. HH.: separa por contenido e identifica por CPF o legajo.",
     payslipsName: "Recibos de sueldo",
+    filledQuestion: "¿Tus documentos ya están completados con los datos de cada persona?",
+    blankTitle: "Todavía no: tengo una plantilla y una planilla con los datos",
+    blankHint:
+      "MDSign completa la plantilla con cada fila de la planilla y genera un documento por persona.",
+    createFromPdf: "¿Tu plantilla es un PDF en blanco? Crea la plantilla a partir del PDF",
+    filledTitle: "Sí: ya tengo un PDF con el documento de cada persona",
+    filledHint:
+      "Ej.: PDF exportado de la nómina. MDSign lo separa e identifica a cada persona por CPF, legajo o correo.",
+    blankPdfWarn:
+      "Ninguna página tiene CPF, legajo ni correo. Si este PDF es una plantilla en blanco para completar con la planilla, crea una plantilla a partir de él y usa “Generar a partir de una plantilla”.",
+    blankPdfAction: "Crear plantilla a partir del PDF",
     steps: ["Subir", "Separar", "Identificar", "Revisar", "Firma", "Confirmar"],
     uploadHint: "Solo PDF, hasta 50 MB y 1.000 páginas.",
     uploadFirst: "Sube el PDF para continuar.",

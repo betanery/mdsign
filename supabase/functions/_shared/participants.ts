@@ -68,6 +68,12 @@ export function isValidCpf(value: string): boolean {
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/** Domínios reservados para exemplos e testes (RFC 2606/6761): não recebem e-mail. */
+export const reservedEmailDomain = (email: string) =>
+  /@(?:[^@\s]+\.)?(?:example\.(?:com|net|org)|[^@\s]+\.(?:example|test|invalid|localhost))$/i.test(
+    email.trim(),
+  );
+
 /**
  * Celular no formato internacional que o motor exige ("+55 11 91234-5678"). Aceita o número
  * como a pessoa digita: com ou sem DDI, com 0 na frente do DDD, com pontuação.
@@ -129,6 +135,7 @@ export function cleanParticipants(
     const authLevel = (p.authLevel ?? "basic") as AuthLevel;
     if (name.length < 2) problems.push({ index, field: "name" });
     if (!EMAIL.test(email)) problems.push({ index, field: "email" });
+    else if (reservedEmailDomain(email)) problems.push({ index, field: "email_domain" });
     if (p.noCpf ? !identifierOptional : !isValidCpf(cpf ?? ""))
       problems.push({ index, field: "cpf" });
     if (!levels.includes(authLevel)) problems.push({ index, field: "authLevel" });

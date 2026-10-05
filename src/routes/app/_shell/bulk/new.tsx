@@ -151,32 +151,68 @@ function NewBulk() {
       />
     );
 
+  // A pergunta que decide o caminho: o PDF já traz os dados de cada pessoa ou é um modelo em branco?
+  const card = (
+    search: { mode: "template" | "pdf" } | { preset: "payslips" },
+    Icon: typeof Files,
+    title: string,
+    text: string,
+  ) => (
+    <li key={title}>
+      <Link
+        to="/app/bulk/new"
+        search={search}
+        className="flex h-full flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm transition-colors hover:border-brand"
+      >
+        <span className="flex size-11 items-center justify-center rounded-xl bg-brand-soft">
+          <Icon className="size-5 text-brand" aria-hidden />
+        </span>
+        <span className="font-display text-base font-semibold">{title}</span>
+        <span className="text-sm text-muted-foreground">{text}</span>
+      </Link>
+    </li>
+  );
+
   return (
     <>
-      <PageHeader title={t.bulk.new} subtitle={t.split.choose} />
-      <ul className="grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {(
-          [
-            [{ mode: "template" }, LayoutTemplate, t.split.fromTemplate, t.split.fromTemplateText],
-            [{ mode: "pdf" }, Files, t.split.fromPdf, t.split.fromPdfText],
-            [{ preset: "payslips" }, Wallet, t.split.payslips, t.split.payslipsText],
-          ] as const
-        ).map(([search, Icon, title, text]) => (
-          <li key={title}>
-            <Link
-              to="/app/bulk/new"
-              search={search}
-              className="flex h-full flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm transition-colors hover:border-brand"
-            >
-              <span className="flex size-11 items-center justify-center rounded-xl bg-brand-soft">
-                <Icon className="size-5 text-brand" aria-hidden />
-              </span>
-              <span className="font-display text-base font-semibold">{title}</span>
-              <span className="text-sm text-muted-foreground">{text}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <PageHeader title={t.bulk.new} subtitle={t.split.filledQuestion} />
+      <div className="grid max-w-4xl gap-8">
+        <section className="grid gap-3" aria-labelledby="bulk-blank">
+          <div>
+            <h2 id="bulk-blank" className="font-display text-lg font-semibold">
+              {t.split.blankTitle}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t.split.blankHint}</p>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {card(
+              { mode: "template" },
+              LayoutTemplate,
+              t.split.fromTemplate,
+              t.split.fromTemplateText,
+            )}
+          </ul>
+          <Link
+            to="/app/templates/new"
+            search={{ kind: "pdf" }}
+            className="w-fit text-sm font-semibold text-brand hover:underline"
+          >
+            {t.split.createFromPdf} →
+          </Link>
+        </section>
+        <section className="grid gap-3" aria-labelledby="bulk-filled">
+          <div>
+            <h2 id="bulk-filled" className="font-display text-lg font-semibold">
+              {t.split.filledTitle}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t.split.filledHint}</p>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {card({ mode: "pdf" }, Files, t.split.fromPdf, t.split.fromPdfText)}
+            {card({ preset: "payslips" }, Wallet, t.split.payslips, t.split.payslipsText)}
+          </ul>
+        </section>
+      </div>
     </>
   );
 }
@@ -565,6 +601,13 @@ function TemplateBulk({
                 </span>
               </label>
             ))}
+            <Link
+              to="/app/templates/new"
+              search={{ kind: "pdf" }}
+              className="w-fit text-sm font-semibold text-brand hover:underline sm:col-span-2 xl:col-span-3"
+            >
+              {t.split.createFromPdf} →
+            </Link>
           </fieldset>
         )}
 
@@ -667,6 +710,11 @@ function TemplateBulk({
                 ? f(t.bulk.summary, { ready: String(rows.length - issues), issues: String(issues) })
                 : f(t.bulk.allReady, { n: String(rows.length) })}
             </p>
+            {problems.some((p) => p.includes("email_domain")) && (
+              <p className="text-sm text-destructive">
+                {t.participants.fieldErrors["email_domain"]}
+              </p>
+            )}
             {issues > 0 && (
               <div className="flex flex-wrap items-center gap-3">
                 <label className="flex items-center gap-2 text-sm">
@@ -709,14 +757,16 @@ function TemplateBulk({
                 </thead>
                 <tbody className="divide-y">
                   {visible.map(({ r, p }) => {
+                    const bad = (field: string) =>
+                      p.includes(field) || (field === "email" && p.includes("email_domain"));
                     const cell = (field: string, value: string, onChange: (v: string) => void) => (
                       <td className="p-1.5">
                         <Input
                           value={value}
                           onChange={(e) => onChange(e.target.value)}
-                          aria-invalid={p.includes(field)}
+                          aria-invalid={bad(field)}
                           aria-label={`${t.bulk.row} ${r.key}: ${field}`}
-                          className={cn("h-8 min-w-36", p.includes(field) && "border-destructive")}
+                          className={cn("h-8 min-w-36", bad(field) && "border-destructive")}
                         />
                       </td>
                     );

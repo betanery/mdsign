@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -38,7 +38,7 @@ import {
   splitDocAt,
 } from "../split";
 import { selectClass } from "../ui";
-import { formatCpf, isValidCpf, onlyDigits } from "../validation";
+import { formatCpf, isValidCpf, onlyDigits, reservedEmailDomain } from "../validation";
 import { FormMessage } from "./auth-layout";
 import { useConfirm } from "./confirm-dialog";
 import { PdfDrop, Stepper } from "./pdf-drop";
@@ -173,6 +173,12 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
   const pending = docs.filter(isPending);
   const yellow = pending.filter((d) => d.confidence === "yellow").length;
   const red = pending.length - yellow;
+  // Nenhuma página com CPF, matrícula ou e-mail: provavelmente é um modelo em branco.
+  // Destinatários com e-mail de exemplo (@example.com, .test…): o convite não chegaria.
+  const exampleEmails = ready.filter((d) =>
+    reservedEmailDomain(byKey.get(d.personKey!)?.email ?? ""),
+  ).length;
+  const looksBlank = docs.length > 0 && docs.every((d) => d.reason === "not_found");
 
   async function pick(f: File) {
     setError(null);
@@ -469,6 +475,7 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
     if (step === 2) return identifyNow();
     if (step === 3 && pending.length) return setError(t.errors["unsafe_association"]!);
     if (step === 3 && !ready.length) return setError(t.errors["bulk_empty"]!);
+    if (step === 3 && exampleEmails) return setError(t.participants.fieldErrors["email_domain"]!);
     setStep(step + 1);
   }
 
@@ -691,6 +698,23 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
               {t.bulk.onlyIssues}
             </label>
           </div>
+          {exampleEmails > 0 && (
+            <p className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              {t.participants.fieldErrors["email_domain"]}
+            </p>
+          )}
+          {looksBlank && (
+            <div className="grid gap-2 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-900">
+              <p>{t.split.blankPdfWarn}</p>
+              <Link
+                to="/app/templates/new"
+                search={{ kind: "pdf" }}
+                className="w-fit font-semibold text-brand hover:underline"
+              >
+                {t.split.blankPdfAction} →
+              </Link>
+            </div>
+          )}
           <div
             className={cn("grid gap-4", openDoc && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]")}
           >
