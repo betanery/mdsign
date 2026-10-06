@@ -247,7 +247,7 @@ export function FieldInput({
     <div className="grid gap-1.5">
       {label}
       {input}
-      {invalid && <p className="text-xs text-destructive">{t.errors["invalid_fields"]}</p>}
+      {invalid && <p className="text-xs text-destructive">{t.templates.fill.fieldInvalid}</p>}
     </div>
   );
 }

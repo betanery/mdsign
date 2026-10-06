@@ -17,6 +17,7 @@ import { useAuth } from "../auth";
 import { errorText, fieldProblems } from "../errors";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
+import { clearTemplateDraft, saveTemplateDraft } from "../template-draft";
 import { selectClass } from "../ui";
 import { friendlyError, onlyDigits } from "../validation";
 import { FormMessage } from "./auth-layout";
@@ -94,9 +95,12 @@ function uniqueKey(base: string, taken: Set<string>) {
 export function PdfTemplateEditor({
   initial,
   id,
+  initialStep,
 }: {
   initial?: Partial<TemplateRow>;
   id?: string;
+  /** Rascunho retomado: volta ao passo em que a pessoa estava. */
+  initialStep?: number;
 }) {
   const { t, locale } = useAppI18n();
   const { user } = useAuth();
@@ -104,7 +108,7 @@ export function PdfTemplateEditor({
   const config = useAppConfig();
   const navigate = useNavigate();
   const canOrg = can("templates.manage");
-  const [step, setStep] = useState(initial?.file_path ? 1 : 0);
+  const [step, setStep] = useState(initialStep ?? (initial?.file_path ? 1 : 0));
   const [upload, setUpload] = useState<Upload | null>(null);
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -140,6 +144,44 @@ export function PdfTemplateEditor({
 
   const filePath = upload?.path ?? initial?.file_path ?? null;
   const pageCount = upload?.pages.length || initial?.page_count || 0;
+
+  // Modelo novo: guarda o progresso no navegador para não se perder se a página recarregar.
+  useEffect(() => {
+    if (id || !current || !user || !filePath) return;
+    saveTemplateDraft(current.id, user.id, {
+      step,
+      row: {
+        kind: "pdf",
+        file_path: filePath,
+        page_count: pageCount || null,
+        name,
+        description,
+        category,
+        locale: docLocale,
+        scope,
+        participants: roles,
+        flow,
+        fields,
+        marks,
+      },
+    });
+  }, [
+    id,
+    current,
+    user,
+    filePath,
+    pageCount,
+    step,
+    name,
+    description,
+    category,
+    docLocale,
+    scope,
+    roles,
+    flow,
+    fields,
+    marks,
+  ]);
   const roleLabel = (slot: number) =>
     roles.find((r) => r.slot === slot)?.label.trim() ||
     t.pdf.roleDefault.replace("{n}", String(slot));
@@ -404,8 +446,16 @@ export function PdfTemplateEditor({
           .single();
     setBusy(null);
     if (result.error) return setError(friendlyError(result.error, t));
+    if (!id) clearTemplateDraft(current.id, user.id);
     toast.success(t.templates.editor.saved);
-    void navigate({ to: "/app/templates" });
+    // Volta para a aba onde o modelo aparece, com ele em destaque.
+    void navigate({
+      to: "/app/templates",
+      search: {
+        tab: (id ? initial?.scope : scope) === "personal" ? "mine" : "organization",
+        highlight: result.data.id,
+      },
+    });
   }
 
   const missingSignature = roles.filter(
@@ -441,7 +491,10 @@ export function PdfTemplateEditor({
             {filePath && (
               <>
                 <p className="text-sm font-medium">
-                  {t.pdf.pages.replace("{n}", String(pageCount))}
+                  {(pageCount === 1 ? t.pdf.pagesOne : t.pdf.pages).replace(
+                    "{n}",
+                    String(pageCount),
+                  )}
                 </p>
                 <div className="grid gap-1.5">
                   <Label htmlFor="pt-name">{t.templates.editor.name}</Label>

@@ -10,7 +10,10 @@ import { TemplateEditor } from "@/app/components/template-editor";
 import { templateSelect, type TemplateRow } from "@/app/components/template-fields";
 import { errorText } from "@/app/errors";
 import { useAppI18n } from "@/app/i18n";
+import { useAuth } from "@/app/auth";
 import { useOrg } from "@/app/org";
+import { clearTemplateDraft, loadTemplateDraft, type TemplateDraft } from "@/app/template-draft";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 
 type Search = { from?: string | undefined; kind?: "text" | "pdf" | undefined };
@@ -30,6 +33,14 @@ function NewTemplate() {
   const { from, kind } = Route.useSearch();
   const [base, setBase] = useState<Partial<TemplateRow> | null>(from ? null : {});
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  // Modelo PDF começado e não salvo: oferece continuar de onde parou.
+  const [draft, setDraft] = useState<TemplateDraft | null>(null);
+  const [resumed, setResumed] = useState<TemplateDraft | null>(null);
+  useEffect(() => {
+    if (from || kind !== "pdf" || !current || !user) return;
+    setDraft(loadTemplateDraft(current.id, user.id));
+  }, [from, kind, current, user]);
 
   useEffect(() => {
     if (!from || !current) return;
@@ -102,10 +113,43 @@ function NewTemplate() {
   return (
     <>
       <PageHeader title={t.templates.editor.titleNew} />
+      {draft && !resumed && (
+        <div
+          className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 text-sm"
+          role="status"
+        >
+          <p className="flex-1">
+            {t.pdf.draftFound
+              .replace("{name}", draft.row.name?.trim() || t.pdf.draftUnnamed)
+              .replace("{when}", new Date(draft.savedAt).toLocaleString())}
+          </p>
+          <Button
+            size="sm"
+            className="bg-brand hover:bg-brand-strong"
+            onClick={() => setResumed(draft)}
+          >
+            {t.pdf.draftResume}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              if (current && user) clearTemplateDraft(current.id, user.id);
+              setDraft(null);
+            }}
+          >
+            {t.pdf.draftDiscard}
+          </Button>
+        </div>
+      )}
       {!base ? (
         <p>{t.common.loading}</p>
       ) : chosen === "pdf" ? (
-        <PdfTemplateEditor initial={base} />
+        resumed ? (
+          <PdfTemplateEditor key="resumed" initial={resumed.row} initialStep={resumed.step} />
+        ) : (
+          <PdfTemplateEditor initial={base} />
+        )
       ) : (
         <TemplateEditor initial={base} />
       )}

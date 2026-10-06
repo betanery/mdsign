@@ -33,6 +33,7 @@ import {
 } from "./templates.ts";
 import { loadPdf, type MarkType, type RelBox, type RelMark } from "./pdf.ts";
 import { validateValues } from "./render.ts";
+import { removeBulkPart } from "./retention.ts";
 import { identifierPresent, pdfText, type MatchMethod } from "./verify.ts";
 
 export type BulkRow = ParticipantInput & { values: Record<string, string> };
@@ -219,6 +220,8 @@ export async function processBulk(jobId: string, n = 5) {
           saveContacts: true,
         });
         documentId = created.documentId;
+        // O documento já está no motor: a parte do PDF (dados pessoais) não é mais necessária.
+        if (!template) await removeBulkPart(item.data.part).catch(() => undefined);
       } catch (e) {
         status = "failed";
         error = e instanceof AppError ? e.code : "internal_error";

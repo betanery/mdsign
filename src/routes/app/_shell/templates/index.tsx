@@ -14,18 +14,30 @@ import { friendlyError } from "@/app/validation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 // Modelos (PRD §13): biblioteca MDSign, da organização e pessoais.
-export const Route = createFileRoute("/app/_shell/templates/")({ component: TemplatesPage });
-
 type Tab = "library" | "organization" | "mine";
+type Search = { tab?: Tab | undefined; highlight?: string | undefined };
+
+export const Route = createFileRoute("/app/_shell/templates/")({
+  // Depois de salvar, o editor abre a aba do modelo com ele em destaque.
+  validateSearch: (search: Record<string, unknown>): Search => ({
+    tab: ["library", "organization", "mine"].includes(String(search["tab"]))
+      ? (search["tab"] as Tab)
+      : undefined,
+    highlight: typeof search["highlight"] === "string" ? search["highlight"] : undefined,
+  }),
+  component: TemplatesPage,
+});
 
 function TemplatesPage() {
   const { t, f } = useAppI18n();
   const { user } = useAuth();
   const { current, can } = useOrg();
   const [templates, setTemplates] = useState<TemplateRow[] | null>(null);
-  const [tab, setTab] = useState<Tab>("library");
+  const search = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(search.tab ?? "library");
 
   const load = useCallback(async () => {
     if (!current) return;
@@ -120,7 +132,13 @@ function TemplatesPage() {
                 {byTab[k].map((tpl) => (
                   <li
                     key={tpl.id}
-                    className="flex flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm"
+                    ref={(el) => {
+                      if (el && tpl.id === search.highlight) el.scrollIntoView({ block: "center" });
+                    }}
+                    className={cn(
+                      "flex flex-col gap-3 rounded-2xl border bg-white p-5 shadow-sm",
+                      tpl.id === search.highlight && "border-brand ring-2 ring-brand/30",
+                    )}
                   >
                     <div className="flex items-start gap-3">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft">

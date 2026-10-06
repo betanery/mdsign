@@ -4,6 +4,7 @@
 
 import { admin } from "../_shared/auth.ts";
 import { processBulk } from "../_shared/bulk.ts";
+import { runRetention } from "../_shared/retention.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { signdoc } from "../_shared/signdoc.ts";
 
@@ -82,7 +83,14 @@ Deno.serve(async (req) => {
       console.error("bulk", job.id, e);
     }
   }
-  return new Response(JSON.stringify({ sent, bulk }), {
+  // Retenção: apaga partes de lotes e PDFs que não são mais necessários.
+  let retention = null;
+  try {
+    retention = await runRetention();
+  } catch (e) {
+    console.error("retention", e);
+  }
+  return new Response(JSON.stringify({ sent, bulk, retention }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

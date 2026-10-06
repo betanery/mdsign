@@ -13,6 +13,7 @@ import {
 } from "../_shared/bulk.ts";
 import { admin } from "../_shared/auth.ts";
 import { createDocument } from "../_shared/create.ts";
+import { removeBulkFolder } from "../_shared/retention.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import {
   availableAuthLevels,
@@ -566,6 +567,8 @@ Deno.serve(async (req) => {
     if (action === "cancel") {
       if (job.status === "done" || job.status === "canceled") throw new AppError("bulk_finished");
       await admin.from("bulk_jobs").update({ status: "canceled" }).eq("id", job.id);
+      // Lote cancelado: as partes do PDF (dados pessoais) não serão usadas.
+      if (job.source_folder) await removeBulkFolder(job.source_folder).catch(() => undefined);
       await admin.rpc("write_audit_as", {
         org: job.organization_id,
         actor: caller.user.id,

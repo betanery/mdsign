@@ -76,7 +76,13 @@ export function TemplateEditor({ initial, id }: { initial?: Partial<TemplateRow>
     setBusy(false);
     if (result.error) return setError(friendlyError(result.error, t));
     toast.success(t.templates.editor.saved);
-    void navigate({ to: "/app/templates" });
+    void navigate({
+      to: "/app/templates",
+      search: {
+        tab: (id ? initial?.scope : scope) === "personal" ? "mine" : "organization",
+        highlight: result.data.id,
+      },
+    });
   }
 
   return (
