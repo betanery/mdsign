@@ -474,4 +474,38 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Bloco B: busca global respeita a organização e o RLS de cada tabela.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.global_search((select v from t_ids where k = 'orgA'), 'Doc webhook') where kind = 'document') = 1, 'proprietária encontra o próprio documento';
+  assert (select count(*) from public.global_search((select v from t_ids where k = 'orgA'), 'x')) = 0, 'busca exige 2 caracteres';
+  assert (select count(*) from public.global_search((select v from t_ids where k = 'orgA'), '%')) = 0, 'curinga é tratado como texto';
+end $$;
+reset role;
+update public.documents set deleted_at = now() where name = 'Doc webhook';
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.global_search((select v from t_ids where k = 'orgA'), 'Doc webhook') where kind = 'document') = 0, 'excluído não aparece na busca';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.global_search((select v from t_ids where k = 'orgB'), 'Doc observado') where kind = 'document') = 1, 'Bruno encontra o documento da Empresa B';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.global_search((select v from t_ids where k = 'orgB'), 'Doc observado')) = 0, 'Ana não encontra nada da Empresa B';
+end $$;
+do $$ begin
+  update public.documents set deleted_at = null where name = 'Doc webhook';
+  assert not found, 'navegador não altera documentos';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

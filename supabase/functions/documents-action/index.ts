@@ -8,7 +8,7 @@ import { signdoc } from "../_shared/signdoc.ts";
 
 type Body = {
   documentId?: string;
-  action?: "sign-url" | "sync" | "download" | "cancel" | "remind";
+  action?: "sign-url" | "sync" | "download" | "cancel" | "remind" | "refuse" | "delete";
   participantId?: string;
   reason?: string;
   version?: "signed" | "original" | "printable";
@@ -89,14 +89,17 @@ Deno.serve(async (req) => {
                 ? "Signatures"
                 : "Original";
         const ticket = await signdoc.ticket(doc.engine_document_id, type);
-        const url = ticket.location.startsWith("http") ? ticket.location : `${signdoc.baseUrl}${ticket.location}`;
+        const url = ticket.location.startsWith("http")
+          ? ticket.location
+          : `${signdoc.baseUrl}${ticket.location}`;
         return json({ url }, 200, origin);
       }
 
       case "cancel": {
         if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
         if (doc.status !== "pending") throw new AppError("document_not_pending", 409);
-        const reason = (body.reason ?? "").trim().slice(0, 500) || "Cancelado pelo remetente no MDSign.";
+        const reason =
+          (body.reason ?? "").trim().slice(0, 500) || "Cancelado pelo remetente no MDSign.";
         await signdoc.cancel(doc.engine_document_id, reason);
         await syncDocument(doc);
         await admin.rpc("write_audit_as", {
@@ -110,6 +113,71 @@ Deno.serve(async (req) => {
         return json({ status: "canceled" }, 200, origin);
       }
 
+      // Recusa por quem está com a vez (ações em lote ou na página do documento). O motor registra
+      // a recusa pelo aplicativo do MDSign; por isso o motivo leva o nome de quem recusou, e a
+      // linha do tempo/auditoria do MDSign registram a pessoa.
+      case "refuse": {
+        if (doc.status !== "pending") throw new AppError("document_not_pending", 409);
+        const reason = (body.reason ?? "").trim();
+        if (reason.length < 3 || reason.length > 400)
+          throw new AppError("refusal_reason_required", 422);
+        const { data: rows } = await admin
+          .from("document_participants")
+          .select("id, user_id, name, email, status")
+          .eq("document_id", doc.id)
+          .eq("status", "pending");
+        const email = caller.user.email?.toLowerCase();
+        const me = (rows ?? []).find(
+          (p) => p.user_id === caller.user.id || (email && p.email.toLowerCase() === email),
+        );
+        if (!me) throw new AppError("nothing_to_refuse", 409);
+        await signdoc.refuse(
+          doc.engine_document_id,
+          `Recusado por ${me.name} pelo MDSign: ${reason}`.slice(0, 500),
+        );
+        await admin.from("document_participants").update({ status: "refused" }).eq("id", me.id);
+        await admin.from("document_events").insert({
+          document_id: doc.id,
+          organization_id: doc.organization_id,
+          type: "participant.refused",
+          actor_name: me.name,
+          source: "mdsign",
+          data: { reason },
+        });
+        await syncDocument(doc).catch(() => undefined);
+        await admin.rpc("write_audit_as", {
+          org: doc.organization_id,
+          actor: caller.user.id,
+          act: "document.refused",
+          ent: "document",
+          ent_id: doc.id,
+          payload: { reason },
+        });
+        return json({ status: "refused" }, 200, origin);
+      }
+
+      // Exclusão lógica: some das listas, mas fica guardado (prova no motor, auditoria aqui).
+      // Concluídos não são excluídos; pendentes precisam ser cancelados antes.
+      case "delete": {
+        if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
+        if (doc.status === "concluded") throw new AppError("document_delete_concluded", 409);
+        if (doc.status === "pending") throw new AppError("document_delete_pending", 409);
+        await admin
+          .from("documents")
+          .update({ deleted_at: new Date().toISOString(), deleted_by: caller.user.id })
+          .eq("id", doc.id)
+          .is("deleted_at", null);
+        await admin.rpc("write_audit_as", {
+          org: doc.organization_id,
+          actor: caller.user.id,
+          act: "document.deleted",
+          ent: "document",
+          ent_id: doc.id,
+          payload: { status: doc.status },
+        });
+        return json({ ok: true }, 200, origin);
+      }
+
       case "remind": {
         if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
         const { data: p } = await admin
@@ -118,7 +186,8 @@ Deno.serve(async (req) => {
           .eq("document_id", doc.id)
           .eq("id", body.participantId ?? "")
           .maybeSingle();
-        if (!p?.engine_flow_action_id || p.status !== "pending") throw new AppError("nothing_to_remind", 409);
+        if (!p?.engine_flow_action_id || p.status !== "pending")
+          throw new AppError("nothing_to_remind", 409);
         await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
         await admin.from("document_events").insert({
           document_id: doc.id,

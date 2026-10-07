@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "../auth";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
+import { GlobalSearch } from "./global-search";
 import { LanguageSelect, SkipLink } from "./language-select";
 
 type NavKey =
@@ -292,6 +293,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Sheet>
       <JourneySheet open={plusOpen} onOpenChange={setPlusOpen} />
       <main id="conteudo" className="mx-auto max-w-6xl px-4 pt-6 pb-24 sm:px-6 lg:px-8 lg:pb-10">
+        <GlobalSearch />
         {children}
       </main>
       <MobileBar onMore={() => setMoreOpen(true)} onPlus={() => setPlusOpen(true)} />

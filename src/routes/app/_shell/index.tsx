@@ -64,6 +64,7 @@ function Dashboard() {
       .from("documents")
       .select(`${documentSelect}, expires_at`)
       .eq("organization_id", current.id)
+      .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(300)
       .then(({ data }) => setDocs((data as Doc[] | null) ?? []));

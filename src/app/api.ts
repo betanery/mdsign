@@ -62,7 +62,8 @@ export async function callPublicFunction<T>(
   return (await res.json().catch(() => ({}))) as T;
 }
 
-export type DocumentAction = "sign-url" | "sync" | "download" | "cancel" | "remind";
+export type DocumentAction =
+  "sign-url" | "sync" | "download" | "cancel" | "remind" | "refuse" | "delete";
 
 export function documentAction<T = Record<string, unknown>>(
   documentId: string,

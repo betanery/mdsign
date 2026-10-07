@@ -105,6 +105,10 @@ export const signdoc = {
   cancel(id: string, reason: string) {
     return call<null>("POST", `/api/documents/${id}/cancellation`, { reason });
   },
+  /** Recusa o documento com motivo (o fluxo pausa; só volta com nova versão). */
+  refuse(id: string, reason: string) {
+    return call<null>("POST", `/api/documents/${id}/refusal`, { reason });
+  },
   remind(documentId: string, flowActionId: string) {
     return call<null>("POST", "/api/notifications/flow-action-reminder", {
       documentId,

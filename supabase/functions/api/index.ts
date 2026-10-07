@@ -277,6 +277,7 @@ async function route(req: Request, key: Key, parts: string[], url: URL) {
       .from("documents")
       .select("id, name, status, created_at, concluded_at")
       .eq("organization_id", key.organization_id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(limit);
     const status = url.searchParams.get("status");
