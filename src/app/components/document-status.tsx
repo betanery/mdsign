@@ -85,6 +85,8 @@ export function DocumentStatusSummary({
                       name: p.name,
                       action: t.documents.now.actions[p.role] ?? "",
                     })}
+                    {p.delegated_from_name &&
+                      ` · ${f(t.documents.delegatedFrom, { name: p.delegated_from_name })}`}
                   </span>
                   <span className="block text-muted-foreground">
                     {f(t.documents.now.since, {

@@ -49,6 +49,63 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+type Delegation = { fromUser: string; fromName: string; delegationId: string | null } | null;
+
+/**
+ * Delegação de aprovações (Bloco C): se um aprovador tem delegação ativa, a etapa vai para o
+ * delegado — que age com a própria identidade (nome, e-mail e CPF dele). Assinaturas nunca
+ * são delegadas. Sem CPF no perfil do delegado (o motor exige), a aprovação fica com o titular.
+ */
+async function applyDelegations(organizationId: string, list: CleanParticipant[]) {
+  const info: Delegation[] = [];
+  const out: CleanParticipant[] = [];
+  for (const p of list) {
+    let next = p;
+    let from: Delegation = null;
+    if (p.role === "approver") {
+      const { data: owner } = await admin.rpc("user_id_by_email", { target: p.email });
+      const { data: delegate } = owner
+        ? await admin.rpc("active_delegate", {
+            org: organizationId,
+            delegator: owner,
+            delegation_scope: "approvals",
+          })
+        : { data: null };
+      if (delegate) {
+        const [{ data: profile }, { data: auth }, { data: row }] = await Promise.all([
+          admin.from("profiles").select("full_name, cpf").eq("id", delegate).maybeSingle(),
+          admin.auth.admin.getUserById(delegate as string),
+          admin
+            .from("delegations")
+            .select("id")
+            .eq("organization_id", organizationId)
+            .eq("delegator_id", owner)
+            .eq("delegate_id", delegate)
+            .eq("active", true)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ]);
+        const email = auth?.user?.email?.toLowerCase();
+        const already = list.some((x) => x.email === email);
+        if (email && profile?.cpf && !already) {
+          next = {
+            ...p,
+            name: profile.full_name?.trim() || email,
+            email,
+            cpf: profile.cpf,
+            noCpf: false,
+          };
+          from = { fromUser: owner as string, fromName: p.name, delegationId: row?.id ?? null };
+        }
+      }
+    }
+    out.push(next);
+    info.push(from);
+  }
+  return { list: out, info };
+}
+
 export async function createDocument(input: CreateInput): Promise<Created> {
   // Limite do plano (Bloco 6): bloqueia antes de criar no motor.
   const { data: allowed, error: limitError } = await admin.rpc("consume_document", {
@@ -57,6 +114,8 @@ export async function createDocument(input: CreateInput): Promise<Created> {
   });
   if (limitError) throw new AppError("internal_error", 500);
   if (allowed === false) throw new AppError("plan_limit_reached", 402);
+  const delegated = await applyDelegations(input.organizationId, input.participants);
+  input = { ...input, participants: delegated.list };
 
   try {
     const sizes = input.marks?.some((m) => m?.length) ? pageSizes(await loadPdf(input.pdf)) : [];
@@ -109,7 +168,8 @@ export async function createDocument(input: CreateInput): Promise<Created> {
     // Liga cada participante à ação do motor (mesma ordem de envio) e à conta MDSign, se houver.
     const actions = [...(engine.flowActions ?? [])];
     const rows = [];
-    for (const p of input.participants) {
+    for (const [i, p] of input.participants.entries()) {
+      const d = delegated.info[i];
       const idx = actions.findIndex(
         (a) => a.step === p.step && (a.user?.email ?? "").toLowerCase() === p.email,
       );
@@ -129,6 +189,13 @@ export async function createDocument(input: CreateInput): Promise<Created> {
         auth_level: p.authLevel,
         status: action?.status === "Created" ? "created" : "pending",
         engine_flow_action_id: action?.id ?? null,
+        ...(d
+          ? {
+              delegated_from_user: d.fromUser,
+              delegated_from_name: d.fromName,
+              delegation_id: d.delegationId,
+            }
+          : {}),
       });
     }
     const { data: inserted } = await admin.from("document_participants").insert(rows).select("id");
@@ -142,6 +209,21 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       actor_name: input.actorName,
       source: "mdsign",
     });
+    // Aprovações delegadas: registradas na linha do tempo ("em delegação de").
+    const delegations = input.participants
+      .map((p, i) => ({ p, d: delegated.info[i] }))
+      .filter((x) => x.d);
+    if (delegations.length)
+      await admin.from("document_events").insert(
+        delegations.map(({ p, d }) => ({
+          document_id: doc.id,
+          organization_id: input.organizationId,
+          type: "participant.delegated",
+          actor_name: p.name,
+          source: "mdsign",
+          data: { from: d!.fromName, delegation: d!.delegationId },
+        })),
+      );
     // Webhooks de saída: avisa o sistema do cliente já no envio.
     await deliverDue(10, input.organizationId).catch(() => undefined);
     await admin.rpc("write_audit_as", {

@@ -144,6 +144,45 @@ export function ParticipantsEditor({
   const contacts = useContacts();
   const fixed = Boolean(labels);
   const listId = useId();
+  const { current } = useOrg();
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const orgId = current?.id;
+  useEffect(() => {
+    if (!orgId || fixed) return;
+    void supabase
+      .from("org_groups")
+      .select("id, name")
+      .eq("organization_id", orgId)
+      .order("name")
+      .then(({ data }) => setGroups((data as { id: string; name: string }[] | null) ?? []));
+  }, [orgId, fixed]);
+
+  // Grupo inteiro de uma vez ("todos do grupo"): cada membro vira um participante.
+  async function addGroup(groupId: string) {
+    if (!orgId) return;
+    const [{ data: links }, { data: members }] = await Promise.all([
+      supabase.from("org_group_members").select("user_id").eq("group_id", groupId),
+      supabase.rpc("list_members", { org: orgId }),
+    ]);
+    const ids = new Set(((links as { user_id: string }[] | null) ?? []).map((l) => l.user_id));
+    const taken = new Set(value.map((p) => p.email.trim().toLowerCase()).filter(Boolean));
+    const add = (
+      (members as { user_id: string; full_name: string | null; email: string }[] | null) ?? []
+    )
+      .filter((m) => ids.has(m.user_id) && !taken.has(m.email.toLowerCase()))
+      .map((m) => {
+        const c = contacts.find((x) => x.email.toLowerCase() === m.email.toLowerCase());
+        return {
+          ...newParticipant(),
+          name: m.full_name ?? c?.name ?? "",
+          email: m.email,
+          cpf: c?.cpf ? formatCpf(c.cpf) : "",
+          phone: c?.phone ?? "",
+        };
+      });
+    const keep = value.filter((p) => p.name || p.email);
+    onChange([...keep, ...add].slice(0, 30));
+  }
 
   const update = (i: number, patch: Partial<ParticipantDraft>) =>
     onChange(value.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
@@ -332,6 +371,21 @@ export function ParticipantsEditor({
           <UserRound aria-hidden />
           {t.participants.addMe}
         </Button>
+        {groups.length > 0 && (
+          <select
+            aria-label={t.participants.addGroup}
+            value=""
+            onChange={(e) => e.target.value && void addGroup(e.target.value)}
+            className={cn(selectClass, "h-10 w-auto")}
+          >
+            <option value="">{t.participants.addGroup}</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );

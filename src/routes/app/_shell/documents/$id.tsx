@@ -256,6 +256,11 @@ function DocumentDetail() {
                       </span>
                     )}
                   </p>
+                  {p.delegated_from_name && (
+                    <p className="text-xs text-brand">
+                      {f(t.documents.delegatedFrom, { name: p.delegated_from_name })}
+                    </p>
+                  )}
                   <p className="truncate text-sm text-muted-foreground">{p.email}</p>
                 </div>
                 <span className="text-sm text-muted-foreground">

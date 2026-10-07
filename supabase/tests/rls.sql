@@ -508,4 +508,54 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Bloco C: grupos e delegações.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+insert into public.org_groups (organization_id, name, created_by)
+  values ((select v from t_ids where k = 'orgA'), 'Jurídico', '00000000-0000-0000-0000-00000000000a');
+insert into public.org_group_members (group_id, organization_id, user_id)
+  select g.id, g.organization_id, u from public.org_groups g,
+    unnest(array['00000000-0000-0000-0000-00000000000b','00000000-0000-0000-0000-00000000000c']::uuid[]) u
+  where g.name = 'Jurídico';
+do $$ begin
+  assert (select count(*) from public.org_group_members) = 2, 'proprietária monta o grupo com membros da organização';
+end $$;
+reset role;
+insert into public.org_groups (organization_id, name) values ((select v from t_ids where k = 'orgB'), 'Diretoria B');
+do $$ begin
+  insert into public.org_group_members (group_id, organization_id, user_id)
+    select id, organization_id, '00000000-0000-0000-0000-00000000000a' from public.org_groups where name = 'Diretoria B';
+  assert false, 'quem não é da organização não entra no grupo';
+exception when raise_exception then null;
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  insert into public.org_groups (organization_id, name, created_by)
+    values ((select v from t_ids where k = 'orgA'), 'Grupo do Bruno', '00000000-0000-0000-0000-00000000000b');
+  assert false, 'operador não cria grupo';
+exception when insufficient_privilege then null;
+end $$;
+insert into public.delegations (organization_id, delegator_id, delegate_id, ends_at, created_by)
+  values ((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000b',
+          '00000000-0000-0000-0000-00000000000a', now() + interval '7 days', '00000000-0000-0000-0000-00000000000b');
+do $$ begin
+  insert into public.delegations (organization_id, delegator_id, delegate_id, ends_at, created_by)
+    values ((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000a',
+            '00000000-0000-0000-0000-00000000000c', now() + interval '7 days', '00000000-0000-0000-0000-00000000000b');
+  assert false, 'operador não delega a aprovação de outra pessoa';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+do $$ begin
+  assert public.active_delegate((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000b', 'approvals') = '00000000-0000-0000-0000-00000000000a', 'delegação ativa encontrada';
+  assert exists (select 1 from public.audit_log where action = 'delegation.insert'), 'delegação auditada';
+  assert exists (select 1 from public.audit_log where action = 'group.member_insert'), 'membro do grupo auditado';
+end $$;
+update public.delegations set revoked_at = now(), active = false where delegator_id = '00000000-0000-0000-0000-00000000000b';
+do $$ begin
+  assert public.active_delegate((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000b', 'approvals') is null, 'revogada deixa de valer';
+  assert exists (select 1 from public.audit_log where action = 'delegation.revoked'), 'revogação auditada';
+end $$;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;
