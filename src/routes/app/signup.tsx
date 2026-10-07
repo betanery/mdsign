@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 
@@ -10,7 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
-import { track } from "@/lib/analytics";
+import { getAttribution, track, trackGrowth } from "@/lib/analytics";
+
+// Versão do texto dos termos aceita no cadastro (fica gravada com o aceite).
+const TERMS_VERSION = "2026-10";
 
 type Search = { redirect?: string };
 
@@ -30,12 +33,20 @@ function Signup() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    trackGrowth("signup_started", { lang: locale });
+  }, [locale]);
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const invalid = validatePassword(form, t);
     if (invalid) {
       setError(invalid);
+      return;
+    }
+    if (!form.get("terms")) {
+      setError(t.auth.termsRequired);
       return;
     }
     const password = String(form.get("password"));
@@ -45,7 +56,15 @@ function Signup() {
       email: String(form.get("email")).trim(),
       password,
       options: {
-        data: { full_name: String(form.get("name")).trim(), locale },
+        // Origem da campanha e aceites vão no cadastro: ficam gravados no servidor antes mesmo
+        // da confirmação do e-mail. Marketing é opcional e separado dos termos.
+        data: {
+          full_name: String(form.get("name")).trim(),
+          locale,
+          terms_version: TERMS_VERSION,
+          marketing_opt_in: form.get("marketing") === "on",
+          acq: getAttribution(),
+        },
         emailRedirectTo: `${window.location.origin}${redirect ?? "/app"}`,
       },
     });
@@ -90,6 +109,23 @@ function Signup() {
             <Input id="email" name="email" type="email" required autoComplete="email" />
           </div>
           <PasswordFields label={t.auth.password} />
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="terms"
+              required
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)]"
+            />
+            <span>{t.auth.acceptTerms}</span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              name="marketing"
+              className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)]"
+            />
+            <span>{t.auth.marketingOptIn}</span>
+          </label>
           {error && <FormMessage kind="error">{error}</FormMessage>}
           <Button
             type="submit"
@@ -100,7 +136,6 @@ function Signup() {
             {busy && <Loader2 className="animate-spin" aria-hidden />}
             {t.auth.signup}
           </Button>
-          <p className="text-xs text-muted-foreground">{t.auth.terms}</p>
         </form>
       )}
     </AuthLayout>

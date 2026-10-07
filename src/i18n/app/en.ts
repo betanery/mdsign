@@ -63,9 +63,13 @@ const en: AppMessages = {
     emailNotSent:
       "We couldn't send the confirmation email right now. Try again in a few minutes or contact support.",
     logout: "Sign out",
+    acceptTerms: "I have read and accept the MDSign terms of use and privacy policy.",
+    marketingOptIn: "I want to receive MDSign news and offers by email (optional).",
+    termsRequired: "To create the account, accept the terms of use and privacy policy.",
     terms: "By creating an account, you agree to the terms of use and the privacy policy.",
   },
   onboarding: {
+    phone: "Mobile phone",
     title: "Let's create your organization",
     profileStep: "1. Confirm your profile",
     confirmProfileTitle: "Confirm your profile",

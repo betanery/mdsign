@@ -10,6 +10,7 @@ import { OrgProvider, useOrg } from "@/app/org";
 import {
   formatCnpj,
   formatCpf,
+  formatPhone,
   friendlyError,
   isValidCnpj,
   isValidCpf,
@@ -173,6 +174,9 @@ function Onboarding() {
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
+  const [phone, setPhone] = useState("");
+  // Nome da organização: começa com o nome da pessoa (dá para trocar depois).
+  const [orgName, setOrgName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -181,18 +185,19 @@ function Onboarding() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("full_name, cpf")
+      .select("full_name, cpf, phone")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         setFullName(data?.full_name ?? "");
         setCpf(formatCpf(data?.cpf ?? ""));
+        setPhone(data?.phone ? formatPhone(data.phone) : "");
       });
   }, [user]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const name = String(new FormData(event.currentTarget).get("name")).trim();
+    const name = (orgName ?? fullName).trim();
     if (!isValidCpf(cpf)) {
       setError(t.settings.cpfInvalid);
       return;
@@ -206,7 +211,11 @@ function Onboarding() {
     setError(null);
     const profile = await supabase
       .from("profiles")
-      .update({ full_name: fullName.trim(), cpf: onlyDigits(cpf) })
+      .update({
+        full_name: fullName.trim(),
+        cpf: onlyDigits(cpf),
+        ...(phone.trim() ? { phone: phone.trim() } : {}),
+      })
       .eq("id", user.id);
     if (profile.error) {
       setError(friendlyError(profile.error, t));
@@ -259,6 +268,21 @@ function Onboarding() {
               {t.settings.cpfRequiredHint}
             </p>
           </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="me-phone">
+              {t.onboarding.phone}{" "}
+              <span className="text-muted-foreground">({t.common.optional})</span>
+            </Label>
+            <Input
+              id="me-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              placeholder="(61) 99999-9999"
+            />
+          </div>
         </fieldset>
         <fieldset className="grid gap-4 border-t pt-4">
           <legend className="mb-1 font-display font-semibold">{t.onboarding.orgStep}</legend>
@@ -267,6 +291,8 @@ function Onboarding() {
             <Input
               id="org-name"
               name="name"
+              value={orgName ?? fullName}
+              onChange={(e) => setOrgName(e.target.value)}
               required
               minLength={2}
               maxLength={160}

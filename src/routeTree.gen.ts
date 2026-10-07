@@ -13,11 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LangRouteRouteImport } from './routes/$lang/route'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteRouteImport } from './routes/app/route'
+import { Route as AssinarGratisRouteImport } from './routes/assinar-gratis'
 import { Route as DesenvolvedoresRouteImport } from './routes/desenvolvedores'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LangIndexRouteImport } from './routes/$lang/index'
+import { Route as LangAssinarGratisRouteImport } from './routes/$lang/assinar-gratis'
 import { Route as LangDesenvolvedoresRouteImport } from './routes/$lang/desenvolvedores'
 import { Route as LangEntrarRouteImport } from './routes/$lang/entrar'
 import { Route as AppShellRouteImport } from './routes/app/_shell'
@@ -27,6 +29,7 @@ import { Route as AppResetPasswordRouteImport } from './routes/app/reset-passwor
 import { Route as AppSignupRouteImport } from './routes/app/signup'
 import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as STokenRouteImport } from './routes/s.$token'
+import { Route as LangLpSlugRouteImport } from './routes/$lang/lp.$slug'
 import { Route as AppShellIndexRouteImport } from './routes/app/_shell/index'
 import { Route as AppShellSectionRouteImport } from './routes/app/_shell/$section'
 import { Route as AppShellContactsRouteImport } from './routes/app/_shell/contacts'
@@ -69,6 +72,11 @@ const AppRouteRoute = AppRouteRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssinarGratisRoute = AssinarGratisRouteImport.update({
+  id: '/assinar-gratis',
+  path: '/assinar-gratis',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DesenvolvedoresRoute = DesenvolvedoresRouteImport.update({
   id: '/desenvolvedores',
   path: '/desenvolvedores',
@@ -92,6 +100,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const LangIndexRoute = LangIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangAssinarGratisRoute = LangAssinarGratisRouteImport.update({
+  id: '/assinar-gratis',
+  path: '/assinar-gratis',
   getParentRoute: () => LangRouteRoute,
 } as any)
 const LangDesenvolvedoresRoute = LangDesenvolvedoresRouteImport.update({
@@ -137,6 +150,11 @@ const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
   path: '/s/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LangLpSlugRoute = LangLpSlugRouteImport.update({
+  id: '/lp/$slug',
+  path: '/lp/$slug',
+  getParentRoute: () => LangRouteRoute,
 } as any)
 const AppShellIndexRoute = AppShellIndexRouteImport.update({
   id: '/',
@@ -249,10 +267,12 @@ export interface FileRoutesByFullPath {
   '/$lang': typeof LangRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/admin': typeof AdminRoute
+  '/assinar-gratis': typeof AssinarGratisRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
@@ -262,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/f/$token': typeof FTokenRoute
   '/s/$token': typeof STokenRoute
   '/$lang/': typeof LangIndexRoute
+  '/$lang/lp/$slug': typeof LangLpSlugRoute
   '/app/$section': typeof AppShellSectionRoute
   '/app/contacts': typeof AppShellContactsRoute
   '/app/forms': typeof AppShellFormsRoute
@@ -288,10 +309,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppShellIndexRoute
   '/admin': typeof AdminRoute
+  '/assinar-gratis': typeof AssinarGratisRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
@@ -301,6 +324,7 @@ export interface FileRoutesByTo {
   '/f/$token': typeof FTokenRoute
   '/s/$token': typeof STokenRoute
   '/$lang': typeof LangIndexRoute
+  '/$lang/lp/$slug': typeof LangLpSlugRoute
   '/app/$section': typeof AppShellSectionRoute
   '/app/contacts': typeof AppShellContactsRoute
   '/app/forms': typeof AppShellFormsRoute
@@ -328,10 +352,12 @@ export interface FileRoutesById {
   '/$lang': typeof LangRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/admin': typeof AdminRoute
+  '/assinar-gratis': typeof AssinarGratisRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/app/_shell': typeof AppShellRouteWithChildren
@@ -342,6 +368,7 @@ export interface FileRoutesById {
   '/f/$token': typeof FTokenRoute
   '/s/$token': typeof STokenRoute
   '/$lang/': typeof LangIndexRoute
+  '/$lang/lp/$slug': typeof LangLpSlugRoute
   '/app/_shell/$section': typeof AppShellSectionRoute
   '/app/_shell/contacts': typeof AppShellContactsRoute
   '/app/_shell/forms': typeof AppShellFormsRoute
@@ -371,10 +398,12 @@ export interface FileRouteTypes {
     | '/$lang'
     | '/app'
     | '/admin'
+    | '/assinar-gratis'
     | '/desenvolvedores'
     | '/entrar'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$lang/assinar-gratis'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/app/forgot-password'
@@ -384,6 +413,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/s/$token'
     | '/$lang/'
+    | '/$lang/lp/$slug'
     | '/app/$section'
     | '/app/contacts'
     | '/app/forms'
@@ -410,10 +440,12 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/admin'
+    | '/assinar-gratis'
     | '/desenvolvedores'
     | '/entrar'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$lang/assinar-gratis'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/app/forgot-password'
@@ -423,6 +455,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/s/$token'
     | '/$lang'
+    | '/$lang/lp/$slug'
     | '/app/$section'
     | '/app/contacts'
     | '/app/forms'
@@ -449,10 +482,12 @@ export interface FileRouteTypes {
     | '/$lang'
     | '/app'
     | '/admin'
+    | '/assinar-gratis'
     | '/desenvolvedores'
     | '/entrar'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$lang/assinar-gratis'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/app/_shell'
@@ -463,6 +498,7 @@ export interface FileRouteTypes {
     | '/f/$token'
     | '/s/$token'
     | '/$lang/'
+    | '/$lang/lp/$slug'
     | '/app/_shell/$section'
     | '/app/_shell/contacts'
     | '/app/_shell/forms'
@@ -491,6 +527,7 @@ export interface RootRouteChildren {
   LangRouteRoute: typeof LangRouteRouteWithChildren
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AdminRoute: typeof AdminRoute
+  AssinarGratisRoute: typeof AssinarGratisRoute
   DesenvolvedoresRoute: typeof DesenvolvedoresRoute
   EntrarRoute: typeof EntrarRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
@@ -529,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/assinar-gratis': {
+      id: '/assinar-gratis'
+      path: '/assinar-gratis'
+      fullPath: '/assinar-gratis'
+      preLoaderRoute: typeof AssinarGratisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/desenvolvedores': {
       id: '/desenvolvedores'
       path: '/desenvolvedores'
@@ -562,6 +606,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/$lang/'
       preLoaderRoute: typeof LangIndexRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/assinar-gratis': {
+      id: '/$lang/assinar-gratis'
+      path: '/assinar-gratis'
+      fullPath: '/$lang/assinar-gratis'
+      preLoaderRoute: typeof LangAssinarGratisRouteImport
       parentRoute: typeof LangRouteRoute
     }
     '/$lang/desenvolvedores': {
@@ -626,6 +677,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/s/$token'
       preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$lang/lp/$slug': {
+      id: '/$lang/lp/$slug'
+      path: '/lp/$slug'
+      fullPath: '/$lang/lp/$slug'
+      preLoaderRoute: typeof LangLpSlugRouteImport
+      parentRoute: typeof LangRouteRoute
     }
     '/app/_shell/': {
       id: '/app/_shell/'
@@ -778,15 +836,19 @@ declare module '@tanstack/react-router' {
 }
 
 interface LangRouteRouteChildren {
+  LangAssinarGratisRoute: typeof LangAssinarGratisRoute
   LangDesenvolvedoresRoute: typeof LangDesenvolvedoresRoute
   LangEntrarRoute: typeof LangEntrarRoute
   LangIndexRoute: typeof LangIndexRoute
+  LangLpSlugRoute: typeof LangLpSlugRoute
 }
 
 const LangRouteRouteChildren: LangRouteRouteChildren = {
+  LangAssinarGratisRoute: LangAssinarGratisRoute,
   LangDesenvolvedoresRoute: LangDesenvolvedoresRoute,
   LangEntrarRoute: LangEntrarRoute,
   LangIndexRoute: LangIndexRoute,
+  LangLpSlugRoute: LangLpSlugRoute,
 }
 
 const LangRouteRouteWithChildren = LangRouteRoute._addFileChildren(
@@ -870,6 +932,7 @@ const rootRouteChildren: RootRouteChildren = {
   LangRouteRoute: LangRouteRouteWithChildren,
   AppRouteRoute: AppRouteRouteWithChildren,
   AdminRoute: AdminRoute,
+  AssinarGratisRoute: AssinarGratisRoute,
   DesenvolvedoresRoute: DesenvolvedoresRoute,
   EntrarRoute: EntrarRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,

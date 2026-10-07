@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { siteConfig } from "@/config/site";
+import { CAMPAIGN_SLUGS } from "@/content/acquisition";
 import { htmlLang, localizedPath, locales } from "@/i18n";
 
 /** Páginas indexáveis (sem o idioma); cada uma sai nas três versões. */
-const paths = ["/", "/desenvolvedores"];
+const paths = [
+  "/",
+  "/desenvolvedores",
+  "/assinar-gratis",
+  ...CAMPAIGN_SLUGS.map((slug) => `/lp/${slug}`),
+];
 
 // Sitemap multilíngue: cada URL lista as alternativas por idioma (PRD 27.2).
 export const Route = createFileRoute("/sitemap.xml")({

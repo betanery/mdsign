@@ -480,3 +480,6 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+[functions.growth-track]
+verify_jwt = false

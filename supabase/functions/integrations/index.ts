@@ -73,7 +73,17 @@ Deno.serve(async (req) => {
       org: organizationId,
       ent: "integrations_access",
     });
-    if (!allowed) throw new AppError("plan_feature_unavailable", 403);
+    if (!allowed) {
+      // Sinal de intenção de plano pago para o funil.
+      await admin.rpc("growth_mark", {
+        org: organizationId,
+        usr: caller.user.id,
+        ev: "paid_feature_attempted",
+        payload: { feature: "integrations" },
+        is_milestone: false,
+      });
+      throw new AppError("plan_feature_unavailable", 403);
+    }
     const action = String(body["action"] ?? "");
     const audit = (act: string, ent: string, id: string, payload: Record<string, unknown> = {}) =>
       admin.rpc("write_audit_as", {

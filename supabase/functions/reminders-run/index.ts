@@ -101,7 +101,15 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("billing", e);
   }
-  return new Response(JSON.stringify({ sent, bulk, retention, billing }), {
+  // Funil: registra gatilhos (inativo, checkout abandonado) para automações futuras. Não envia nada.
+  let growth = null;
+  try {
+    const { data } = await admin.rpc("growth_daily");
+    growth = data;
+  } catch (e) {
+    console.error("growth", e);
+  }
+  return new Response(JSON.stringify({ sent, bulk, retention, billing, growth }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

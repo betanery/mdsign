@@ -638,4 +638,90 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Funil PLG: origem e aceites no cadastro, eventos únicos, Cedro por pessoa, isolamento.
+insert into auth.users (id, email, aud, role, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-00000000000d', 'dani@teste.mdsign', 'authenticated', 'authenticated',
+   '{"full_name":"Dani Teste","terms_version":"2026-10","marketing_opt_in":false,"acq":{"utm_source":"google","utm_campaign":"cedro-out","landing_page":"/pt/assinar-gratis","first_seen_at":"2026-10-08T10:00:00Z"}}');
+do $$ begin
+  assert (select utm_campaign from public.user_acquisition where user_id = '00000000-0000-0000-0000-00000000000d') = 'cedro-out', 'origem do cadastro gravada';
+  assert (select granted from public.user_consents where user_id = '00000000-0000-0000-0000-00000000000d' and kind = 'terms'), 'aceite dos termos gravado';
+  assert not (select granted from public.user_consents where user_id = '00000000-0000-0000-0000-00000000000d' and kind = 'marketing'), 'recusa de marketing não impede o cadastro';
+  assert (select count(*) from public.growth_events where user_id = '00000000-0000-0000-0000-00000000000d' and event = 'signup_completed') = 1, 'cadastro vira evento';
+  perform public.growth_mark(null, '00000000-0000-0000-0000-00000000000d', 'signup_completed');
+  assert (select count(*) from public.growth_events where user_id = '00000000-0000-0000-0000-00000000000d' and event = 'signup_completed') = 1, 'marco não duplica';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
+set local role authenticated;
+insert into t_ids values ('orgD1', public.create_organization('Dani 1'));
+insert into t_ids values ('orgD2', public.create_organization('Dani 2'));
+do $$ begin
+  perform 1 from public.growth_events;
+  assert false, 'navegador não lê eventos do funil';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+do $$ begin
+  for i in 1..3 loop
+    assert public.consume_document((select v from t_ids where k = 'orgD1'), 'teste'), 'Cedro: 1ª organização usa o grátis';
+  end loop;
+  assert public.consume_document((select v from t_ids where k = 'orgD2'), 'teste'), '4º grátis na 2ª organização';
+  assert public.consume_document((select v from t_ids where k = 'orgD2'), 'teste'), '5º grátis na 2ª organização';
+  assert not public.consume_document((select v from t_ids where k = 'orgD2'), 'teste'), 'Cedro soma por pessoa: 6º bloqueado';
+  assert not public.consume_document((select v from t_ids where k = 'orgD1'), 'teste'), 'também bloqueado na 1ª organização';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'cedro_usage_4_of_5'), 'evento 4 de 5';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'cedro_limit_reached'), 'evento limite';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'paid_feature_attempted'), 'tentativa além do grátis registrada';
+  assert public.org_growth_stage((select v from t_ids where k = 'orgD2')) = 'pql_hot', 'quem esgotou o grátis é PQL quente';
+  assert public.org_growth_stage((select v from t_ids where k = 'orgB')) <> 'opportunity', 'cadastro não vira oportunidade sozinho';
+  -- Outra pessoa não é afetada pela soma da Dani.
+  update public.usage_counters set value = 0 where organization_id = (select v from t_ids where k = 'orgB');
+  assert public.consume_document((select v from t_ids where k = 'orgB'), 'teste'), 'outra pessoa tem o próprio grátis';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select documents_total_used from public.org_usage((select v from t_ids where k = 'orgD1'))) = 5, 'tela mostra a soma por pessoa';
+end $$;
+insert into public.org_qualification (organization_id, use_case, answered_by)
+  values ((select v from t_ids where k = 'orgD1'), 'send_others', '00000000-0000-0000-0000-00000000000d');
+do $$ begin
+  insert into public.org_qualification (organization_id, use_case, answered_by)
+    values ((select v from t_ids where k = 'orgA'), 'company', '00000000-0000-0000-0000-00000000000d');
+  assert false, 'não qualifica organização de outra pessoa';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.admin_growth_funnel(now() - interval '1 day', now() + interval '1 day');
+  assert false, 'só o Super Admin vê o funil';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.org_qualification) = 0, 'Bruno não vê a qualificação da Dani';
+end $$;
+reset role;
+-- Documento concluído vira marco (uma vez); checkout pago vira cliente pago.
+update public.documents set status = 'concluded' where name = 'Doc observado';
+update public.documents set status = 'pending' where name = 'Doc observado';
+update public.documents set status = 'concluded' where name = 'Doc observado';
+do $$ begin
+  assert (select count(*) from public.growth_events where organization_id = (select v from t_ids where k = 'orgB') and event = 'first_document_completed') = 1, '1º documento concluído uma vez só';
+end $$;
+insert into public.billing_checkouts (organization_id, plan_id, environment, value_cents)
+  values ((select v from t_ids where k = 'orgD1'), 'jacaranda', 'sandbox', 3990);
+update public.billing_checkouts set status = 'paid' where organization_id = (select v from t_ids where k = 'orgD1');
+do $$ begin
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'checkout_started'), 'checkout iniciado';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'paid_plan_activated'), 'pagamento confirmado ativa o marco pago';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (public.admin_growth_funnel(now() - interval '1 day', now() + interval '1 day') ->> 'signups')::int >= 1, 'Super Admin vê o funil';
+  assert (public.admin_growth_funnel(now() - interval '1 day', now() + interval '1 day', 'cedro-out') ->> 'signups')::int = 1, 'filtro por campanha';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;
