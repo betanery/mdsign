@@ -209,9 +209,10 @@ function Dashboard() {
         </ul>
       </section>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      {/* minmax(0,…) e min-w-0: nomes longos de documento cortam com "…" em vez de alargar a tela. */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <section
-          className="rounded-2xl border bg-white p-5 shadow-sm"
+          className="min-w-0 rounded-2xl border bg-white p-5 shadow-sm"
           aria-labelledby="attention-title"
         >
           <div className="flex items-center justify-between gap-2">
@@ -234,7 +235,7 @@ function Dashboard() {
                     className="flex items-center gap-3 py-2.5 text-sm hover:text-brand"
                   >
                     <Icon className={`size-4 shrink-0 ${tone}`} aria-hidden />
-                    <span className="truncate">{label}</span>
+                    <span className="min-w-0 truncate">{label}</span>
                   </Link>
                 </li>
               ))}
@@ -242,7 +243,7 @@ function Dashboard() {
           )}
         </section>
 
-        <div className="grid content-start gap-6">
+        <div className="grid min-w-0 content-start gap-6">
           {usage && (
             <section
               className="rounded-2xl border bg-white p-5 shadow-sm"
