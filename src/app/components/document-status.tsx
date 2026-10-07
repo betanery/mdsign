@@ -94,6 +94,14 @@ export function DocumentStatusSummary({
                       ago: ago(start, locale),
                     })}
                     {" · "}
+                    {(() => {
+                      const opened = events.find(
+                        (e) => e.type === "participant.link_opened" && e.actor_name === p.name,
+                      );
+                      return opened
+                        ? `${f(t.documents.now.opened, { date: formatDate(opened.occurred_at, locale) })} · `
+                        : "";
+                    })()}
                     {r && r.reminder_count > 0 && r.last_reminded_at
                       ? f(
                           r.reminder_count === 1

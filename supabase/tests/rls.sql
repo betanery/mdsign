@@ -576,4 +576,31 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Bloco E: notificações e link seguro.
+insert into public.notifications (organization_id, document_id, channel, kind)
+  values ((select v from t_ids where k = 'orgB'), (select v from t_ids where k = 'docObs'), 'whatsapp', 'signature_requested');
+insert into public.sign_links (organization_id, document_id, participant_id, token_hash, expires_at)
+  select (select v from t_ids where k = 'orgB'), (select v from t_ids where k = 'docObs'), p.id, repeat('b', 64), now() + interval '7 days'
+  from public.document_participants p where p.document_id = (select v from t_ids where k = 'docObs') limit 1;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.notifications where document_id = (select v from t_ids where k = 'docObs')) = 0, 'notificações de documento de outra organização não aparecem';
+end $$;
+do $$ begin
+  perform token_hash from public.sign_links;
+  assert false, 'links de assinatura não são legíveis pelo navegador';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  insert into public.notification_settings (organization_id, whatsapp_enabled) values ((select v from t_ids where k = 'orgB'), true);
+  assert false, 'não configura canal de outra organização';
+exception when insufficient_privilege then null;
+end $$;
+insert into public.notification_settings (organization_id, whatsapp_enabled) values ((select v from t_ids where k = 'orgA'), true);
+do $$ begin
+  assert (select whatsapp_enabled from public.notification_settings where organization_id = (select v from t_ids where k = 'orgA')), 'proprietária configura o canal';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

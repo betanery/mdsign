@@ -16,6 +16,8 @@ Deno.serve(async (req) => {
         authLevels: availableAuthLevels(),
         // Participantes sem CPF dependem de General.CountryIdentifierMode=Nullable no motor.
         foreignSigners: identifierOptional,
+        // WhatsApp do MDSign (provedor configurado nos segredos; só o sim/não vem para o app).
+        whatsappConfigured: Boolean(Deno.env.get("BOTCONVERSA_API_KEY")),
         // Ambiente de cobrança (só o nome, nunca a chave); null = cobrança não configurada.
         billingEnvironment: (() => {
           try {

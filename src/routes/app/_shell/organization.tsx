@@ -7,6 +7,7 @@ import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { BillingPanel } from "@/app/components/billing-panel";
+import { NotificationsTab } from "@/app/components/notification-settings";
 import { DelegationsTab, GroupsTab } from "@/app/components/org-groups";
 import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
 import { useAppI18n } from "@/app/i18n";
@@ -69,7 +70,7 @@ function OrganizationPage() {
       <PageHeader title={t.organization.title} subtitle={current.name} />
       <Tabs
         defaultValue={
-          search.tab && ["plan", "groups", "delegations"].includes(search.tab)
+          search.tab && ["plan", "groups", "delegations", "notifications"].includes(search.tab)
             ? search.tab
             : "members"
         }
@@ -79,6 +80,7 @@ function OrganizationPage() {
           <TabsTrigger value="units">{t.organization.tabUnits}</TabsTrigger>
           <TabsTrigger value="groups">{t.organization.tabGroups}</TabsTrigger>
           <TabsTrigger value="delegations">{t.organization.tabDelegations}</TabsTrigger>
+          <TabsTrigger value="notifications">{t.organization.tabNotifications}</TabsTrigger>
           {can("audit.view") && <TabsTrigger value="audit">{t.organization.tabAudit}</TabsTrigger>}
           <TabsTrigger value="profile">{t.organization.tabProfile}</TabsTrigger>
           <TabsTrigger value="plan">{t.organization.tabPlan}</TabsTrigger>
@@ -94,6 +96,9 @@ function OrganizationPage() {
         </TabsContent>
         <TabsContent value="delegations">
           <DelegationsTab orgId={current.id} />
+        </TabsContent>
+        <TabsContent value="notifications">
+          <NotificationsTab orgId={current.id} />
         </TabsContent>
         {can("audit.view") && (
           <TabsContent value="audit">

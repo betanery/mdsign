@@ -3,6 +3,7 @@
 
 import { admin } from "./auth.ts";
 import { AppError } from "./http.ts";
+import { enqueueWhatsApp } from "./notifications.ts";
 import {
   toFlowAction,
   toObserver,
@@ -202,7 +203,18 @@ export async function createDocument(input: CreateInput): Promise<Created> {
           : {}),
       });
     }
-    const { data: inserted } = await admin.from("document_participants").insert(rows).select("id");
+    const { data: inserted } = await admin
+      .from("document_participants")
+      .insert(rows)
+      .select("id, status");
+    // Convite também por WhatsApp (se a organização ligou o canal) para quem já está com a vez.
+    if (input.kind === "send" && input.notify)
+      await enqueueWhatsApp(
+        doc.id,
+        (inserted ?? []).filter((r) => r.status === "pending").map((r) => r.id as string),
+        "signature_requested",
+        input.createdBy,
+      ).catch((e) => console.error("enqueue whatsapp", e));
     if (input.observers?.length)
       await saveObservers(doc.id, input.organizationId, input.observers, engine);
 

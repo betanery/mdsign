@@ -2,6 +2,7 @@
 
 import { admin } from "./auth.ts";
 import { mapDocumentStatus, signdoc, type EngineDocument } from "./signdoc.ts";
+import { enqueueWhatsApp } from "./notifications.ts";
 import { deliverDue } from "./webhooks.ts";
 
 type DocRow = { id: string; organization_id: string; status: string; engine_document_id: string };
@@ -37,6 +38,7 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
     occurred_at?: string;
   }[] = [];
 
+  const nowPending: string[] = [];
   for (const action of current.flowActions ?? []) {
     const row = (participants as ParticipantRow[] | null)?.find(
       (p) => p.engine_flow_action_id === action.id,
@@ -66,6 +68,7 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
       .neq("status", next)
       .select("id");
     if (!changed?.length) continue;
+    if (next === "pending") nowPending.push(row.id);
     if (next === "completed")
       events.push({
         type: action.type === "Approver" ? "participant.approved" : "participant.signed",
@@ -110,5 +113,8 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
       })),
     );
   if (events.length) await deliverDue(20, doc.organization_id).catch(() => undefined);
+  // Chegou a vez de alguém (fluxo em ordem): convite também por WhatsApp, se ligado.
+  if (nowPending.length && status === "pending")
+    await enqueueWhatsApp(doc.id, nowPending, "signature_requested").catch(() => undefined);
   return { status, engine: current };
 }

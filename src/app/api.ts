@@ -63,7 +63,7 @@ export async function callPublicFunction<T>(
 }
 
 export type DocumentAction =
-  "sign-url" | "sync" | "download" | "cancel" | "remind" | "refuse" | "delete";
+  "sign-url" | "sync" | "download" | "cancel" | "remind" | "refuse" | "delete" | "whatsapp";
 
 export function documentAction<T = Record<string, unknown>>(
   documentId: string,

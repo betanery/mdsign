@@ -4,11 +4,17 @@
 import { admin, requireUser, type Caller } from "../_shared/auth.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
+import {
+  enqueueWhatsApp,
+  processNotifications,
+  whatsappConfigured,
+} from "../_shared/notifications.ts";
 import { signdoc } from "../_shared/signdoc.ts";
 
 type Body = {
   documentId?: string;
-  action?: "sign-url" | "sync" | "download" | "cancel" | "remind" | "refuse" | "delete";
+  action?:
+    "sign-url" | "sync" | "download" | "cancel" | "remind" | "refuse" | "delete" | "whatsapp";
   participantId?: string;
   reason?: string;
   version?: "signed" | "original" | "printable";
@@ -178,6 +184,21 @@ Deno.serve(async (req) => {
         return json({ ok: true }, 200, origin);
       }
 
+      // Reenvio só por WhatsApp (link seguro), para quem gerencia o documento.
+      case "whatsapp": {
+        if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
+        if (!whatsappConfigured()) throw new AppError("whatsapp_not_configured", 503);
+        const n = await enqueueWhatsApp(
+          doc.id,
+          [body.participantId ?? ""],
+          "resend",
+          caller.user.id,
+        );
+        if (!n) throw new AppError("whatsapp_unavailable", 409);
+        await processNotifications(5).catch(() => undefined);
+        return json({ ok: true }, 200, origin);
+      }
+
       case "remind": {
         if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
         const { data: p } = await admin
@@ -189,6 +210,7 @@ Deno.serve(async (req) => {
         if (!p?.engine_flow_action_id || p.status !== "pending")
           throw new AppError("nothing_to_remind", 409);
         await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
+        await enqueueWhatsApp(doc.id, [p.id], "reminder", caller.user.id).catch(() => undefined);
         // Lembrete manual também conta (o resumo mostra quantos e quando foi o último).
         await admin
           .from("document_participants")

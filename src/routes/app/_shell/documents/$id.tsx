@@ -1,9 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bell, Download, FileUp, Loader2, PenLine, RefreshCw, Users, XCircle } from "lucide-react";
+import {
+  Bell,
+  Download,
+  FileUp,
+  Loader2,
+  MessageCircle,
+  PenLine,
+  RefreshCw,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { documentAction } from "@/app/api";
+import { useAppConfig } from "@/app/app-config";
 import { errorText } from "@/app/errors";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
@@ -43,6 +54,16 @@ function DocumentDetail() {
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [observers, setObservers] = useState<ObserverRow[]>([]);
   const [reminders, setReminders] = useState<ReminderInfo[]>([]);
+  const [notes, setNotes] = useState<
+    {
+      participant_id: string | null;
+      status: string;
+      error: string | null;
+      sent_at: string | null;
+      created_at: string;
+    }[]
+  >([]);
+  const config = useAppConfig();
   const [editing, setEditing] = useState<"flow" | "replace" | null>(null);
 
   const load = useCallback(async () => {
@@ -65,6 +86,13 @@ function DocumentDetail() {
       .select("id, reminder_count, last_reminded_at")
       .eq("document_id", id);
     setReminders((rem.data as ReminderInfo[] | null) ?? []);
+    const nt = await supabase
+      .from("notifications")
+      .select("participant_id, status, error, sent_at, created_at")
+      .eq("document_id", id)
+      .eq("channel", "whatsapp")
+      .order("created_at", { ascending: false });
+    setNotes((nt.data as typeof notes | null) ?? []);
     setDoc((d.data as DocumentRow | null) ?? null);
     setEvents((e.data as EventRow[] | null) ?? []);
   }, [id]);
@@ -262,6 +290,24 @@ function DocumentDetail() {
                     </p>
                   )}
                   <p className="truncate text-sm text-muted-foreground">{p.email}</p>
+                  {(() => {
+                    // Última notificação de WhatsApp desta pessoa (status honesto: enviado ≠ entregue).
+                    const n = notes.find((x) => x.participant_id === p.id);
+                    if (!n) return null;
+                    return (
+                      <p
+                        className={cn(
+                          "text-xs",
+                          n.status === "failed" ? "text-destructive" : "text-muted-foreground",
+                        )}
+                      >
+                        {f(t.notify.status[n.status] ?? n.status, {
+                          date: formatDate(n.sent_at ?? n.created_at, locale),
+                          reason: t.notify.reasons[n.error ?? ""] ?? n.error ?? "",
+                        })}
+                      </p>
+                    );
+                  })()}
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {t.documents.participantStatus[p.status]}
@@ -281,6 +327,23 @@ function DocumentDetail() {
                   >
                     <Bell aria-hidden />
                     {t.documents.actions.remind}
+                  </Button>
+                )}
+                {manage && p.status === "pending" && p.phone && config.whatsappConfigured && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy !== null}
+                    onClick={() =>
+                      void run(
+                        "whatsapp",
+                        () => documentAction(id, "whatsapp", { participantId: p.id }),
+                        t.notify.queued,
+                      )
+                    }
+                  >
+                    <MessageCircle aria-hidden />
+                    {t.notify.sendWhatsapp}
                   </Button>
                 )}
               </li>

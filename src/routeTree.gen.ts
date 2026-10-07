@@ -26,6 +26,7 @@ import { Route as AppLoginRouteImport } from './routes/app/login'
 import { Route as AppResetPasswordRouteImport } from './routes/app/reset-password'
 import { Route as AppSignupRouteImport } from './routes/app/signup'
 import { Route as FTokenRouteImport } from './routes/f.$token'
+import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as AppShellIndexRouteImport } from './routes/app/_shell/index'
 import { Route as AppShellSectionRouteImport } from './routes/app/_shell/$section'
 import { Route as AppShellContactsRouteImport } from './routes/app/_shell/contacts'
@@ -130,6 +131,11 @@ const AppSignupRoute = AppSignupRouteImport.update({
 const FTokenRoute = FTokenRouteImport.update({
   id: '/f/$token',
   path: '/f/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppShellIndexRoute = AppShellIndexRouteImport.update({
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
   '/f/$token': typeof FTokenRoute
+  '/s/$token': typeof STokenRoute
   '/$lang/': typeof LangIndexRoute
   '/app/$section': typeof AppShellSectionRoute
   '/app/contacts': typeof AppShellContactsRoute
@@ -292,6 +299,7 @@ export interface FileRoutesByTo {
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
   '/f/$token': typeof FTokenRoute
+  '/s/$token': typeof STokenRoute
   '/$lang': typeof LangIndexRoute
   '/app/$section': typeof AppShellSectionRoute
   '/app/contacts': typeof AppShellContactsRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
   '/f/$token': typeof FTokenRoute
+  '/s/$token': typeof STokenRoute
   '/$lang/': typeof LangIndexRoute
   '/app/_shell/$section': typeof AppShellSectionRoute
   '/app/_shell/contacts': typeof AppShellContactsRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/app/reset-password'
     | '/app/signup'
     | '/f/$token'
+    | '/s/$token'
     | '/$lang/'
     | '/app/$section'
     | '/app/contacts'
@@ -411,6 +421,7 @@ export interface FileRouteTypes {
     | '/app/reset-password'
     | '/app/signup'
     | '/f/$token'
+    | '/s/$token'
     | '/$lang'
     | '/app/$section'
     | '/app/contacts'
@@ -450,6 +461,7 @@ export interface FileRouteTypes {
     | '/app/reset-password'
     | '/app/signup'
     | '/f/$token'
+    | '/s/$token'
     | '/$lang/'
     | '/app/_shell/$section'
     | '/app/_shell/contacts'
@@ -484,6 +496,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   FTokenRoute: typeof FTokenRoute
+  STokenRoute: typeof STokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -605,6 +618,13 @@ declare module '@tanstack/react-router' {
       path: '/f/$token'
       fullPath: '/f/$token'
       preLoaderRoute: typeof FTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/_shell/': {
@@ -855,6 +875,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   FTokenRoute: FTokenRoute,
+  STokenRoute: STokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

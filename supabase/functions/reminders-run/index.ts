@@ -5,6 +5,7 @@
 import { admin } from "../_shared/auth.ts";
 import { processBulk } from "../_shared/bulk.ts";
 import { runBilling } from "../_shared/billing.ts";
+import { enqueueWhatsApp } from "../_shared/notifications.ts";
 import { runRetention } from "../_shared/retention.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { signdoc } from "../_shared/signdoc.ts";
@@ -48,6 +49,8 @@ Deno.serve(async (req) => {
       if (now < due) continue;
       try {
         await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
+        // Mesmo lembrete também por WhatsApp (se a organização ligou o canal).
+        await enqueueWhatsApp(doc.id, [p.id], "reminder").catch(() => undefined);
         await admin
           .from("document_participants")
           .update({

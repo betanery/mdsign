@@ -19,12 +19,15 @@ export type AppConfig = {
   foreignSigners: boolean;
   /** Cobrança pelo Asaas: "sandbox" nesta fase; null se não estiver configurada. */
   billingEnvironment: "sandbox" | "production" | null;
+  /** Provedor de WhatsApp configurado no servidor. */
+  whatsappConfigured: boolean;
 };
 
 const fallback: AppConfig = {
   authLevels: ["basic", "qualified"],
   foreignSigners: false,
   billingEnvironment: null,
+  whatsappConfigured: false,
 };
 let cache: Promise<AppConfig> | null = null;
 
