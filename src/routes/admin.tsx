@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 import { callFunction } from "@/app/api";
 import { AuthProvider, useAuth } from "@/app/auth";
+import { AdminFunnel } from "@/app/components/admin-funnel";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { errorText } from "@/app/errors";
 import { AppI18nProvider, useAppI18n } from "@/app/i18n";
@@ -280,16 +281,22 @@ function AdminPage() {
       <Tabs defaultValue="overview" className="mt-6">
         <div className="overflow-x-auto">
           <TabsList>
-            {(["overview", "orgs", "billing", "policies", "activity"] as const).map((k) => (
-              <TabsTrigger key={k} value={k}>
-                {t.admin.tabs[k]}
-              </TabsTrigger>
-            ))}
+            {(["overview", "funnel", "orgs", "billing", "policies", "activity"] as const).map(
+              (k) => (
+                <TabsTrigger key={k} value={k}>
+                  {t.admin.tabs[k]}
+                </TabsTrigger>
+              ),
+            )}
           </TabsList>
         </div>
 
         <TabsContent value="overview" className="mt-4">
           <Overview orgs={orgs} health={health} planName={planName} fmtDate={fmtDate} />
+        </TabsContent>
+
+        <TabsContent value="funnel" className="mt-4">
+          <AdminFunnel fmtDate={fmtDate} />
         </TabsContent>
 
         <TabsContent value="orgs" className="mt-4">

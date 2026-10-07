@@ -16,6 +16,7 @@ import { useAuth } from "@/app/auth";
 import { journeys, PageHeader } from "@/app/components/app-shell";
 import { FreePlanCard, freeUsage } from "@/app/components/free-plan-card";
 import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
+import { QualificationCard } from "@/app/components/qualification-card";
 import { documentSelect, type DocumentRow } from "@/app/documents";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
@@ -298,6 +299,7 @@ function Dashboard() {
         </section>
 
         <div className="grid min-w-0 content-start gap-6">
+          <QualificationCard concluded={stats.concluded} />
           {usage && (
             <section
               className="rounded-2xl border bg-white p-5 shadow-sm"
