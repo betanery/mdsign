@@ -7,6 +7,8 @@ import { callFunction } from "@/app/api";
 import { bulkTone, type BulkJob } from "@/app/bulk";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import { useConfirm } from "@/app/components/confirm-dialog";
+import { SaveProcessDialog } from "@/app/components/save-process-dialog";
 import { errorText } from "@/app/errors";
 import { useAppI18n } from "@/app/i18n";
 import { downloadCsv, toCsv } from "@/app/sheet";
@@ -72,6 +74,7 @@ function BulkJobPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [fixing, setFixing] = useState<Item | null>(null);
   const [saving, setSaving] = useState(false);
+  const [confirm, confirmDialog] = useConfirm();
   const [busy, setBusy] = useState<string | null>(null);
   const working = useRef(false);
   // Reinicia o processamento na tela após um reenvio.
@@ -157,7 +160,13 @@ function BulkJobPage() {
             {(job.status === "sending" || job.status === "draft") && (
               <Button
                 variant="outline"
-                onClick={() => window.confirm(t.bulk.cancelConfirm) && void run("cancel")}
+                onClick={() =>
+                  void confirm({
+                    title: t.bulk.cancel,
+                    text: t.bulk.cancelConfirm,
+                    action: t.bulk.cancel,
+                  }).then((ok) => ok && void run("cancel"))
+                }
               >
                 <XCircle aria-hidden />
                 {t.bulk.cancel}
@@ -326,6 +335,7 @@ function BulkJobPage() {
       {saving && (
         <SaveProcessDialog jobId={job.id} name={job.name} onClose={() => setSaving(false)} />
       )}
+      {confirmDialog}
     </>
   );
 }
@@ -406,67 +416,6 @@ function FixDialog({
               {t.common.cancel}
             </Button>
             <Button type="submit" disabled={busy} className="bg-brand hover:bg-brand-strong">
-              {t.common.save}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function SaveProcessDialog({
-  jobId,
-  name: initial,
-  onClose,
-}: {
-  jobId: string;
-  name: string;
-  onClose: () => void;
-}) {
-  const { t } = useAppI18n();
-  const [name, setName] = useState(initial);
-  const [error, setError] = useState<string | null>(null);
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    try {
-      await callFunction("bulk-jobs", { action: "save-process", jobId, name: name.trim() });
-      toast.success(t.processes.saved);
-      onClose();
-    } catch (err) {
-      setError(errorText(t, err));
-    }
-  }
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t.processes.save}</DialogTitle>
-          <DialogDescription>{t.processes.subtitle}</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={(e) => void save(e)} className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="proc-name">{t.processes.name}</Label>
-            <Input
-              id="proc-name"
-              value={name}
-              placeholder={t.processes.namePlaceholder}
-              maxLength={160}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          {error && <FormMessage kind="error">{error}</FormMessage>}
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              {t.common.cancel}
-            </Button>
-            <Button
-              type="submit"
-              disabled={name.trim().length < 2}
-              className="bg-brand hover:bg-brand-strong"
-            >
               {t.common.save}
             </Button>
           </div>

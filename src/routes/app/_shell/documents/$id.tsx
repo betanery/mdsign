@@ -18,6 +18,7 @@ import { useAppConfig } from "@/app/app-config";
 import { errorText } from "@/app/errors";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
+import { FormMessage } from "@/app/components/auth-layout";
 import {
   EditFlowDialog,
   ReplaceDocumentDialog,
@@ -48,7 +49,9 @@ function DocumentDetail() {
   const { t, f, locale } = useAppI18n();
   const { user } = useAuth();
   const { can } = useOrg();
-  const [doc, setDoc] = useState<DocumentRow | null | undefined>(undefined);
+  const [doc, setDoc] = useState<(DocumentRow & { deleted_at?: string | null }) | null | undefined>(
+    undefined,
+  );
   const [events, setEvents] = useState<EventRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
@@ -68,7 +71,7 @@ function DocumentDetail() {
 
   const load = useCallback(async () => {
     const [d, e] = await Promise.all([
-      supabase.from("documents").select(documentSelect).eq("id", id).maybeSingle(),
+      supabase.from("documents").select(`${documentSelect}, deleted_at`).eq("id", id).maybeSingle(),
       supabase
         .from("document_events")
         .select("id, type, actor_name, occurred_at")
@@ -93,7 +96,7 @@ function DocumentDetail() {
       .eq("channel", "whatsapp")
       .order("created_at", { ascending: false });
     setNotes((nt.data as typeof notes | null) ?? []);
-    setDoc((d.data as DocumentRow | null) ?? null);
+    setDoc((d.data as (DocumentRow & { deleted_at?: string | null }) | null) ?? null);
     setEvents((e.data as EventRow[] | null) ?? []);
   }, [id]);
 
@@ -148,9 +151,13 @@ function DocumentDetail() {
     );
 
   const parts = [...doc.document_participants].sort((a, b) => a.step - b.step);
+  // Documento excluído (link direto): só leitura, com aviso.
+  const deletedAt = doc.deleted_at ?? null;
   const myTurn =
-    doc.status === "pending" && parts.some((p) => p.user_id === user?.id && p.status === "pending");
-  const manage = doc.created_by === user?.id || can("documents.manage");
+    !deletedAt &&
+    doc.status === "pending" &&
+    parts.some((p) => p.user_id === user?.id && p.status === "pending");
+  const manage = !deletedAt && (doc.created_by === user?.id || can("documents.manage"));
 
   return (
     <>
@@ -165,6 +172,14 @@ function DocumentDetail() {
           </span>
         }
       />
+
+      {deletedAt && (
+        <div className="mb-4">
+          <FormMessage kind="error">
+            {f(t.documents.deletedBanner, { date: formatDate(deletedAt, locale) })}
+          </FormMessage>
+        </div>
+      )}
 
       <div className="mb-6 flex flex-wrap gap-2">
         {myTurn && (

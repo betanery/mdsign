@@ -14,6 +14,7 @@ import { Logo } from "@/components/landing/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 // Formulário / link público (PRD §14): a pessoa preenche, gera o documento e assina, sem conta.
 export const Route = createFileRoute("/f/$token")({
@@ -107,9 +108,19 @@ function PublicForm() {
         <Logo />
         <LanguageSelect />
       </header>
-      <main id="conteudo" className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">
+      <main
+        id="conteudo"
+        className={cn(
+          "mx-auto w-full flex-1 px-4 py-8",
+          // A cerimônia de assinatura precisa de mais largura que o formulário.
+          phase === "signing" ? "max-w-4xl" : "max-w-xl",
+        )}
+      >
         {fatal ? (
-          <FormMessage kind="error">{fatal}</FormMessage>
+          <section className="grid gap-3">
+            <h1 className="text-2xl font-bold">{t.publicForm.unavailable}</h1>
+            <FormMessage kind="error">{fatal}</FormMessage>
+          </section>
         ) : !config ? (
           <p className="flex items-center gap-2 text-muted-foreground" role="status">
             <Loader2 className="size-5 animate-spin" aria-hidden />
@@ -125,15 +136,12 @@ function PublicForm() {
             </p>
 
             {(phase === "fill" || phase === "preparing") && (
-              <form
-                onSubmit={(e) => void submit(e)}
-                className="mt-6 grid max-w-xl gap-6"
-                noValidate
-              >
+              <form onSubmit={(e) => void submit(e)} className="mt-6 grid gap-6" noValidate>
                 <fieldset className="grid gap-3 rounded-2xl border bg-white p-5 shadow-sm">
-                  <legend className="px-1 font-display text-lg font-semibold">
+                  <legend className="sr-only">{t.publicForm.yourData}</legend>
+                  <h2 aria-hidden className="font-display text-lg font-semibold">
                     {t.publicForm.yourData}
-                  </legend>
+                  </h2>
                   <div className="grid gap-1.5">
                     <Label htmlFor="s-name">{t.participants.name}</Label>
                     <Input
@@ -181,9 +189,10 @@ function PublicForm() {
 
                 {config.fields.length > 0 && (
                   <fieldset className="grid gap-3 rounded-2xl border bg-white p-5 shadow-sm">
-                    <legend className="px-1 font-display text-lg font-semibold">
+                    <legend className="sr-only">{t.publicForm.fields}</legend>
+                    <h2 aria-hidden className="font-display text-lg font-semibold">
                       {t.publicForm.fields}
-                    </legend>
+                    </h2>
                     {config.fields.map((field) => (
                       <FieldInput
                         key={field.key}
@@ -239,7 +248,7 @@ function PublicForm() {
             )}
 
             {phase === "done" && (
-              <div className="mt-6 grid max-w-xl gap-3 rounded-2xl border bg-white p-6 shadow-sm">
+              <div className="mt-6 grid gap-3 rounded-2xl border bg-white p-6 shadow-sm">
                 <CheckCircle2 className="size-12 text-success" aria-hidden />
                 <h2 className="font-display text-xl font-semibold">{t.publicForm.done}</h2>
                 <p className="text-muted-foreground">{t.publicForm.doneText}</p>

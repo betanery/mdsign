@@ -160,24 +160,31 @@ export function ParticipantsEditor({
   // Grupo inteiro de uma vez ("todos do grupo"): cada membro vira um participante.
   async function addGroup(groupId: string) {
     if (!orgId) return;
-    const [{ data: links }, { data: members }] = await Promise.all([
-      supabase.from("org_group_members").select("user_id").eq("group_id", groupId),
-      supabase.rpc("list_members", { org: orgId }),
-    ]);
-    const ids = new Set(((links as { user_id: string }[] | null) ?? []).map((l) => l.user_id));
+    // CPF e celular vêm do cadastro do usuário; se faltar, dos Contatos.
+    const { data: members } = await supabase.rpc("group_member_identities", { grp: groupId });
     const taken = new Set(value.map((p) => p.email.trim().toLowerCase()).filter(Boolean));
     const add = (
-      (members as { user_id: string; full_name: string | null; email: string }[] | null) ?? []
+      (members as
+        | {
+            full_name: string | null;
+            email: string;
+            cpf: string | null;
+            no_cpf: boolean;
+            phone: string | null;
+          }[]
+        | null) ?? []
     )
-      .filter((m) => ids.has(m.user_id) && !taken.has(m.email.toLowerCase()))
+      .filter((m) => !taken.has(m.email.toLowerCase()))
       .map((m) => {
         const c = contacts.find((x) => x.email.toLowerCase() === m.email.toLowerCase());
+        const cpf = m.cpf ?? c?.cpf ?? null;
         return {
           ...newParticipant(),
           name: m.full_name ?? c?.name ?? "",
           email: m.email,
-          cpf: c?.cpf ? formatCpf(c.cpf) : "",
-          phone: c?.phone ?? "",
+          cpf: cpf ? formatCpf(cpf) : "",
+          noCpf: !cpf && (m.no_cpf || Boolean(c?.no_cpf)) && config.foreignSigners,
+          phone: m.phone ?? c?.phone ?? "",
         };
       });
     const keep = value.filter((p) => p.name || p.email);

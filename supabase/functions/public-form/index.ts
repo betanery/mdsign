@@ -26,6 +26,18 @@ import {
 
 const PER_IP_PER_HOUR = 5;
 
+// Campos do modelo que repetem os dados de quem assina (ex.: "Nome do receptor", "CPF do
+// receptor"): não aparecem no formulário e são preenchidos com "Seus dados".
+type Mirror = "name" | "cpf" | "email";
+function signerMirror(f: { key: string; label: string; type: string; source?: string }) {
+  if (f.source !== "signer") return null;
+  if (f.type === "cpf") return "cpf" as Mirror;
+  if (f.type === "email") return "email" as Mirror;
+  if (f.type === "text" && /^(nome|name|nombre)\b/i.test(`${f.key} ${f.label}`))
+    return "name" as Mirror;
+  return null;
+}
+
 async function sha256(text: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -64,7 +76,9 @@ Deno.serve(async (req) => {
     const { form, template } = await loadForm(String(body["token"] ?? ""));
     const fixed = cleanValues(form.fixed_values);
     // Quem responde só preenche os campos que não foram fixados por quem criou o link.
-    const fields = fillableFields(template).filter((f) => !(f.key in fixed));
+    const fillable = fillableFields(template).filter((f) => !(f.key in fixed));
+    const mirrored = template.participants.length ? [] : fillable.filter((f) => signerMirror(f));
+    const fields = fillable.filter((f) => !mirrored.includes(f));
     const org = form.organizations as unknown as { name: string } | null;
 
     if (body["action"] === "config")
@@ -110,6 +124,16 @@ Deno.serve(async (req) => {
       authLevel: form.auth_level as AuthLevel,
     };
     const values = { ...cleanValues(body["values"]), ...fixed };
+    for (const f of mirrored) {
+      const m = signerMirror(f)!;
+      const v =
+        m === "name"
+          ? signerInput.name.trim()
+          : m === "email"
+            ? signerInput.email.trim()
+            : signerInput.cpf;
+      if (v) values[f.key] = v;
+    }
     let participants;
     let pdf: Uint8Array;
     let marks;

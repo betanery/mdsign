@@ -296,6 +296,16 @@ do $$ begin
   assert false, 'gestora comum não troca plano';
 exception when insufficient_privilege then null;
 end $$;
+do $$ begin
+  perform public.admin_health();
+  assert false, 'gestora comum não vê a saúde da plataforma';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.admin_set_subscription_status((select v from t_ids where k = 'orgB'), 'suspended');
+  assert false, 'gestora comum não suspende organização';
+exception when insufficient_privilege then null;
+end $$;
 reset role;
 insert into public.platform_admins (user_id) values ('00000000-0000-0000-0000-00000000000c');
 set local role authenticated;
@@ -305,6 +315,18 @@ do $$ begin
   assert (select plan_id from public.subscriptions where organization_id = (select v from t_ids where k = 'orgB')) = 'angico', 'Super Admin troca o plano';
   perform public.admin_set_policy('usage_alert', true, '{"percent": 90}');
   assert (select config->>'percent' from public.policies where id = 'usage_alert') = '90', 'Super Admin ajusta política';
+end $$;
+do $$ begin
+  perform public.admin_set_policy('usage_alert', true, '{"percent": "noventa"}');
+  assert false, 'política só aceita números';
+exception when raise_exception then null;
+end $$;
+do $$ begin
+  assert (public.admin_health() ? 'jobs'), 'Super Admin vê a saúde da plataforma';
+  perform public.admin_set_subscription_status((select v from t_ids where k = 'orgB'), 'suspended');
+  assert (select status from public.subscriptions where organization_id = (select v from t_ids where k = 'orgB')) = 'suspended', 'Super Admin suspende';
+  perform public.admin_set_subscription_status((select v from t_ids where k = 'orgB'), 'active');
+  assert (select count(*) from public.admin_activity(10) where action in ('subscription.suspended', 'subscription.reactivated', 'policy.changed', 'plan.changed')) >= 4, 'ações administrativas ficam no histórico';
 end $$;
 reset role;
 
@@ -600,6 +622,19 @@ end $$;
 insert into public.notification_settings (organization_id, whatsapp_enabled) values ((select v from t_ids where k = 'orgA'), true);
 do $$ begin
   assert (select whatsapp_enabled from public.notification_settings where organization_id = (select v from t_ids where k = 'orgA')), 'proprietária configura o canal';
+end $$;
+reset role;
+
+-- Grupo como participante: identidade dos membros só para quem envia na organização.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.group_member_identities((select id from public.org_groups where name = 'Jurídico'))) = 2, 'quem envia vê os membros do grupo';
+end $$;
+do $$ begin
+  perform public.group_member_identities((select id from public.org_groups where name = 'Diretoria B'));
+  assert false, 'não lê membros de grupo de outra organização';
+exception when insufficient_privilege then null;
 end $$;
 reset role;
 

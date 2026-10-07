@@ -536,6 +536,8 @@ Deno.serve(async (req) => {
         .eq("id", job.id)
         .single();
       const config = {
+        // Lote de origem: a página Processos sabe quais envios já viraram processo.
+        jobId: job.id,
         source: job.source,
         templateId: job.template_id,
         split: full?.split ?? {},
