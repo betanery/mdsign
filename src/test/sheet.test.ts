@@ -89,3 +89,15 @@ describe("e-mails que não recebem mensagens", () => {
       expect(reservedEmailDomain(e)).toBe(false);
   });
 });
+
+describe("máscaras de celular e CEP", () => {
+  it("formata celular brasileiro enquanto digita e mantém estrangeiro", async () => {
+    const { formatPhone, formatCep } = await import("@/app/validation");
+    expect(formatPhone("61991670611")).toBe("(61) 99167-0611");
+    expect(formatPhone("6133334444")).toBe("(61) 3333-4444");
+    expect(formatPhone("619")).toBe("(61) 9");
+    expect(formatPhone("+1 415 555 0100")).toBe("+1 415 555 0100");
+    expect(formatCep("70040010")).toBe("70040-010");
+    expect(formatCep("7004")).toBe("7004");
+  });
+});

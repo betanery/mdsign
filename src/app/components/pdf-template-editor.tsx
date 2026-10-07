@@ -19,7 +19,7 @@ import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
 import { clearTemplateDraft, saveTemplateDraft } from "../template-draft";
 import { selectClass } from "../ui";
-import { friendlyError, onlyDigits } from "../validation";
+import { formatCpf, friendlyError, onlyDigits } from "../validation";
 import { FormMessage } from "./auth-layout";
 import { PdfDrop, Stepper } from "./pdf-drop";
 import { PdfPlacer, type PlacedBox, type PlacerTool } from "./pdf-placer";
@@ -1009,7 +1009,7 @@ export function PdfTemplateEditor({
                     aria-label={t.participants.cpf}
                     placeholder={t.participants.cpf}
                     value={person.cpf}
-                    onChange={(e) => set({ cpf: e.target.value })}
+                    onChange={(e) => set({ cpf: formatCpf(e.target.value) })}
                   />
                 </fieldset>
               );

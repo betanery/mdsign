@@ -14,6 +14,7 @@ import { useOrg } from "../org";
 import { selectClass } from "../ui";
 import {
   formatCpf,
+  formatPhone,
   isValidCpf,
   normalizePhone,
   onlyDigits,
@@ -296,7 +297,7 @@ export function ParticipantsEditor({
                 type="tel"
                 inputMode="tel"
                 value={p.phone}
-                onChange={(e) => update(i, { phone: e.target.value })}
+                onChange={(e) => update(i, { phone: formatPhone(e.target.value) })}
                 aria-invalid={bad?.includes("phone")}
               />
               <p className="text-xs text-muted-foreground">{t.participants.phoneHint}</p>

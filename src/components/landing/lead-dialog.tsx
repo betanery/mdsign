@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { siteConfig } from "@/config/site";
+import { formatPhone } from "@/app/validation";
 import { plans, type PlanId } from "@/content/landing";
 import { format, useI18n } from "@/i18n";
 import { getUtm, track } from "@/lib/analytics";
@@ -125,7 +126,15 @@ export function LeadDialogProvider({ children }: { children: ReactNode }) {
                   </div>
                   <div className="grid gap-1.5">
                     <Label htmlFor="lead-telefone">{t.lead.phone}</Label>
-                    <Input id="lead-telefone" name="telefone" type="tel" autoComplete="tel" />
+                    <Input
+                      id="lead-telefone"
+                      name="telefone"
+                      type="tel"
+                      autoComplete="tel"
+                      onInput={(e) => {
+                        e.currentTarget.value = formatPhone(e.currentTarget.value);
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">

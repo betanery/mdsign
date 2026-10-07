@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
+import { PasswordInput } from "@/app/components/password-input";
 
 import { useAuth } from "@/app/auth";
 import { AuthLayout, FormMessage } from "@/app/components/auth-layout";
@@ -75,13 +76,7 @@ function Login() {
               {t.auth.forgot}
             </Link>
           </div>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-          />
+          <PasswordInput id="password" name="password" required autoComplete="current-password" />
         </div>
         {error && <FormMessage kind="error">{error}</FormMessage>}
         <Button type="submit" size="lg" disabled={busy} className="bg-brand hover:bg-brand-strong">

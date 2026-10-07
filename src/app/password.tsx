@@ -1,9 +1,8 @@
 import { useId, useState } from "react";
 import { Check, Circle } from "lucide-react";
-
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { PasswordInput } from "./components/password-input";
 import { useAppI18n } from "./i18n";
 
 /** Política de senha do MDSign: mínimo 8 caracteres, 1 número e 1 caractere especial. */
@@ -52,10 +51,9 @@ export function PasswordFields({
     <>
       <div className="grid gap-1.5">
         <Label htmlFor={`${id}-password`}>{label}</Label>
-        <Input
+        <PasswordInput
           id={`${id}-password`}
           name="password"
-          type="password"
           required
           minLength={PASSWORD_MIN_LENGTH}
           autoComplete="new-password"
@@ -67,10 +65,9 @@ export function PasswordFields({
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor={`${id}-confirm`}>{t.auth.confirmPassword}</Label>
-        <Input
+        <PasswordInput
           id={`${id}-confirm`}
           name="passwordConfirm"
-          type="password"
           required
           autoComplete="new-password"
           value={confirm}

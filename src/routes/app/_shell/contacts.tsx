@@ -8,7 +8,7 @@ import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
-import { formatCpf, friendlyError, isValidCpf, onlyDigits } from "@/app/validation";
+import { formatCpf, formatPhone, friendlyError, isValidCpf, onlyDigits } from "@/app/validation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -267,7 +267,7 @@ function ContactDialog({
                 id="c-phone"
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
               />
             </div>
             <div className="grid gap-1.5">

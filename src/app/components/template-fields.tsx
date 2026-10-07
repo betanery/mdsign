@@ -4,7 +4,14 @@ import { cn } from "@/lib/utils";
 import type { AppMessages } from "@/i18n/app/pt";
 import type { AuthLevel } from "../app-config";
 import { selectClass } from "../ui";
-import { formatCpf, isValidCnpj, isValidCpf, onlyDigits } from "../validation";
+import {
+  formatCnpj,
+  formatCpf,
+  formatPhone,
+  isValidCnpj,
+  isValidCpf,
+  onlyDigits,
+} from "../validation";
 
 export const fieldTypes = [
   "text",
@@ -218,7 +225,15 @@ export function FieldInput({
       input = (
         <Input
           id={id}
-          value={field.type === "cpf" ? formatCpf(value) : value}
+          value={
+            field.type === "cpf"
+              ? formatCpf(value)
+              : field.type === "cnpj"
+                ? formatCnpj(value)
+                : field.type === "phone"
+                  ? formatPhone(value)
+                  : value
+          }
           type={
             field.type === "date"
               ? "date"
@@ -236,7 +251,13 @@ export function FieldInput({
               : undefined
           }
           onChange={(e) =>
-            onChange(field.type === "cpf" ? onlyDigits(e.target.value) : e.target.value)
+            onChange(
+              field.type === "cpf" || field.type === "cnpj"
+                ? onlyDigits(e.target.value)
+                : field.type === "phone"
+                  ? formatPhone(e.target.value)
+                  : e.target.value,
+            )
           }
           aria-invalid={invalid}
           maxLength={2000}

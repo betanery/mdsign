@@ -17,7 +17,7 @@ import { useAppConfig } from "../app-config";
 import type { ParticipantRow } from "../documents";
 import { errorText } from "../errors";
 import { useAppI18n } from "../i18n";
-import { normalizePhone } from "../validation";
+import { formatPhone, normalizePhone } from "../validation";
 import { FormMessage } from "./auth-layout";
 import {
   MarksEditor,
@@ -146,7 +146,7 @@ export function EditFlowDialog({
                   placeholder={t.docEdit.newPhone}
                   value={r.newPhone}
                   disabled={locked || r.remove || r.role === "approver"}
-                  onChange={(e) => set({ newPhone: e.target.value })}
+                  onChange={(e) => set({ newPhone: formatPhone(e.target.value) })}
                 />
                 <Button
                   size="sm"

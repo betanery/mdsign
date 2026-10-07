@@ -7,7 +7,7 @@ import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { LanguageSelect } from "@/app/components/language-select";
 import { useAppI18n } from "@/app/i18n";
-import { formatCpf, friendlyError, isValidCpf, onlyDigits } from "@/app/validation";
+import { formatCpf, formatPhone, friendlyError, isValidCpf, onlyDigits } from "@/app/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +33,7 @@ function SettingsPage() {
       .then(({ data }) => {
         setFullName(data?.full_name ?? "");
         setCpf(formatCpf(data?.cpf ?? ""));
-        setPhone(data?.phone ?? "");
+        setPhone(formatPhone(data?.phone ?? ""));
       });
   }, [user]);
 
@@ -98,7 +98,7 @@ function SettingsPage() {
                 id="phone"
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
                 autoComplete="tel"
                 maxLength={30}
               />
