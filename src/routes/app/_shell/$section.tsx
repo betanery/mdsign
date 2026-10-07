@@ -5,8 +5,8 @@ import { PageHeader } from "@/app/components/app-shell";
 import { useAppI18n } from "@/app/i18n";
 
 /** Seções das próximas fases: aparecem no menu, ainda sem conteúdo. */
-const upcoming = ["reports"] as const;
-type Upcoming = (typeof upcoming)[number];
+const upcoming: readonly string[] = [];
+type Upcoming = "reports";
 
 export const Route = createFileRoute("/app/_shell/$section")({
   beforeLoad: ({ params }) => {

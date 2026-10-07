@@ -558,4 +558,22 @@ do $$ begin
   assert exists (select 1 from public.audit_log where action = 'delegation.revoked'), 'revogação auditada';
 end $$;
 
+-- Bloco D: relatório respeita a organização.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ declare r jsonb; begin
+  r := public.org_report((select v from t_ids where k = 'orgB'), now() - interval '1 day', now() + interval '1 day');
+  assert (r->'documents'->>'created')::int >= 1, 'dono vê os números da própria organização';
+  assert r ? 'signatures' and r ? 'pending' and r ? 'bulk' and r ? 'usage', 'todas as seções';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.org_report((select v from t_ids where k = 'orgB'), now() - interval '1 day', now() + interval '1 day');
+  assert false, 'quem não é da organização não vê o relatório';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

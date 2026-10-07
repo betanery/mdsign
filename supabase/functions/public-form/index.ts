@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
         // Quem responde assina agora na página. Com outros papéis, eles recebem o convite.
         notify: participants.length > 1,
         origin: "form",
+        templateId: template.id,
         saveContacts: true,
       });
       await admin

@@ -178,6 +178,7 @@ async function createFromApi(key: Key, body: Record<string, unknown>) {
         pdf: await renderTemplate(template, slotValues(template, values, r.bySlot)),
         participants: r.list,
         marks: template.marks.length ? marksFor(template, r.slots) : undefined,
+        templateId: template.id,
       });
     }
     const participants = cleanParticipants(
@@ -191,6 +192,7 @@ async function createFromApi(key: Key, body: Record<string, unknown>) {
       pdf: await renderTemplate(template, values),
       participants,
       marks: cleanParticipantMarks(body["marks"], participants.length),
+      templateId: template.id,
     });
   }
 

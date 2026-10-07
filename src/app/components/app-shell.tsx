@@ -56,6 +56,7 @@ type NavItem = { key: NavKey; icon: LucideIcon } & (
         | "/app/processes"
         | "/app/integrations"
         | "/app/organization"
+        | "/app/reports"
         | "/app/settings";
       section?: never;
     }
@@ -73,7 +74,7 @@ const navItems: NavItem[] = [
   { key: "contacts", to: "/app/contacts", icon: Users },
   { key: "organization", to: "/app/organization", icon: Building2 },
   { key: "integrations", to: "/app/integrations", icon: Plug },
-  { key: "reports", section: "reports", icon: BarChart3 },
+  { key: "reports", to: "/app/reports", icon: BarChart3 },
   { key: "settings", to: "/app/settings", icon: Settings },
 ];
 

@@ -217,6 +217,7 @@ export async function processBulk(jobId: string, n = 5) {
           reminders: options.reminders,
           observers: options.observers,
           origin: "bulk",
+          templateId: template?.id ?? null,
           saveContacts: true,
         });
         documentId = created.documentId;

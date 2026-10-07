@@ -31,6 +31,8 @@ export type CreateInput = {
   reminders?: { enabled: boolean; firstDays: number; everyDays: number; max: number };
   /** Origem para auditoria/consumo (ex.: "self", "send", "template", "form", "bulk"). */
   origin: string;
+  /** Modelo usado (relatórios por modelo). */
+  templateId?: string | null;
   /** Salva os participantes nos contatos da organização. */
   saveContacts?: boolean;
   /** Assinatura/rubrica posicionadas, por participante (mesmo índice de `participants`). */
@@ -154,6 +156,8 @@ export async function createDocument(input: CreateInput): Promise<Created> {
         kind: input.kind,
         name: input.name,
         engine_document_id: created.documentId,
+        origin: input.origin,
+        template_id: input.templateId ?? null,
         expires_at: engine.expirationDate ?? null,
         message: input.message ?? null,
         reminders_enabled: input.reminders?.enabled ?? input.notify,

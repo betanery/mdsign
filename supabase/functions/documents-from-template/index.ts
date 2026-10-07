@@ -134,6 +134,7 @@ Deno.serve(async (req) => {
       name,
       filename: pdfFilename(name),
       origin: "template",
+      templateId: template.id,
     };
 
     if (p.mode === "self") {
