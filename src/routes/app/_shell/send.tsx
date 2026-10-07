@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 import { callFunction } from "@/app/api";
+import { supabase } from "@/lib/supabase";
 import { useAppConfig } from "@/app/app-config";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
@@ -44,6 +45,28 @@ function SendPage() {
   const { current } = useOrg();
   const config = useAppConfig();
   const [step, setStep] = useState(0);
+  // Aprovações delegadas: avisa na Revisão para quem a aprovação vai de fato.
+  const [delegates, setDelegates] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (step !== 5 || !current) return;
+    const emails = participants
+      .filter((p) => p.role === "approver" && p.email.trim())
+      .map((p) => p.email.trim().toLowerCase());
+    if (!emails.length) return setDelegates({});
+    void supabase
+      .rpc("delegation_preview", { org: current.id, emails })
+      .then(({ data }) =>
+        setDelegates(
+          Object.fromEntries(
+            ((data as { email: string; delegate_name: string }[] | null) ?? []).map((d) => [
+              d.email,
+              d.delegate_name,
+            ]),
+          ),
+        ),
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, current?.id]);
   const [file, setFile] = useState<File | null>(null);
   const [fileBytes, setFileBytes] = useState<ArrayBuffer | null>(null);
   const [marks, setMarks] = useState<MarksByPerson>({});
@@ -210,7 +233,7 @@ function SendPage() {
           />
         )}
         {step === 4 && <SendOptions value={options} onChange={setOptions} />}
-        {step === 5 && (
+        {step === 5 && delegates && (
           <dl className="grid gap-4 rounded-2xl border bg-white p-5 text-sm shadow-sm sm:grid-cols-[10rem_1fr]">
             <dt className="font-medium text-muted-foreground">{t.send.review.document}</dt>
             <dd>{name || file?.name}</dd>
@@ -222,6 +245,14 @@ function SendPage() {
                     {sequential ? `${i + 1}. ` : ""}
                     <strong>{p.name}</strong> · {p.email} · {t.participants.roles[p.role]} ·{" "}
                     {t.participants.levels[p.authLevel]}
+                    {p.role === "approver" && delegates[p.email.trim().toLowerCase()] && (
+                      <span className="block text-xs text-brand">
+                        {t.send.review.delegated.replace(
+                          "{name}",
+                          delegates[p.email.trim().toLowerCase()]!,
+                        )}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ol>

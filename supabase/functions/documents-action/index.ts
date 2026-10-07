@@ -182,13 +182,21 @@ Deno.serve(async (req) => {
         if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
         const { data: p } = await admin
           .from("document_participants")
-          .select("id, name, status, engine_flow_action_id")
+          .select("id, name, status, engine_flow_action_id, reminder_count")
           .eq("document_id", doc.id)
           .eq("id", body.participantId ?? "")
           .maybeSingle();
         if (!p?.engine_flow_action_id || p.status !== "pending")
           throw new AppError("nothing_to_remind", 409);
         await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
+        // Lembrete manual também conta (o resumo mostra quantos e quando foi o último).
+        await admin
+          .from("document_participants")
+          .update({
+            reminder_count: (p.reminder_count ?? 0) + 1,
+            last_reminded_at: new Date().toISOString(),
+          })
+          .eq("id", p.id);
         await admin.from("document_events").insert({
           document_id: doc.id,
           organization_id: doc.organization_id,

@@ -585,6 +585,7 @@ const es: AppMessages = {
     review: {
       document: "Documento",
       participants: "Participantes",
+      delegated: "Delegación activa: esta aprobación va a {name} (en delegación).",
       order: "Orden",
       sequential: "En secuencia",
       parallel: "Todos al mismo tiempo",

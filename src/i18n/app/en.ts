@@ -580,6 +580,7 @@ const en: AppMessages = {
     review: {
       document: "Document",
       participants: "Participants",
+      delegated: "Active delegation: this approval goes to {name} (on behalf).",
       order: "Order",
       sequential: "In sequence",
       parallel: "All at the same time",

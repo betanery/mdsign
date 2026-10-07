@@ -580,6 +580,7 @@ const pt = {
     review: {
       document: "Documento",
       participants: "Participantes",
+      delegated: "Delegação ativa: esta aprovação vai para {name} (em delegação).",
       order: "Ordem",
       sequential: "Em sequência",
       parallel: "Todos ao mesmo tempo",
