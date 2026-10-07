@@ -58,6 +58,12 @@ async function authenticate(req: Request): Promise<Key> {
     .is("revoked_at", null)
     .maybeSingle();
   if (!data) throw new AppError("invalid_api_key", 401);
+  // API MDSign faz parte de Integrações: exclusiva do Mogno.
+  const { data: allowed } = await admin.rpc("entitlement_bool", {
+    org: data.organization_id,
+    ent: "integrations_access",
+  });
+  if (!allowed) throw new AppError("plan_feature_unavailable", 403);
   // Limite por chave: 120 chamadas por minuto.
   const since = new Date(Date.now() - 60_000).toISOString();
   const { count } = await admin

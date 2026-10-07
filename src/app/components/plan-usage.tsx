@@ -34,7 +34,16 @@ export function useOrgUsage() {
 }
 
 /** Consumo do plano em linguagem simples (PRD §41: "X de 5 documentos"). */
-export function PlanUsage({ usage, compact = false }: { usage: OrgUsage; compact?: boolean }) {
+export function PlanUsage({
+  usage,
+  compact = false,
+  hideUpgrade = false,
+}: {
+  usage: OrgUsage;
+  compact?: boolean;
+  /** Dentro de "Plano e cobrança" os botões já fazem esse papel. */
+  hideUpgrade?: boolean;
+}) {
   const { t, f } = useAppI18n();
   const limit = usage.has_total_limit
     ? {
@@ -93,7 +102,9 @@ export function PlanUsage({ usage, compact = false }: { usage: OrgUsage; compact
             : f(t.plan.usersUnlimited, { used: String(usage.users_used) })}
         </p>
       )}
-      {(pct >= 80 || !compact) && <p className="text-sm text-muted-foreground">{t.plan.upgrade}</p>}
+      {!hideUpgrade && (pct >= 80 || !compact) && (
+        <p className="text-sm text-muted-foreground">{t.plan.upgrade}</p>
+      )}
     </div>
   );
 }

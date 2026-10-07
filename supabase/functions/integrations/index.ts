@@ -68,6 +68,12 @@ Deno.serve(async (req) => {
     const organizationId = String(body["organizationId"] ?? "");
     if (!organizationId) throw new AppError("organization_required");
     await requirePermission(caller, organizationId, "integrations.manage");
+    // Integrações (API e webhooks para sistemas do cliente) são exclusivas do Mogno.
+    const { data: allowed } = await admin.rpc("entitlement_bool", {
+      org: organizationId,
+      ent: "integrations_access",
+    });
+    if (!allowed) throw new AppError("plan_feature_unavailable", 403);
     const action = String(body["action"] ?? "");
     const audit = (act: string, ent: string, id: string, payload: Record<string, unknown> = {}) =>
       admin.rpc("write_audit_as", {

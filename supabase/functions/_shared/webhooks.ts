@@ -89,7 +89,9 @@ export async function deliver(d: Due) {
 export async function deliverDue(limit = 50, organizationId?: string) {
   let q = admin
     .from("webhook_deliveries")
-    .select("id, event_type, payload, attempts, webhook_endpoints (url, secret, active)")
+    .select(
+      "id, organization_id, event_type, payload, attempts, webhook_endpoints (url, secret, active)",
+    )
     .eq("status", "pending")
     .lte("next_attempt_at", new Date().toISOString())
     .order("next_attempt_at")
@@ -97,6 +99,24 @@ export async function deliverDue(limit = 50, organizationId?: string) {
   if (organizationId) q = q.eq("organization_id", organizationId);
   const { data } = await q;
   let sent = 0;
-  for (const d of (data ?? []) as unknown as Due[]) if (await deliver(d)) sent++;
+  // Sem Integrações no plano (exclusivo do Mogno): a entrega falha sem novas tentativas.
+  const allowed = new Map<string, boolean>();
+  for (const d of (data ?? []) as unknown as (Due & { organization_id: string })[]) {
+    if (!allowed.has(d.organization_id)) {
+      const { data: ok } = await admin.rpc("entitlement_bool", {
+        org: d.organization_id,
+        ent: "integrations_access",
+      });
+      allowed.set(d.organization_id, Boolean(ok));
+    }
+    if (!allowed.get(d.organization_id)) {
+      await admin
+        .from("webhook_deliveries")
+        .update({ status: "failed", last_error: "plan_feature_unavailable" })
+        .eq("id", d.id);
+      continue;
+    }
+    if (await deliver(d)) sent++;
+  }
   return { processed: data?.length ?? 0, delivered: sent };
 }

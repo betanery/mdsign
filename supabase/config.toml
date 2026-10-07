@@ -468,3 +468,9 @@ verify_jwt = false
 
 [functions.webhooks-run]
 verify_jwt = false
+
+[functions.billing]
+verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false

@@ -14,23 +14,42 @@ export type AuthLevel =
 /** Níveis que exigem celular (código por SMS ou WhatsApp). */
 export const needsPhone = (level: AuthLevel) =>
   level === "reinforced" || level === "reinforced_whatsapp";
-export type AppConfig = { authLevels: AuthLevel[]; foreignSigners: boolean };
+export type AppConfig = {
+  authLevels: AuthLevel[];
+  foreignSigners: boolean;
+  /** Cobrança pelo Asaas: "sandbox" nesta fase; null se não estiver configurada. */
+  billingEnvironment: "sandbox" | "production" | null;
+};
 
-const fallback: AppConfig = { authLevels: ["basic", "qualified"], foreignSigners: false };
+const fallback: AppConfig = {
+  authLevels: ["basic", "qualified"],
+  foreignSigners: false,
+  billingEnvironment: null,
+};
 let cache: Promise<AppConfig> | null = null;
 
 /** O que o motor oferece nesta instalação (níveis de autenticação, estrangeiros sem CPF). */
 export function useAppConfig(): AppConfig {
   const [config, setConfig] = useState<AppConfig>(fallback);
   useEffect(() => {
-    cache ??= callFunction<AppConfig>("app-config", {}).catch(() => {
-      cache = null;
-      return fallback;
-    });
     let alive = true;
-    void cache.then((c) => alive && setConfig(c));
+    let timer: number | undefined;
+    // A 1ª consulta pode falhar (ex.: sessão ainda carregando): tenta de novo algumas vezes.
+    const load = (attempt: number) => {
+      cache ??= callFunction<AppConfig>("app-config", {}).catch(() => {
+        cache = null;
+        return null;
+      }) as Promise<AppConfig>;
+      void cache.then((c) => {
+        if (!alive) return;
+        if (c) setConfig(c);
+        else if (attempt < 4) timer = window.setTimeout(() => load(attempt + 1), 1500);
+      });
+    };
+    load(1);
     return () => {
       alive = false;
+      window.clearTimeout(timer);
     };
   }, []);
   return config;

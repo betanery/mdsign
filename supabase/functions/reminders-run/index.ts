@@ -4,6 +4,7 @@
 
 import { admin } from "../_shared/auth.ts";
 import { processBulk } from "../_shared/bulk.ts";
+import { runBilling } from "../_shared/billing.ts";
 import { runRetention } from "../_shared/retention.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { signdoc } from "../_shared/signdoc.ts";
@@ -90,7 +91,14 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("retention", e);
   }
-  return new Response(JSON.stringify({ sent, bulk, retention }), {
+  // Faturamento: reprocessa eventos do Asaas, suspende após a tolerância, encerra cancelados.
+  let billing = null;
+  try {
+    billing = await runBilling();
+  } catch (e) {
+    console.error("billing", e);
+  }
+  return new Response(JSON.stringify({ sent, bulk, retention, billing }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

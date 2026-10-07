@@ -3,7 +3,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
+import { callFunction } from "@/app/api";
 import { AuthProvider, useAuth } from "@/app/auth";
+import { errorText } from "@/app/errors";
 import { AppI18nProvider, useAppI18n } from "@/app/i18n";
 import { selectClass } from "@/app/ui";
 import { Button } from "@/components/ui/button";
@@ -41,7 +43,12 @@ type Org = {
   last_document_at: string | null;
 };
 type Plan = { id: string; name: string; sort: number };
-type Policy = { id: string; description: string; config: { percent?: number }; active: boolean };
+type Policy = {
+  id: string;
+  description: string;
+  config: { percent?: number; days?: number };
+  active: boolean;
+};
 
 const billingStatuses = ["free", "paid", "pending", "overdue", "exempt"] as const;
 
@@ -225,6 +232,8 @@ function AdminPage() {
         </div>
       </section>
 
+      <BillingAdmin />
+
       <section className="mt-6 rounded-2xl border bg-white p-4 shadow-sm">
         <h2 className="mb-3 font-display text-lg font-semibold">{t.admin.policies}</h2>
         <ul className="grid gap-3">
@@ -271,6 +280,27 @@ function AdminPage() {
                   />
                 </label>
               )}
+              {p.config.days !== undefined && (
+                <label className="flex items-center gap-2">
+                  {t.admin.days}
+                  <Input
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={p.config.days}
+                    onChange={(e) =>
+                      setPolicies(
+                        policies.map((x, j) =>
+                          j === i
+                            ? { ...x, config: { ...x.config, days: Number(e.target.value) } }
+                            : x,
+                        ),
+                      )
+                    }
+                    className="h-8 w-20"
+                  />
+                </label>
+              )}
               <Button size="sm" variant="outline" onClick={() => void savePolicy(p)}>
                 {t.common.save}
               </Button>
@@ -279,5 +309,130 @@ function AdminPage() {
         </ul>
       </section>
     </main>
+  );
+}
+
+type BillingRow = {
+  organization_id: string;
+  organization_name: string;
+  plan_id: string;
+  provider: string;
+  status: string;
+  billing_status: string;
+  asaas_customer_id: string | null;
+  asaas_subscription_id: string | null;
+  next_due_date: string | null;
+  last_payment_at: string | null;
+  last_sync_at: string | null;
+  pending_events: number;
+};
+type BillingStatus = {
+  environment: string | null;
+  error: string | null;
+  apiKeyConfigured: boolean;
+  webhookTokenConfigured: boolean;
+  productionEnabled: boolean;
+};
+
+/** Cobrança (Asaas): situação por organização e configuração — nunca chaves ou segredos. */
+function BillingAdmin() {
+  const { t, locale } = useAppI18n();
+  const [rows, setRows] = useState<BillingRow[]>([]);
+  const [status, setStatus] = useState<BillingStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  const date = (v: string | null) =>
+    v
+      ? new Intl.DateTimeFormat(locale === "pt" ? "pt-BR" : locale, { dateStyle: "short" }).format(
+          new Date(v),
+        )
+      : "—";
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.rpc("admin_billing");
+    setRows((data as BillingRow[] | null) ?? []);
+    try {
+      setStatus(await callFunction<BillingStatus>("billing", { action: "status" }));
+    } catch {
+      setStatus(null);
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function setupWebhook() {
+    setBusy(true);
+    try {
+      await callFunction("billing", { action: "setup-webhook" });
+      toast.success(t.admin.webhookReady);
+    } catch (e) {
+      toast.error(errorText(t, e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="mt-6 rounded-2xl border bg-white shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 border-b p-4">
+        <h2 className="flex-1 font-display text-lg font-semibold">{t.admin.billing}</h2>
+        {status && (
+          <span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">
+            {status.environment
+              ? `${t.admin.environment}: ${status.environment}`
+              : t.errors[status.error ?? "billing_not_configured"]}
+            {" · "}
+            {status.apiKeyConfigured ? t.admin.keyOk : t.admin.keyMissing}
+            {" · "}
+            {t.admin.productionOff}
+          </span>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void setupWebhook()}
+          disabled={busy || !status?.environment || !status.webhookTokenConfigured}
+        >
+          {busy && <Loader2 className="animate-spin" aria-hidden />}
+          {t.admin.setupWebhook}
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="text-muted-foreground">
+            <tr>
+              <th className="p-2 font-medium">{t.admin.organization}</th>
+              <th className="p-2 font-medium">{t.admin.plan}</th>
+              <th className="p-2 font-medium">Provider</th>
+              <th className="p-2 font-medium">{t.admin.billingStatus}</th>
+              <th className="p-2 font-medium">Customer</th>
+              <th className="p-2 font-medium">Subscription</th>
+              <th className="p-2 font-medium">{t.billing.nextDue}</th>
+              <th className="p-2 font-medium">{t.billing.lastPayment}</th>
+              <th className="p-2 font-medium">{t.admin.lastSync}</th>
+              <th className="p-2 font-medium">{t.admin.pendingEvents}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {rows.map((r) => (
+              <tr key={r.organization_id}>
+                <td className="p-2">{r.organization_name}</td>
+                <td className="p-2">{r.plan_id}</td>
+                <td className="p-2">{r.provider}</td>
+                <td className="p-2">
+                  {r.status} / {r.billing_status}
+                </td>
+                <td className="p-2 font-mono text-xs">{r.asaas_customer_id ?? "—"}</td>
+                <td className="p-2 font-mono text-xs">{r.asaas_subscription_id ?? "—"}</td>
+                <td className="p-2">{date(r.next_due_date)}</td>
+                <td className="p-2">{date(r.last_payment_at)}</td>
+                <td className="p-2">{date(r.last_sync_at)}</td>
+                <td className="p-2">{r.pending_events}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }

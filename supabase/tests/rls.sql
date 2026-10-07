@@ -389,6 +389,13 @@ insert into public.api_keys (organization_id, name, prefix, key_hash)
   values ((select v from t_ids where k = 'orgA'), 'ERP', 'mds_abc12345', repeat('a', 64));
 insert into public.documents (organization_id, kind, name, engine_document_id)
   values ((select v from t_ids where k = 'orgA'), 'send', 'Doc webhook', '00000000-0000-0000-0000-0000000000f1');
+-- Fora do Mogno (Empresa A está no Ipê): Integrações desligadas, nada entra na fila.
+insert into public.document_events (document_id, organization_id, type, actor_name)
+  values ((select id from public.documents where name = 'Doc webhook'), (select v from t_ids where k = 'orgA'), 'participant.approved', 'Fulano');
+do $$ begin
+  assert (select count(*) from public.webhook_deliveries) = 0, 'sem Integrações no plano, eventos não viram webhook';
+end $$;
+update public.subscriptions set plan_id = 'mogno' where organization_id = (select v from t_ids where k = 'orgA');
 insert into public.document_events (document_id, organization_id, type, actor_name)
   values ((select id from public.documents where name = 'Doc webhook'), (select v from t_ids where k = 'orgA'), 'participant.signed', 'Fulano');
 insert into public.document_events (document_id, organization_id, type)
@@ -397,6 +404,7 @@ do $$ begin
   assert (select count(*) from public.webhook_deliveries where organization_id = (select v from t_ids where k = 'orgA') and event_type = 'participant.signed') = 1, 'evento vira webhook';
   assert (select count(*) from public.webhook_deliveries where organization_id = (select v from t_ids where k = 'orgA')) = 1, 'eventos internos (lembrete) não viram webhook';
 end $$;
+update public.subscriptions set plan_id = 'ipe' where organization_id = (select v from t_ids where k = 'orgA');
 -- Carla (gestora, sem integrations.manage) não vê; a proprietária vê, mas sem o segredo
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
 set local role authenticated;
@@ -418,6 +426,50 @@ end $$;
 do $$ begin
   perform key_hash from public.api_keys;
   assert false, 'hash da chave não é legível pelo navegador';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+-- Bloco A (Asaas): cobrança isolada por organização e escrita só pelo servidor.
+insert into public.billing_checkouts (organization_id, plan_id, environment, value_cents)
+  values ((select v from t_ids where k = 'orgA'), 'aroeira', 'sandbox', 14997),
+         ((select v from t_ids where k = 'orgB'), 'jacaranda', 'sandbox', 3990);
+insert into public.billing_payments (asaas_payment_id, organization_id, environment, status, value_cents)
+  values ('pay_A', (select v from t_ids where k = 'orgA'), 'sandbox', 'RECEIVED', 14997),
+         ('pay_B', (select v from t_ids where k = 'orgB'), 'sandbox', 'RECEIVED', 3990);
+insert into public.billing_events (id, event, environment, organization_id)
+  values ('evt_A', 'PAYMENT_RECEIVED', 'sandbox', (select v from t_ids where k = 'orgA'));
+do $$ begin
+  assert not public.entitlement_bool((select v from t_ids where k = 'orgA'), 'integrations_access'), 'Integrações fora do Mogno';
+end $$;
+update public.subscriptions set plan_id = 'mogno' where organization_id = (select v from t_ids where k = 'orgB');
+do $$ begin
+  assert public.entitlement_bool((select v from t_ids where k = 'orgB'), 'integrations_access'), 'Integrações no Mogno';
+end $$;
+update public.subscriptions set plan_id = 'cedro' where organization_id = (select v from t_ids where k = 'orgB');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.billing_checkouts) = 1, 'proprietária vê só os checkouts da própria organização';
+  assert (select count(*) from public.billing_payments) = 1, 'proprietária vê só as próprias cobranças';
+  assert (select count(*) from public.billing_events) = 0, 'eventos do Asaas só para o Super Admin';
+  assert (select count(*) from public.org_billing((select v from t_ids where k = 'orgA'))) = 1, 'resumo financeiro da própria organização';
+  assert (select count(*) from public.org_billing((select v from t_ids where k = 'orgB'))) = 0, 'sem resumo financeiro de outra organização';
+end $$;
+do $$ begin
+  insert into public.billing_payments (asaas_payment_id, organization_id, environment, status)
+    values ('pay_X', (select v from t_ids where k = 'orgA'), 'sandbox', 'RECEIVED');
+  assert false, 'navegador não grava cobranças';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  update public.subscriptions set plan_id = 'mogno' where organization_id = (select v from t_ids where k = 'orgA');
+  assert false, 'navegador não troca o próprio plano';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.admin_billing();
+  assert false, 'só o Super Admin vê o painel financeiro';
 exception when insufficient_privilege then null;
 end $$;
 reset role;

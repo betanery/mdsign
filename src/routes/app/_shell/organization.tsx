@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import { BillingPanel } from "@/app/components/billing-panel";
 import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg, type OrgRole } from "@/app/org";
@@ -26,7 +27,16 @@ import { locales, localeNames, type Locale } from "@/i18n";
 import { track } from "@/lib/analytics";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/app/_shell/organization")({ component: OrganizationPage });
+type Search = { tab?: string | undefined; checkout?: string | undefined };
+
+export const Route = createFileRoute("/app/_shell/organization")({
+  // ?tab=plan abre "Plano e cobrança"; ?checkout= é o retorno do Checkout do Asaas.
+  validateSearch: (search: Record<string, unknown>): Search => ({
+    tab: typeof search["tab"] === "string" ? search["tab"] : undefined,
+    checkout: typeof search["checkout"] === "string" ? search["checkout"] : undefined,
+  }),
+  component: OrganizationPage,
+});
 
 const roles: OrgRole[] = ["owner", "admin", "manager", "operator", "member", "viewer", "finance"];
 
@@ -51,11 +61,12 @@ type AuditEntry = {
 function OrganizationPage() {
   const { t } = useAppI18n();
   const { current, can } = useOrg();
+  const search = Route.useSearch();
   if (!current) return <p>{t.notFoundOrg}</p>;
   return (
     <>
       <PageHeader title={t.organization.title} subtitle={current.name} />
-      <Tabs defaultValue="members">
+      <Tabs defaultValue={search.tab === "plan" ? "plan" : "members"}>
         <TabsList className="mb-4 flex h-auto flex-wrap justify-start">
           <TabsTrigger value="members">{t.organization.tabMembers}</TabsTrigger>
           <TabsTrigger value="units">{t.organization.tabUnits}</TabsTrigger>
@@ -78,16 +89,24 @@ function OrganizationPage() {
           <ProfileTab />
         </TabsContent>
         <TabsContent value="plan">
-          <PlanTab />
+          <PlanTab checkout={search.checkout} />
         </TabsContent>
       </Tabs>
     </>
   );
 }
 
-function PlanTab() {
+function PlanTab({ checkout }: { checkout?: string | undefined }) {
   const { t } = useAppI18n();
+  const { can } = useOrg();
   const usage = useOrgUsage();
+  // Plano e cobrança para quem vê a cobrança; os demais veem só o consumo.
+  if (can("billing.view"))
+    return (
+      <div className="max-w-4xl">
+        <BillingPanel usage={usage} checkoutState={checkout} />
+      </div>
+    );
   return (
     <section className="max-w-xl rounded-2xl border bg-white p-5 shadow-sm">
       {usage ? (

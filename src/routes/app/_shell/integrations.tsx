@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Copy, KeyRound, Loader2, Plus, RotateCcw, Send, Trash2, Webhook } from "lucide-react";
 import { toast } from "sonner";
 
@@ -92,8 +92,44 @@ async function copy(text: string, ok: string) {
 function IntegrationsPage() {
   const { t } = useAppI18n();
   const { current, can } = useOrg();
+  // Integrações (API, webhooks, RH/HCM, ERP) são exclusivas do plano Mogno.
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!current) return;
+    void supabase
+      .rpc("entitlement_bool", { org: current.id, ent: "integrations_access" })
+      .then(({ data }) => setAllowed(Boolean(data)));
+  }, [current]);
   if (!current) return <p>{t.notFoundOrg}</p>;
   if (!can("integrations.manage")) return <p>{t.common.forbidden}</p>;
+  if (allowed === null) return <p className="text-muted-foreground">{t.common.loading}</p>;
+  if (!allowed)
+    return (
+      <>
+        <PageHeader title={t.integrations.title} subtitle={t.integrations.subtitle} />
+        <section className="grid max-w-2xl gap-3 rounded-2xl border bg-white p-6 shadow-sm">
+          <h2 className="font-display text-lg font-semibold">{t.integrations.mognoTitle}</h2>
+          <p className="text-sm text-muted-foreground">{t.integrations.mognoText}</p>
+          <ul className="list-disc pl-5 text-sm">
+            {t.integrations.mognoItems.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild className="bg-brand hover:bg-brand-strong">
+              <a href="/pt#planos" target="_blank" rel="noreferrer">
+                {t.billing.talkSales}
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/app/organization" search={{ tab: "plan" }}>
+                {t.organization.tabPlan}
+              </Link>
+            </Button>
+          </div>
+        </section>
+      </>
+    );
   return (
     <>
       <PageHeader title={t.integrations.title} subtitle={t.integrations.subtitle} />

@@ -46,6 +46,53 @@ export function formatCnpj(value: string): string {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
+/**
+ * Celular enquanto a pessoa digita: (61) 99167-0611 / (61) 3333-4444. Número estrangeiro
+ * (começa com "+") fica como foi digitado — o servidor normaliza para o formato do motor.
+ */
+export function formatPhone(value: string): string {
+  if (value.trim().startsWith("+")) return value;
+  const d = onlyDigits(value).slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : "";
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+/** CEP enquanto a pessoa digita: 70000-000. */
+export function formatCep(value: string): string {
+  const d = onlyDigits(value).slice(0, 8);
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+}
+
+/** Endereço pelo CEP (ViaCEP, serviço público): rua, bairro e cidade/UF. Null se não achar. */
+export async function lookupCep(
+  cep: string,
+): Promise<{ address: string; province: string; city: string } | null> {
+  const d = onlyDigits(cep);
+  if (d.length !== 8) return null;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${d}/json/`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = (await res.json()) as {
+      erro?: boolean;
+      logradouro?: string;
+      bairro?: string;
+      localidade?: string;
+      uf?: string;
+    };
+    if (!res.ok || data.erro) return null;
+    return {
+      address: data.logradouro ?? "",
+      province: data.bairro ?? "",
+      city: data.localidade ? `${data.localidade}${data.uf ? `/${data.uf}` : ""}` : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Mensagem amigável para erros do Supabase (Auth e banco). */
 export function friendlyError(
   error: { message?: string | undefined; code?: string | undefined } | null | undefined,

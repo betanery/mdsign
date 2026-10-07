@@ -23,6 +23,15 @@ export function errorText(t: AppMessages, e: unknown): string {
     const reason = [d.code, d.message, fields].filter(Boolean).join(" — ");
     if (reason) return `${text} (${reason})`;
   }
+  // Recusa do Asaas: mostra o motivo dado pelo serviço de pagamento.
+  if (e instanceof ApiError && code === "billing_rejected" && e.details) {
+    const reasons = (
+      (e.details as { errors?: { description?: string | null }[] | null }).errors ?? []
+    )
+      .map((x) => x.description)
+      .filter(Boolean);
+    if (reasons.length) return `${text} (${reasons.join(" ")})`;
+  }
   return text;
 }
 
