@@ -69,6 +69,23 @@ const es: AppMessages = {
     termsRequired: "Para crear la cuenta, acepte los términos de uso y la política de privacidad.",
     terms: "Al crear la cuenta, aceptas los términos de uso y la política de privacidad.",
   },
+  cedro: {
+    usage: "Documentos gratuitos: {used} de {limit} utilizados.",
+    left: "Todavía tiene {n} documentos gratuitos disponibles.",
+    left1: "Todavía tiene 1 documento gratuito disponible.",
+    keepGoing: "Ya empezó a organizar sus firmas en MDSign. Siga usando sus documentos gratuitos.",
+    oneLeft: "Solo le queda 1 documento gratuito. Conozca los planes para seguir usando MDSign.",
+    reached:
+      "Usó sus 5 documentos gratuitos. Elija un plan para seguir firmando y enviando documentos.",
+    firstDone: "Su primer documento se creó con éxito.",
+    seePlans: "Ver planes",
+    firstTitle: "¿Qué quiere hacer primero?",
+    firstText: "Tiene 5 documentos gratuitos. Elija por dónde empezar:",
+    firstSign: "Firmar mi documento",
+    firstSignText: "Suba un PDF y fírmelo usted en pocos pasos.",
+    firstSend: "Enviar un documento a firmar",
+    firstSendText: "Indique quién debe firmar y siga cada firma.",
+  },
   onboarding: {
     phone: "Celular",
     title: "Vamos a crear tu organización",
@@ -743,9 +760,9 @@ const es: AppMessages = {
     forbidden: "No tienes permiso para esta acción en esta organización.",
     widget: "No pudimos abrir la firma. Recarga la página e inténtalo de nuevo.",
     plan_limit_reached:
-      "Alcanzaste el límite de documentos de tu plan. Habla con el equipo de MDSign para ampliarlo.",
+      "Alcanzó el límite de documentos de su plan. Elija un plan en Organización → Plan y cobro para continuar. Sus documentos siguen disponibles.",
     plan_users_limit:
-      "Tu plan no permite más usuarios. Habla con el equipo de MDSign para ampliarlo.",
+      "Su plan no permite más usuarios. Elija un plan mayor en Organización → Plan y cobro.",
     invalid_participants: "Revisa los participantes destacados.",
     participants_required: "Agrega al menos un participante.",
     too_many_participants: "Usa como máximo 30 participantes por documento.",

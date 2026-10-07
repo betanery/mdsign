@@ -21,15 +21,27 @@ export type OrgUsage = {
   has_month_limit: boolean;
 };
 
+const USAGE_EVENT = "mdsign:usage-changed";
+
+/** Avisa as telas que o consumo mudou (documento criado), para recarregarem o número real. */
+export function notifyUsageChanged() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(USAGE_EVENT));
+}
+
 export function useOrgUsage() {
   const { current } = useOrg();
   const [usage, setUsage] = useState<OrgUsage | null>(null);
+  const orgId = current?.id;
   useEffect(() => {
-    if (!current) return;
-    supabase
-      .rpc("org_usage", { org: current.id })
-      .then(({ data }) => setUsage(((data as OrgUsage[] | null) ?? [])[0] ?? null));
-  }, [current]);
+    if (!orgId) return;
+    const load = () =>
+      void supabase
+        .rpc("org_usage", { org: orgId })
+        .then(({ data }) => setUsage(((data as OrgUsage[] | null) ?? [])[0] ?? null));
+    load();
+    window.addEventListener(USAGE_EVENT, load);
+    return () => window.removeEventListener(USAGE_EVENT, load);
+  }, [orgId]);
   return usage;
 }
 

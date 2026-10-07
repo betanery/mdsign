@@ -16,6 +16,8 @@ import {
   type ObserverDraft,
 } from "@/app/components/marks-editor";
 import { SigningFrame } from "@/app/components/signing-frame";
+import { CedroAfterDocument } from "@/app/components/free-plan-card";
+import { notifyUsageChanged, useOrgUsage } from "@/app/components/plan-usage";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
@@ -33,6 +35,7 @@ function SelfSign() {
   const { t } = useAppI18n();
   const { current } = useOrg();
   const [step, setStep] = useState<Step>("upload");
+  const usage = useOrgUsage();
   const [file, setFile] = useState<File | null>(null);
   const [fileBytes, setFileBytes] = useState<ArrayBuffer | null>(null);
   const [marks, setMarks] = useState<MarksByPerson>({});
@@ -99,6 +102,7 @@ function SelfSign() {
       await new Promise((r) => setTimeout(r, 1500));
     }
     setStep("done");
+    notifyUsageChanged();
   }
 
   async function download() {
@@ -237,6 +241,7 @@ function SelfSign() {
             <h2 className="font-display text-xl font-semibold">{t.sign.done}</h2>
             <p className="mt-1 text-muted-foreground">{t.sign.doneText}</p>
           </div>
+          <CedroAfterDocument usage={usage} />
           {error && <FormMessage kind="error">{error}</FormMessage>}
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => void download()} className="bg-brand hover:bg-brand-strong">

@@ -28,8 +28,10 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "../auth";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
+import { CedroBanner } from "./free-plan-card";
 import { GlobalSearch } from "./global-search";
 import { LanguageSelect, SkipLink } from "./language-select";
+import { useOrgUsage } from "./plan-usage";
 
 type NavKey =
   | "home"
@@ -295,6 +297,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <JourneySheet open={plusOpen} onOpenChange={setPlusOpen} />
       <main id="conteudo" className="mx-auto max-w-6xl px-4 pt-6 pb-24 sm:px-6 lg:px-8 lg:pb-10">
         <GlobalSearch />
+        <ShellCedroBanner />
         {children}
       </main>
       <MobileBar onMore={() => setMoreOpen(true)} onPlus={() => setPlusOpen(true)} />
@@ -320,4 +323,10 @@ export function PageHeader({
       {actions}
     </div>
   );
+}
+
+/** Faixa do plano grátis (falta 1 documento ou acabaram), em todas as telas do app. */
+function ShellCedroBanner() {
+  const usage = useOrgUsage();
+  return <CedroBanner usage={usage} />;
 }

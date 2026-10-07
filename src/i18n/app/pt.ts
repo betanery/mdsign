@@ -66,6 +66,25 @@ const pt = {
     termsRequired: "Para criar a conta, aceite os termos de uso e a política de privacidade.",
     terms: "Ao criar a conta, você concorda com os termos de uso e a política de privacidade.",
   },
+  cedro: {
+    usage: "Documentos gratuitos: {used} de {limit} utilizados.",
+    left: "Você ainda tem {n} documentos gratuitos disponíveis.",
+    left1: "Você ainda tem 1 documento gratuito disponível.",
+    keepGoing:
+      "Você já começou a organizar suas assinaturas no MDSign. Continue utilizando seus documentos gratuitos.",
+    oneLeft:
+      "Você tem apenas 1 documento gratuito disponível. Conheça os planos para continuar utilizando o MDSign.",
+    reached:
+      "Você utilizou seus 5 documentos gratuitos. Escolha um plano para continuar assinando e enviando documentos.",
+    firstDone: "Seu primeiro documento foi criado com sucesso.",
+    seePlans: "Ver planos",
+    firstTitle: "O que você quer fazer primeiro?",
+    firstText: "Você tem 5 documentos gratuitos. Escolha por onde começar:",
+    firstSign: "Assinar meu documento",
+    firstSignText: "Envie um PDF e assine você mesmo, em poucos passos.",
+    firstSend: "Enviar um documento para assinatura",
+    firstSendText: "Indique quem precisa assinar e acompanhe cada assinatura.",
+  },
   onboarding: {
     phone: "Celular",
     title: "Vamos criar sua organização",
@@ -740,8 +759,9 @@ const pt = {
     forbidden: "Você não tem permissão para esta ação nesta organização.",
     widget: "Não foi possível abrir a assinatura. Recarregue a página e tente de novo.",
     plan_limit_reached:
-      "Você atingiu o limite de documentos do seu plano. Fale com a equipe MDSign para ampliar.",
-    plan_users_limit: "Seu plano não permite mais usuários. Fale com a equipe MDSign para ampliar.",
+      "Você atingiu o limite de documentos do seu plano. Escolha um plano em Organização → Plano e cobrança para continuar. Seus documentos continuam disponíveis.",
+    plan_users_limit:
+      "Seu plano não permite mais usuários. Escolha um plano maior em Organização → Plano e cobrança.",
     invalid_participants: "Confira os participantes destacados.",
     participants_required: "Adicione pelo menos um participante.",
     too_many_participants: "Use no máximo 30 participantes por documento.",

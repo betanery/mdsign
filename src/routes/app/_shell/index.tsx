@@ -7,12 +7,14 @@ import {
   Clock,
   FileCheck2,
   PenLine,
+  Send,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
 
 import { useAuth } from "@/app/auth";
 import { journeys, PageHeader } from "@/app/components/app-shell";
+import { FreePlanCard, freeUsage } from "@/app/components/free-plan-card";
 import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
 import { documentSelect, type DocumentRow } from "@/app/documents";
 import { useAppI18n } from "@/app/i18n";
@@ -41,6 +43,7 @@ function Dashboard() {
   );
   const [memberCount, setMemberCount] = useState(1);
   const [docs, setDocs] = useState<Doc[]>([]);
+  const [docsLoaded, setDocsLoaded] = useState(false);
   const [hasTemplate, setHasTemplate] = useState(false);
 
   useEffect(() => {
@@ -67,7 +70,10 @@ function Dashboard() {
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })
       .limit(300)
-      .then(({ data }) => setDocs((data as Doc[] | null) ?? []));
+      .then(({ data }) => {
+        setDocs((data as Doc[] | null) ?? []);
+        setDocsLoaded(true);
+      });
     supabase
       .from("templates")
       .select("id", { count: "exact", head: true })
@@ -154,6 +160,54 @@ function Dashboard() {
         }
         subtitle={t.dashboard.subtitle}
       />
+
+      {/* Primeira experiência: duas portas de entrada claras (fluxos atuais, sem motor novo). */}
+      {docsLoaded && docs.length === 0 && (
+        <section
+          aria-labelledby="first-title"
+          className="mb-6 rounded-2xl border bg-white p-5 shadow-sm"
+        >
+          <h2 id="first-title" className="font-display text-xl font-semibold">
+            {t.cedro.firstTitle}
+          </h2>
+          {freeUsage(usage) && (
+            <p className="mt-1 text-sm text-muted-foreground">{t.cedro.firstText}</p>
+          )}
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {(
+              [
+                {
+                  to: "/app/sign",
+                  icon: PenLine,
+                  title: t.cedro.firstSign,
+                  text: t.cedro.firstSignText,
+                },
+                {
+                  to: "/app/send",
+                  icon: Send,
+                  title: t.cedro.firstSend,
+                  text: t.cedro.firstSendText,
+                },
+              ] as const
+            ).map(({ to, icon: Icon, title, text }) => (
+              <li key={to}>
+                <Link
+                  to={to}
+                  className="flex h-full items-start gap-3 rounded-xl border-2 border-brand/20 p-4 transition-colors hover:border-brand hover:bg-brand-soft/40"
+                >
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand text-white">
+                    <Icon className="size-5" aria-hidden />
+                  </span>
+                  <span>
+                    <span className="block font-display font-semibold">{title}</span>
+                    <span className="mt-1 block text-sm text-muted-foreground">{text}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-label={t.nav.newAction}>
         {/* No celular: 2 por linha e sem descrição, para "Precisa da sua atenção" aparecer logo. */}
@@ -249,7 +303,11 @@ function Dashboard() {
               className="rounded-2xl border bg-white p-5 shadow-sm"
               aria-label={t.dashboard.usageTitle}
             >
-              <PlanUsage usage={usage} compact />
+              {freeUsage(usage) ? (
+                <FreePlanCard usage={usage} />
+              ) : (
+                <PlanUsage usage={usage} compact />
+              )}
             </section>
           )}
           <section

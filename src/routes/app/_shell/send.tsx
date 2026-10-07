@@ -31,6 +31,8 @@ import {
   type SendOptionsValue,
 } from "@/app/components/send-options";
 import { errorCode, errorText, participantProblems } from "@/app/errors";
+import { CedroAfterDocument } from "@/app/components/free-plan-card";
+import { notifyUsageChanged, useOrgUsage } from "@/app/components/plan-usage";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
@@ -78,6 +80,7 @@ function SendPage() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const usage = useOrgUsage();
 
   function next() {
     setError(null);
@@ -117,6 +120,7 @@ function SendPage() {
     try {
       const r = await callFunction<{ documentId: string }>("documents-send", form);
       setDocumentId(r.documentId);
+      notifyUsageChanged();
     } catch (e) {
       setError(errorText(t, e));
       if (errorCode(e) === "invalid_participants") {
@@ -151,6 +155,7 @@ function SendPage() {
             <h2 className="font-display text-xl font-semibold">{t.send.done}</h2>
             <p className="mt-1 text-muted-foreground">{t.send.doneText}</p>
           </div>
+          <CedroAfterDocument usage={usage} />
           <div className="flex flex-wrap gap-3">
             <Button asChild className="bg-brand hover:bg-brand-strong">
               <Link to="/app/documents/$id" params={{ id: documentId }}>
