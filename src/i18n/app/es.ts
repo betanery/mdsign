@@ -287,6 +287,23 @@ const es: AppMessages = {
     confirming: "Confirmando la firma…",
   },
   documents: {
+    now: {
+      title: "Situación actual",
+      waiting: "Esperando a {name} ({action})",
+      actions: {
+        signer: "firma",
+        approver: "aprobación",
+        witness: "firma como testigo",
+      } as Record<string, string>,
+      since: "Es su turno desde {date} ({ago})",
+      reminders: "{n} recordatorios enviados, el último el {date}",
+      reminderOne: "1 recordatorio enviado, el {date}",
+      noReminders: "aún no se enviaron recordatorios",
+      concluded: "Todos ya firmaron. Documento concluido el {date}.",
+      refused: "Rechazado por {name}.",
+      noViewInfo:
+        "El servicio de firma no informa si la persona abrió el correo o el documento: la situación cambia cuando firma, aprueba o rechaza.",
+    },
     title: "Documentos",
     subtitle: "Sigue todo lo que se envió y firmó.",
     tabs: { all: "Todos", waiting: "Pendientes", forMe: "Para mí", concluded: "Concluidos" },

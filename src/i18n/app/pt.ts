@@ -284,6 +284,23 @@ const pt = {
     confirming: "Confirmando a assinatura…",
   },
   documents: {
+    now: {
+      title: "Situação agora",
+      waiting: "Aguardando {name} ({action})",
+      actions: {
+        signer: "assinatura",
+        approver: "aprovação",
+        witness: "assinatura como testemunha",
+      } as Record<string, string>,
+      since: "É a vez desde {date} ({ago})",
+      reminders: "{n} lembretes enviados, o último em {date}",
+      reminderOne: "1 lembrete enviado, em {date}",
+      noReminders: "nenhum lembrete enviado ainda",
+      concluded: "Todos já assinaram. Documento concluído em {date}.",
+      refused: "Recusado por {name}.",
+      noViewInfo:
+        "O serviço de assinatura não informa se a pessoa abriu o e-mail ou o documento: a situação muda quando ela assina, aprova ou recusa.",
+    },
     title: "Documentos",
     subtitle: "Acompanhe tudo o que foi enviado e assinado.",
     tabs: { all: "Todos", waiting: "Aguardando", forMe: "Para mim", concluded: "Concluídos" },

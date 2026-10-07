@@ -285,6 +285,23 @@ const en: AppMessages = {
     confirming: "Confirming the signature…",
   },
   documents: {
+    now: {
+      title: "Current status",
+      waiting: "Waiting for {name} ({action})",
+      actions: {
+        signer: "signature",
+        approver: "approval",
+        witness: "signature as witness",
+      } as Record<string, string>,
+      since: "Their turn since {date} ({ago})",
+      reminders: "{n} reminders sent, the last on {date}",
+      reminderOne: "1 reminder sent, on {date}",
+      noReminders: "no reminders sent yet",
+      concluded: "Everyone has signed. Document completed on {date}.",
+      refused: "Refused by {name}.",
+      noViewInfo:
+        "The signing service does not report whether the person opened the email or the document: the status changes when they sign, approve or refuse.",
+    },
     title: "Documents",
     subtitle: "Track everything that was sent and signed.",
     tabs: { all: "All", waiting: "Waiting", forMe: "For me", concluded: "Completed" },

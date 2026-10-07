@@ -20,6 +20,7 @@ import {
   statusTone,
   type DocumentRow,
 } from "@/app/documents";
+import { DocumentStatusSummary, type ReminderInfo } from "@/app/components/document-status";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ function DocumentDetail() {
   const [busy, setBusy] = useState<string | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [observers, setObservers] = useState<ObserverRow[]>([]);
+  const [reminders, setReminders] = useState<ReminderInfo[]>([]);
   const [editing, setEditing] = useState<"flow" | "replace" | null>(null);
 
   const load = useCallback(async () => {
@@ -58,6 +60,11 @@ function DocumentDetail() {
       .eq("document_id", id)
       .order("created_at");
     setObservers((obs.data as ObserverRow[] | null) ?? []);
+    const rem = await supabase
+      .from("document_participants")
+      .select("id, reminder_count, last_reminded_at")
+      .eq("document_id", id);
+    setReminders((rem.data as ReminderInfo[] | null) ?? []);
     setDoc((d.data as DocumentRow | null) ?? null);
     setEvents((e.data as EventRow[] | null) ?? []);
   }, [id]);
@@ -226,6 +233,14 @@ function DocumentDetail() {
           <TabsTrigger value="timeline">{t.documents.tabTimeline}</TabsTrigger>
         </TabsList>
         <TabsContent value="participants">
+          {doc.kind === "send" && (
+            <DocumentStatusSummary
+              doc={doc}
+              participants={parts}
+              events={events}
+              reminders={reminders}
+            />
+          )}
           <ul className="divide-y rounded-2xl border bg-white shadow-sm">
             {parts.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center gap-3 p-4">
@@ -280,6 +295,14 @@ function DocumentDetail() {
           )}
         </TabsContent>
         <TabsContent value="timeline">
+          {doc.kind === "send" && (
+            <DocumentStatusSummary
+              doc={doc}
+              participants={parts}
+              events={events}
+              reminders={reminders}
+            />
+          )}
           <ol className="rounded-2xl border bg-white p-4 shadow-sm">
             {events.map((e) => (
               <li key={e.id} className="relative border-l-2 border-brand/30 pb-4 pl-4 last:pb-0">
