@@ -110,17 +110,37 @@ export function GuidedTour({
   return (
     <div className="fixed inset-0 z-[60]" aria-hidden={false}>
       {rect ? (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed rounded-xl ring-2 ring-brand transition-all duration-200"
-          style={{
-            top: rect.top - PAD,
-            left: rect.left - PAD,
-            width: rect.width + PAD * 2,
-            height: rect.height + PAD * 2,
-            boxShadow: "0 0 0 9999px rgba(15, 10, 40, 0.55)",
-          }}
-        />
+        <>
+          {/* Quatro faixas escuras em volta do alvo (mais confiável que uma sombra gigante). */}
+          {[
+            { top: 0, left: 0, right: 0, height: Math.max(0, rect.top - PAD) },
+            { top: rect.top + rect.height + PAD, left: 0, right: 0, bottom: 0 },
+            {
+              top: rect.top - PAD,
+              left: 0,
+              width: Math.max(0, rect.left - PAD),
+              height: rect.height + PAD * 2,
+            },
+            {
+              top: rect.top - PAD,
+              left: rect.left + rect.width + PAD,
+              right: 0,
+              height: rect.height + PAD * 2,
+            },
+          ].map((style, i) => (
+            <div key={i} aria-hidden className="fixed bg-[rgba(15,10,40,0.55)]" style={style} />
+          ))}
+          <div
+            aria-hidden
+            className="pointer-events-none fixed rounded-xl ring-2 ring-brand transition-all duration-200"
+            style={{
+              top: rect.top - PAD,
+              left: rect.left - PAD,
+              width: rect.width + PAD * 2,
+              height: rect.height + PAD * 2,
+            }}
+          />
+        </>
       ) : (
         <div aria-hidden className="fixed inset-0 bg-[rgba(15,10,40,0.55)]" />
       )}

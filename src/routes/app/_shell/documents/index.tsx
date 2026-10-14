@@ -12,6 +12,7 @@ import { RefuseDialog, SigningQueue } from "@/app/components/document-batch";
 import {
   documentSelect,
   formatDate,
+  formatDay,
   humanStatus,
   statusTone,
   type DocumentRow,
@@ -312,7 +313,7 @@ function DocumentsPage() {
                         {(() => {
                           const a = availability(d.created_at);
                           if (!a) return null;
-                          const date = formatDate(a.until.toISOString(), locale);
+                          const date = formatDay(a.until.toISOString(), locale);
                           return (
                             <span className={a.expired ? "text-orange-700" : undefined}>
                               {" · "}

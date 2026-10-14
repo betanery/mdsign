@@ -133,6 +133,7 @@ function SelfSign() {
       {(step === "upload" || step === "preparing") && (
         <div className={extras ? "grid max-w-5xl gap-4" : "grid max-w-2xl gap-4"}>
           <div
+            data-tour="pdf-drop"
             role="button"
             tabIndex={0}
             onClick={() => input.current?.click()}

@@ -60,6 +60,13 @@ export const statusTone: Record<DocStatus, string> = {
   expired: "bg-muted text-muted-foreground",
 };
 
+/** Só a data (ex.: prazo de disponibilidade). */
+export function formatDay(iso: string, locale: string) {
+  return new Intl.DateTimeFormat(locale === "pt" ? "pt-BR" : locale, { dateStyle: "short" }).format(
+    new Date(iso),
+  );
+}
+
 export function formatDate(iso: string, locale: string) {
   return new Intl.DateTimeFormat(locale === "pt" ? "pt-BR" : locale, {
     dateStyle: "short",

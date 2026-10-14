@@ -31,6 +31,7 @@ import { SigningFrame } from "@/app/components/signing-frame";
 import {
   documentSelect,
   formatDate,
+  formatDay,
   humanStatus,
   statusTone,
   type DocumentRow,
@@ -196,13 +197,13 @@ function DocumentDetail() {
         (avail.expired ? (
           <div className="mb-4 grid gap-3 rounded-2xl border border-orange-300 bg-orange-50 p-4 text-sm">
             <p>
-              {f(t.documents.cedroExpired, { date: formatDate(avail.until.toISOString(), locale) })}
+              {f(t.documents.cedroExpired, { date: formatDay(avail.until.toISOString(), locale) })}
             </p>
             <UpgradeButton where="document_expired" className="w-fit" />
           </div>
         ) : (
           <p className="mb-4 text-sm text-muted-foreground">
-            {f(t.documents.cedroAvailable, { date: formatDate(avail.until.toISOString(), locale) })}
+            {f(t.documents.cedroAvailable, { date: formatDay(avail.until.toISOString(), locale) })}
           </p>
         ))}
 
