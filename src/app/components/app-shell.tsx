@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  Compass,
   BarChart3,
   Building2,
   ChevronsUpDown,
@@ -30,6 +31,8 @@ import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
 import { ClosedBanner } from "./account-tab";
 import { CedroBanner } from "./free-plan-card";
+import { OnboardingHost } from "./onboarding-panel";
+import { openGuide } from "../onboarding";
 import { GlobalSearch } from "./global-search";
 import { LanguageSelect, SkipLink } from "./language-select";
 import { useOrgUsage } from "./plan-usage";
@@ -192,6 +195,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: (() => void) | undefined 
         )}
       </nav>
       <div className="space-y-3 border-t border-white/15 pt-3">
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            openGuide();
+          }}
+          className="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-white/85 hover:bg-white/10"
+        >
+          <Compass className="size-4" aria-hidden />
+          {t.guide.menu}
+        </button>
         <LanguageSelect className="w-fit border-white/30 bg-white" />
         <p className="truncate px-1 text-xs text-white/70">{user?.email}</p>
         <button
@@ -303,6 +317,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </main>
       <MobileBar onMore={() => setMoreOpen(true)} onPlus={() => setPlusOpen(true)} />
+      <OnboardingHost />
     </div>
   );
 }
@@ -322,7 +337,7 @@ export function PageHeader({
         <h1 className="text-2xl font-bold sm:text-3xl">{title}</h1>
         {subtitle && <p className="mt-1 text-muted-foreground">{subtitle}</p>}
       </div>
-      {actions}
+      {actions && <div data-tour="page-actions">{actions}</div>}
     </div>
   );
 }

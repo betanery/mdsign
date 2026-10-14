@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 
+import { markGuideStep } from "@/app/onboarding";
 import { PageHeader } from "@/app/components/app-shell";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
@@ -75,6 +76,8 @@ function range(preset: Preset, from: string, to: string): [Date, Date] {
 function ReportsPage() {
   const { t, f, locale } = useAppI18n();
   const { current, can } = useOrg();
+  const guideOrg = current?.id;
+  useEffect(() => markGuideStep(guideOrg, "viewed_reports"), [guideOrg]);
   const orgId = current?.id;
   const [preset, setPreset] = useState<Preset>("30d");
   const [from, setFrom] = useState("");
@@ -316,6 +319,7 @@ function ReportsPage() {
       />
 
       <section
+        data-tour="reports-filters"
         className="mb-5 grid gap-3 rounded-2xl border bg-white p-4 shadow-sm"
         aria-label={t.reports.filters}
       >

@@ -116,6 +116,187 @@ const pt = {
     banner: "Esta conta foi encerrada. Exporte seus documentos até {until}.",
     bannerAction: "Exportar ou desfazer",
   },
+  guide: {
+    title: "Primeiros passos",
+    menu: "Primeiros passos",
+    progress: "{done} de {total} concluídos",
+    showMe: "Me mostre como",
+    doIt: "Fazer agora",
+    dismiss: "Dispensar os primeiros passos",
+    close: "Fechar",
+    allDone: "Parabéns! Você concluiu os primeiros passos.",
+    allDoneText:
+      "Agora você já domina o essencial do MDSign. Quando precisar, os modelos e o envio em massa poupam ainda mais tempo.",
+    skip: "Pular o tour",
+    back: "Voltar",
+    next: "Próximo",
+    finish: "Entendi",
+    counter: "{n} de {total}",
+    groups: {
+      basics: "O essencial",
+      productivity: "Ganhe tempo",
+      team: "Sua equipe",
+    } as Record<string, string>,
+    steps: {
+      profile: {
+        title: "Completar seu perfil",
+        text: "Nome, CPF e celular deixam suas assinaturas mais rápidas.",
+      },
+      self_sign: {
+        title: "Assinar seu primeiro documento",
+        text: "Envie um PDF e assine você mesmo em poucos passos.",
+      },
+      sign_pending: {
+        title: "Assinar o que está esperando por você",
+        text: "Há documentos aguardando a sua assinatura.",
+      },
+      send: {
+        title: "Enviar um documento para assinatura",
+        text: "Indique quem precisa assinar; o MDSign envia o convite.",
+      },
+      track_status: {
+        title: "Acompanhar a situação de um documento",
+        text: "Veja quem já assinou e quem ainda falta.",
+      },
+      remind: {
+        title: "Lembrar quem ainda não assinou",
+        text: "Um lembrete educado, com um clique.",
+      },
+      download: {
+        title: "Baixar um documento assinado",
+        text: "O PDF assinado já vem com a trilha de auditoria.",
+      },
+      contacts: {
+        title: "Organizar seus contatos",
+        text: "Quem você cadastra aparece já preenchido nos próximos envios.",
+      },
+      template: {
+        title: "Criar um modelo",
+        text: "Use um PDF pronto ou escreva o texto, com campos que se preenchem sozinhos.",
+      },
+      form: {
+        title: "Criar um link público de assinatura",
+        text: "Um link para qualquer pessoa preencher e assinar, sem conta.",
+      },
+      billing: {
+        title: "Ver o plano e a cobrança",
+        text: "Consumo, próxima cobrança e histórico de pagamentos.",
+      },
+      reports: {
+        title: "Ver os relatórios",
+        text: "Números de envio e assinatura, com exportação.",
+      },
+      invite: { title: "Convidar sua equipe", text: "Cada pessoa com o seu papel e permissões." },
+      group: {
+        title: "Criar um grupo",
+        text: "Envie para um grupo inteiro, como Jurídico ou Diretoria.",
+      },
+    } as Record<string, { title: string; text: string }>,
+    tours: {
+      profile: [
+        {
+          title: "Seu perfil",
+          text: "Confira nome e CPF: eles identificam você nas assinaturas. O celular é opcional.",
+        },
+      ],
+      self_sign: [
+        {
+          title: "Só eu assino",
+          text: "Este é o caminho mais rápido para assinar um documento seu.",
+        },
+        {
+          title: "Envie o PDF",
+          text: "Arraste o arquivo aqui ou clique para escolher. Depois é só revisar e assinar.",
+        },
+        {
+          title: "Pronto!",
+          text: "Ao terminar, você baixa o documento assinado e ele fica guardado em Documentos.",
+        },
+      ],
+      sign_pending: [
+        {
+          title: "Para você assinar",
+          text: "Aqui ficam os documentos que esperam a sua assinatura. Abra um e clique em Assinar.",
+        },
+      ],
+      send: [
+        {
+          title: "Enviar para assinatura",
+          text: "Use este caminho quando outras pessoas precisam assinar.",
+        },
+        {
+          title: "Envie o PDF",
+          text: "Comece pelo arquivo. Na próxima etapa você indica quem assina e em que ordem.",
+        },
+        {
+          title: "Depois do envio",
+          text: "Cada pessoa recebe o convite por e-mail, e você acompanha tudo em Documentos.",
+        },
+      ],
+      track_status: [
+        {
+          title: "Seus documentos",
+          text: "Todos os documentos ficam aqui, com a situação de cada um.",
+        },
+        {
+          title: "Abra um documento",
+          text: "Na página do documento você vê quem já assinou, quem falta e o histórico completo.",
+        },
+      ],
+      remind: [
+        {
+          title: "Aguardando assinatura",
+          text: "Abra um documento pendente e use Lembrar ao lado de quem ainda não assinou.",
+        },
+      ],
+      download: [
+        {
+          title: "Documentos concluídos",
+          text: "Abra um documento concluído e clique em Baixar para ter o PDF assinado.",
+        },
+      ],
+      contacts: [
+        {
+          title: "Contatos",
+          text: "Cadastre aqui ou importe uma planilha. Quem já assinou com você entra sozinho.",
+        },
+      ],
+      template: [
+        { title: "Novo modelo", text: "Crie aqui um modelo para documentos que se repetem." },
+        {
+          title: "Dica",
+          text: "Com um PDF pronto, você posiciona campos, assinaturas e rubricas uma vez e reutiliza sempre.",
+        },
+      ],
+      form: [
+        {
+          title: "Links públicos",
+          text: "Crie um link a partir de um modelo e compartilhe: quem abrir preenche e assina.",
+        },
+      ],
+      billing: [
+        {
+          title: "Plano e cobrança",
+          text: "Aqui ficam o plano, o consumo e as cobranças da organização.",
+        },
+      ],
+      reports: [
+        {
+          title: "Relatórios",
+          text: "Escolha o período e os filtros; dá para exportar em CSV, XLSX ou PDF.",
+        },
+      ],
+      invite: [
+        { title: "Convidar", text: "Convide pelo e-mail e escolha o papel de cada pessoa." },
+      ],
+      group: [
+        {
+          title: "Grupos",
+          text: "Dê um nome ao grupo e adicione as pessoas. Depois é só escolher o grupo ao enviar.",
+        },
+      ],
+    } as Record<string, { title: string; text: string }[]>,
+  },
   cedro: {
     availability:
       "Cada documento do Cedro fica disponível para consulta e download por 6 meses a partir da criação.",

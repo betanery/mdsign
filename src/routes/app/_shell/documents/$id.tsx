@@ -19,6 +19,7 @@ import { errorText } from "@/app/errors";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { useCedroAvailability } from "@/app/availability";
+import { markGuideStep } from "@/app/onboarding";
 import { FormMessage } from "@/app/components/auth-layout";
 import { UpgradeButton } from "@/app/components/free-plan-card";
 import {
@@ -50,7 +51,12 @@ function DocumentDetail() {
   const { id } = Route.useParams();
   const { t, f, locale } = useAppI18n();
   const { user } = useAuth();
-  const { can } = useOrg();
+  const { can, current } = useOrg();
+  const orgId = current?.id;
+  // Onboarding: "Acompanhar a situação de um documento" se marca ao abrir esta página.
+  useEffect(() => {
+    markGuideStep(orgId, "viewed_document");
+  }, [orgId]);
   const [doc, setDoc] = useState<(DocumentRow & { deleted_at?: string | null }) | null | undefined>(
     undefined,
   );
@@ -133,6 +139,7 @@ function DocumentDetail() {
         version ? { version } : {},
       );
       window.open(url, "_blank", "noopener");
+      markGuideStep(orgId, "downloaded");
     });
   }
 

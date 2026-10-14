@@ -287,7 +287,7 @@ function DocumentsPage() {
               </Button>
             </div>
           )}
-          <ul className="divide-y rounded-2xl border bg-white shadow-sm">
+          <ul data-tour="documents-list" className="divide-y rounded-2xl border bg-white shadow-sm">
             {visible.map((d) => {
               const mine = myAction(d);
               return (

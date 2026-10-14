@@ -61,7 +61,11 @@ function SettingsPage() {
     <>
       <PageHeader title={t.settings.title} />
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <form onSubmit={save} className="grid gap-4 rounded-2xl border bg-white p-5 shadow-sm">
+        <form
+          onSubmit={save}
+          data-tour="settings-profile"
+          className="grid gap-4 rounded-2xl border bg-white p-5 shadow-sm"
+        >
           <div>
             <h2 className="font-display text-lg font-semibold">{t.settings.profile}</h2>
             <p className="text-sm text-muted-foreground">{t.settings.profileText}</p>

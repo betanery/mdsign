@@ -121,6 +121,173 @@ const es: AppMessages = {
     banner: "Esta cuenta fue cerrada. Exporte sus documentos hasta el {until}.",
     bannerAction: "Exportar o deshacer",
   },
+  guide: {
+    title: "Primeros pasos",
+    menu: "Primeros pasos",
+    progress: "{done} de {total} completados",
+    showMe: "Muéstrame cómo",
+    doIt: "Hacerlo ahora",
+    dismiss: "Descartar los primeros pasos",
+    close: "Cerrar",
+    allDone: "¡Felicitaciones! Completó los primeros pasos.",
+    allDoneText:
+      "Ya domina lo esencial de MDSign. Cuando lo necesite, las plantillas y el envío masivo ahorran aún más tiempo.",
+    skip: "Saltar el tour",
+    back: "Volver",
+    next: "Siguiente",
+    finish: "Entendido",
+    counter: "{n} de {total}",
+    groups: {
+      basics: "Lo esencial",
+      productivity: "Ahorre tiempo",
+      team: "Su equipo",
+    } as Record<string, string>,
+    steps: {
+      profile: { title: "Completar su perfil", text: "Nombre, CPF y celular agilizan sus firmas." },
+      self_sign: {
+        title: "Firmar su primer documento",
+        text: "Suba un PDF y fírmelo usted en pocos pasos.",
+      },
+      sign_pending: {
+        title: "Firmar lo que le espera",
+        text: "Hay documentos esperando su firma.",
+      },
+      send: {
+        title: "Enviar un documento a firmar",
+        text: "Indique quién debe firmar; MDSign envía la invitación.",
+      },
+      track_status: {
+        title: "Seguir la situación de un documento",
+        text: "Vea quién ya firmó y quién falta.",
+      },
+      remind: { title: "Recordar a quien no firmó", text: "Un recordatorio amable, con un clic." },
+      download: {
+        title: "Descargar un documento firmado",
+        text: "El PDF firmado incluye el registro de auditoría.",
+      },
+      contacts: {
+        title: "Organizar sus contactos",
+        text: "Quien registre aparece ya completado en los próximos envíos.",
+      },
+      template: {
+        title: "Crear una plantilla",
+        text: "Use un PDF listo o escriba el texto, con campos que se completan solos.",
+      },
+      form: {
+        title: "Crear un enlace público de firma",
+        text: "Un enlace para que cualquiera complete y firme, sin cuenta.",
+      },
+      billing: {
+        title: "Ver el plan y el cobro",
+        text: "Consumo, próximo cobro e historial de pagos.",
+      },
+      reports: { title: "Ver los informes", text: "Números de envío y firma, con exportación." },
+      invite: { title: "Invitar a su equipo", text: "Cada persona con su rol y permisos." },
+      group: {
+        title: "Crear un grupo",
+        text: "Envíe a un grupo entero, como Jurídico o Dirección.",
+      },
+    } as Record<string, { title: string; text: string }>,
+    tours: {
+      profile: [
+        {
+          title: "Su perfil",
+          text: "Revise nombre y CPF: lo identifican en las firmas. El celular es opcional.",
+        },
+      ],
+      self_sign: [
+        { title: "Solo yo firmo", text: "Es el camino más rápido para firmar un documento suyo." },
+        {
+          title: "Suba el PDF",
+          text: "Arrastre el archivo aquí o haga clic para elegir. Luego revise y firme.",
+        },
+        {
+          title: "¡Listo!",
+          text: "Al terminar, descarga el documento firmado y queda guardado en Documentos.",
+        },
+      ],
+      sign_pending: [
+        {
+          title: "Para que usted firme",
+          text: "Aquí están los documentos que esperan su firma. Abra uno y haga clic en Firmar.",
+        },
+      ],
+      send: [
+        { title: "Enviar a firmar", text: "Use este camino cuando otras personas deben firmar." },
+        {
+          title: "Suba el PDF",
+          text: "Empiece por el archivo. En la siguiente etapa indica quién firma y en qué orden.",
+        },
+        {
+          title: "Después del envío",
+          text: "Cada persona recibe la invitación por correo y usted sigue todo en Documentos.",
+        },
+      ],
+      track_status: [
+        {
+          title: "Sus documentos",
+          text: "Todos los documentos están aquí, con la situación de cada uno.",
+        },
+        {
+          title: "Abra un documento",
+          text: "En la página del documento ve quién firmó, quién falta y el historial completo.",
+        },
+      ],
+      remind: [
+        {
+          title: "Esperando firma",
+          text: "Abra un documento pendiente y use Recordar junto a quien no firmó.",
+        },
+      ],
+      download: [
+        {
+          title: "Documentos concluidos",
+          text: "Abra un documento concluido y haga clic en Descargar para obtener el PDF firmado.",
+        },
+      ],
+      contacts: [
+        {
+          title: "Contactos",
+          text: "Regístrelos aquí o importe una planilla. Quien ya firmó con usted entra solo.",
+        },
+      ],
+      template: [
+        {
+          title: "Nueva plantilla",
+          text: "Cree aquí una plantilla para documentos que se repiten.",
+        },
+        {
+          title: "Consejo",
+          text: "Con un PDF listo, ubica campos, firmas y rúbricas una vez y los reutiliza siempre.",
+        },
+      ],
+      form: [
+        {
+          title: "Enlaces públicos",
+          text: "Cree un enlace a partir de una plantilla y compártalo: quien lo abra completa y firma.",
+        },
+      ],
+      billing: [
+        {
+          title: "Plan y cobro",
+          text: "Aquí están el plan, el consumo y los cobros de la organización.",
+        },
+      ],
+      reports: [
+        {
+          title: "Informes",
+          text: "Elija el período y los filtros; puede exportar a CSV, XLSX o PDF.",
+        },
+      ],
+      invite: [{ title: "Invitar", text: "Invite por correo y elija el rol de cada persona." }],
+      group: [
+        {
+          title: "Grupos",
+          text: "Ponga nombre al grupo y agregue a las personas. Luego elija el grupo al enviar.",
+        },
+      ],
+    } as Record<string, { title: string; text: string }[]>,
+  },
   cedro: {
     availability:
       "Cada documento de Cedro está disponible para consulta y descarga por 6 meses desde su creación.",

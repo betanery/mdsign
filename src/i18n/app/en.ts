@@ -118,6 +118,164 @@ const en: AppMessages = {
     banner: "This account was closed. Export your documents by {until}.",
     bannerAction: "Export or undo",
   },
+  guide: {
+    title: "Getting started",
+    menu: "Getting started",
+    progress: "{done} of {total} done",
+    showMe: "Show me how",
+    doIt: "Do it now",
+    dismiss: "Dismiss getting started",
+    close: "Close",
+    allDone: "Congratulations! You finished getting started.",
+    allDoneText:
+      "You now know the essentials of MDSign. When you need it, templates and bulk sending save even more time.",
+    skip: "Skip the tour",
+    back: "Back",
+    next: "Next",
+    finish: "Got it",
+    counter: "{n} of {total}",
+    groups: {
+      basics: "The essentials",
+      productivity: "Save time",
+      team: "Your team",
+    } as Record<string, string>,
+    steps: {
+      profile: {
+        title: "Complete your profile",
+        text: "Name, CPF and mobile phone make your signatures faster.",
+      },
+      self_sign: {
+        title: "Sign your first document",
+        text: "Upload a PDF and sign it yourself in a few steps.",
+      },
+      sign_pending: {
+        title: "Sign what is waiting for you",
+        text: "There are documents awaiting your signature.",
+      },
+      send: {
+        title: "Send a document for signature",
+        text: "Choose who needs to sign; MDSign sends the invitation.",
+      },
+      track_status: {
+        title: "Track a document's status",
+        text: "See who has signed and who is still missing.",
+      },
+      remind: { title: "Remind whoever has not signed", text: "A polite reminder, in one click." },
+      download: {
+        title: "Download a signed document",
+        text: "The signed PDF comes with its audit trail.",
+      },
+      contacts: {
+        title: "Organize your contacts",
+        text: "People you save are pre-filled in your next sends.",
+      },
+      template: {
+        title: "Create a template",
+        text: "Use a ready PDF or write the text, with fields that fill themselves.",
+      },
+      form: {
+        title: "Create a public signing link",
+        text: "A link anyone can fill in and sign, without an account.",
+      },
+      billing: { title: "See plan and billing", text: "Usage, next charge and payment history." },
+      reports: { title: "See the reports", text: "Sending and signing numbers, with export." },
+      invite: {
+        title: "Invite your team",
+        text: "Each person with their own role and permissions.",
+      },
+      group: { title: "Create a group", text: "Send to a whole group, like Legal or Board." },
+    } as Record<string, { title: string; text: string }>,
+    tours: {
+      profile: [
+        {
+          title: "Your profile",
+          text: "Check your name and CPF: they identify you in signatures. The mobile phone is optional.",
+        },
+      ],
+      self_sign: [
+        { title: "Only I sign", text: "This is the fastest way to sign a document of your own." },
+        {
+          title: "Upload the PDF",
+          text: "Drag the file here or click to choose. Then just review and sign.",
+        },
+        {
+          title: "Done!",
+          text: "When you finish, you download the signed document and it stays in Documents.",
+        },
+      ],
+      sign_pending: [
+        {
+          title: "For you to sign",
+          text: "Documents waiting for your signature are here. Open one and click Sign.",
+        },
+      ],
+      send: [
+        { title: "Send for signature", text: "Use this when other people need to sign." },
+        {
+          title: "Upload the PDF",
+          text: "Start with the file. In the next step you choose who signs and in what order.",
+        },
+        {
+          title: "After sending",
+          text: "Each person gets the invitation by email, and you track everything in Documents.",
+        },
+      ],
+      track_status: [
+        { title: "Your documents", text: "All documents are here, with each one's status." },
+        {
+          title: "Open a document",
+          text: "On the document page you see who signed, who is missing and the full history.",
+        },
+      ],
+      remind: [
+        {
+          title: "Awaiting signature",
+          text: "Open a pending document and use Remind next to whoever has not signed.",
+        },
+      ],
+      download: [
+        {
+          title: "Completed documents",
+          text: "Open a completed document and click Download to get the signed PDF.",
+        },
+      ],
+      contacts: [
+        {
+          title: "Contacts",
+          text: "Add them here or import a spreadsheet. People who signed with you are added automatically.",
+        },
+      ],
+      template: [
+        { title: "New template", text: "Create a template here for documents you repeat." },
+        {
+          title: "Tip",
+          text: "With a ready PDF, you place fields, signatures and initials once and reuse them.",
+        },
+      ],
+      form: [
+        {
+          title: "Public links",
+          text: "Create a link from a template and share it: whoever opens it fills in and signs.",
+        },
+      ],
+      billing: [
+        { title: "Plan and billing", text: "The organization's plan, usage and charges are here." },
+      ],
+      reports: [
+        {
+          title: "Reports",
+          text: "Choose the period and filters; you can export to CSV, XLSX or PDF.",
+        },
+      ],
+      invite: [{ title: "Invite", text: "Invite by email and choose each person's role." }],
+      group: [
+        {
+          title: "Groups",
+          text: "Name the group and add people. Then just pick the group when sending.",
+        },
+      ],
+    } as Record<string, { title: string; text: string }[]>,
+  },
   cedro: {
     availability:
       "Each Cedro document is available to view and download for 6 months from creation.",

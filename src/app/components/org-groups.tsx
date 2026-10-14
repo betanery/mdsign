@@ -117,6 +117,7 @@ export function GroupsTab({ orgId }: { orgId: string }) {
       <p className="text-sm text-muted-foreground">{t.groups.hint}</p>
       {manage && (
         <form
+          data-tour="groups-new"
           className="flex flex-wrap items-end gap-2"
           onSubmit={(e) => {
             e.preventDefault();

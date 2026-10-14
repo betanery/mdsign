@@ -218,7 +218,7 @@ export function BillingPanel({
         : "border-success/30 bg-success/10 text-success";
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5" data-tour="plan-panel">
       {confirmDialog}
       {needData && current && (
         <CustomerDataDialog

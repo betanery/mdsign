@@ -786,4 +786,41 @@ do $$ begin
   assert exists (select 1 from public.audit_log where organization_id = (select v from t_ids where k = 'orgD1') and action = 'organization.purged'), 'auditoria guardada';
 end $$;
 
+-- Onboarding: cada pessoa vê só o próprio; dono recebe o completo, convidado o curto; a detecção
+-- segue o uso real; quem entrou antes desta versão começa dispensado.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$ declare p jsonb; begin
+  p := public.onboarding_progress((select v from t_ids where k = 'orgA'));
+  assert p->>'track' = 'full', 'proprietária recebe o onboarding completo';
+  assert not (p->>'dismissed')::boolean, 'organização nova começa com o onboarding aberto';
+  assert (p->'steps'->>'invite')::boolean, 'convite detectado';
+  assert not (p->'steps'->>'track_status')::boolean, 'passo de tela começa desmarcado';
+  perform public.onboarding_update((select v from t_ids where k = 'orgA'), 'mark', 'viewed_document');
+  assert (public.onboarding_progress((select v from t_ids where k = 'orgA'))->'steps'->>'track_status')::boolean, 'passo de tela marcado';
+  perform public.onboarding_update((select v from t_ids where k = 'orgA'), 'dismiss');
+  assert (public.onboarding_progress((select v from t_ids where k = 'orgA'))->>'dismissed')::boolean, 'dispensado';
+end $$;
+do $$ begin
+  perform public.onboarding_update((select v from t_ids where k = 'orgA'), 'mark', 'qualquer');
+  assert false, 'só passos da lista';
+exception when raise_exception then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert public.onboarding_progress((select v from t_ids where k = 'orgA'))->>'track' = 'invited', 'convidado recebe o roteiro curto';
+  assert (select count(*) from public.onboarding_state) = 1, 'cada pessoa vê só o próprio onboarding';
+end $$;
+reset role;
+update public.memberships set created_at = public.onboarding_since() - interval '1 day'
+  where user_id = '00000000-0000-0000-0000-00000000000c' and organization_id = (select v from t_ids where k = 'orgA');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (public.onboarding_progress((select v from t_ids where k = 'orgA'))->>'dismissed')::boolean, 'quem já usava começa dispensado';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

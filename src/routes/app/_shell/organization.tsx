@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/app/auth";
 import { AccountTab } from "@/app/components/account-tab";
+import { markGuideStep } from "@/app/onboarding";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { BillingPanel } from "@/app/components/billing-panel";
@@ -124,8 +125,10 @@ function OrganizationPage() {
 
 function PlanTab({ checkout }: { checkout?: string | undefined }) {
   const { t } = useAppI18n();
-  const { can } = useOrg();
+  const { can, current } = useOrg();
   const usage = useOrgUsage();
+  const guideOrg = current?.id;
+  useEffect(() => markGuideStep(guideOrg, "viewed_billing"), [guideOrg]);
   // Plano e cobrança para quem vê a cobrança; os demais veem só o consumo.
   if (can("billing.view"))
     return (
@@ -200,7 +203,11 @@ function MembersTab({ orgId }: { orgId: string }) {
             <span className="text-muted-foreground">({members.length})</span>
           </h2>
           {manage && (
-            <Button onClick={() => setInviteOpen(true)} className="bg-brand hover:bg-brand-strong">
+            <Button
+              data-tour="members-invite"
+              onClick={() => setInviteOpen(true)}
+              className="bg-brand hover:bg-brand-strong"
+            >
               <UserPlus aria-hidden />
               {t.organization.invite}
             </Button>

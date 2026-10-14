@@ -16,6 +16,7 @@ import { useAuth } from "@/app/auth";
 import { journeys, PageHeader } from "@/app/components/app-shell";
 import { FreePlanCard, freeUsage } from "@/app/components/free-plan-card";
 import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
+import { GuideCard } from "@/app/components/onboarding-panel";
 import { QualificationCard } from "@/app/components/qualification-card";
 import { documentSelect, type DocumentRow } from "@/app/documents";
 import { useAppI18n } from "@/app/i18n";
@@ -217,6 +218,7 @@ function Dashboard() {
             <li key={key}>
               <Link
                 to={to}
+                data-tour={`journey-${key}`}
                 className="flex h-full flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-colors hover:border-brand sm:gap-3 sm:p-5"
               >
                 <span className="flex size-9 items-center justify-center rounded-xl bg-brand-soft sm:size-11">
@@ -312,41 +314,7 @@ function Dashboard() {
               )}
             </section>
           )}
-          <section
-            className="rounded-2xl border bg-white p-5 shadow-sm"
-            aria-labelledby="checklist-title"
-          >
-            <h2 id="checklist-title" className="font-display text-lg font-semibold">
-              {t.dashboard.checklist}
-            </h2>
-            <ul className="mt-3 space-y-2.5 text-sm">
-              {steps.map((step) => {
-                const Icon = step.done ? CheckCircle2 : Circle;
-                const content = (
-                  <span className="flex items-center gap-2">
-                    <Icon
-                      className={step.done ? "size-4 text-success" : "size-4 text-muted-foreground"}
-                      aria-hidden
-                    />
-                    <span className={step.done ? "text-muted-foreground line-through" : ""}>
-                      {step.label}
-                    </span>
-                  </span>
-                );
-                return (
-                  <li key={step.label}>
-                    {step.done ? (
-                      content
-                    ) : (
-                      <Link to={step.to} className="hover:text-brand">
-                        {content}
-                      </Link>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+          <GuideCard />
         </div>
       </div>
     </>

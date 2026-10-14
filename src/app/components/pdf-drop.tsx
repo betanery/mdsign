@@ -34,6 +34,7 @@ export function PdfDrop({
 
   return (
     <div
+      data-tour="pdf-drop"
       role="button"
       tabIndex={0}
       onClick={() => input.current?.click()}
