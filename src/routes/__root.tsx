@@ -15,6 +15,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { captureUtm } from "../lib/analytics";
 import { siteConfig } from "../config/site";
+import { CookieConsent } from "../components/cookie-consent";
+import { consentHeadScript } from "../lib/consent";
 import { fallbackLocale, htmlLang, isLocale, messages } from "../i18n";
 
 function NotFoundComponent() {
@@ -113,7 +115,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {siteConfig.gtmId && (
           <script
             dangerouslySetInnerHTML={{
-              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',${JSON.stringify(siteConfig.gtmId)});`,
+              __html: consentHeadScript(siteConfig.gtmId),
             }}
           />
         )}
@@ -146,6 +148,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <CookieConsent />
     </QueryClientProvider>
   );
 }

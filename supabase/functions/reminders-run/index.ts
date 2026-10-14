@@ -6,7 +6,7 @@ import { admin } from "../_shared/auth.ts";
 import { processBulk } from "../_shared/bulk.ts";
 import { runBilling } from "../_shared/billing.ts";
 import { enqueueWhatsApp } from "../_shared/notifications.ts";
-import { runRetention } from "../_shared/retention.ts";
+import { runAccountPurge, runRetention } from "../_shared/retention.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { signdoc } from "../_shared/signdoc.ts";
 
@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
   // Retenção: apaga partes de lotes e PDFs que não são mais necessários.
   let retention = null;
   try {
-    retention = await runRetention();
+    retention = { ...(await runRetention()), purgedAccounts: await runAccountPurge() };
   } catch (e) {
     console.error("retention", e);
   }

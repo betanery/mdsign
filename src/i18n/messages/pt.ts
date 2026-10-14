@@ -295,6 +295,7 @@ const pt = {
     company: ["Quem somos", "Blog", "Contato", "Suporte"],
     terms: "Termos de uso",
     privacy: "Política de privacidade",
+    cookies: "Preferências de cookies",
     rights: "Todos os direitos reservados.",
   },
   lead: {

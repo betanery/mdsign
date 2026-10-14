@@ -184,3 +184,48 @@ export async function runRetention() {
 
   return result;
 }
+
+/** Conta encerrada há 60 dias: apaga os arquivos da organização nos dois buckets. */
+async function removeOrgFiles(org: string) {
+  let removed = 0;
+  for (const bucket of [BULK, TEMPLATES]) {
+    const { data: items } = await admin.storage.from(bucket).list(org, { limit: 1000 });
+    const files: string[] = [];
+    for (const it of items ?? []) {
+      if (it.id) files.push(`${org}/${it.name}`);
+      else {
+        const { data: inner } = await admin.storage
+          .from(bucket)
+          .list(`${org}/${it.name}`, { limit: 1000 });
+        for (const f of inner ?? []) if (f.id) files.push(`${org}/${it.name}/${f.name}`);
+      }
+    }
+    if (files.length) removed += await removeFiles(bucket, files);
+  }
+  return removed;
+}
+
+/**
+ * 60º dia após o encerramento: apaga arquivos e dados operacionais. Documentos, participantes,
+ * eventos, auditoria e cobrança ficam como registro; os PDFs assinados ficam no motor.
+ */
+export async function runAccountPurge() {
+  const { data: orgs } = await admin
+    .from("organizations")
+    .select("id")
+    .lte("purge_after", new Date().toISOString())
+    .is("purged_at", null)
+    .limit(20);
+  let purged = 0;
+  for (const o of orgs ?? []) {
+    try {
+      await removeOrgFiles(o.id as string);
+      const { error } = await admin.rpc("purge_organization", { org: o.id });
+      if (error) throw error;
+      purged++;
+    } catch (e) {
+      console.error("purge", o.id, e);
+    }
+  }
+  return purged;
+}

@@ -738,4 +738,52 @@ do $$ begin
 end $$;
 reset role;
 
+-- Encerramento de conta: só o proprietário; 30 dias para exportar/desfazer; 60º dia apaga o operacional.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.close_organization((select v from t_ids where k = 'orgA'), 'Empresa A');
+  assert false, 'quem não é proprietário não encerra';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.close_organization((select v from t_ids where k = 'orgD1'), 'outro nome');
+  assert false, 'precisa confirmar o nome';
+exception when raise_exception then null;
+end $$;
+do $$ begin
+  perform public.close_organization((select v from t_ids where k = 'orgD1'), 'dani 1');
+  assert public.is_org_member((select v from t_ids where k = 'orgD1')), 'nos 30 dias a proprietária ainda acessa';
+  perform public.reopen_organization((select v from t_ids where k = 'orgD1'));
+  assert (select closed_at is null from public.organizations where id = (select v from t_ids where k = 'orgD1')), 'reativa nos 30 dias';
+  assert (select plan_id from public.subscriptions where organization_id = (select v from t_ids where k = 'orgD1')) = 'cedro', 'reativada volta ao Cedro';
+  perform public.close_organization((select v from t_ids where k = 'orgD1'), 'Dani 1');
+end $$;
+reset role;
+do $$ begin
+  assert not public.consume_document((select v from t_ids where k = 'orgD1'), 'teste'), 'conta encerrada não cria documentos';
+end $$;
+-- Depois dos 30 dias ninguém acessa; no 60º dia o operacional é apagado e o registro fica.
+update public.organizations set export_until = now() - interval '1 day', purge_after = now() - interval '1 minute'
+  where id = (select v from t_ids where k = 'orgD1');
+insert into public.contacts (organization_id, name, email) values ((select v from t_ids where k = 'orgD1'), 'Contato D', 'contato.d@teste.mdsign');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert not public.is_org_member((select v from t_ids where k = 'orgD1')), 'após 30 dias não há acesso';
+  assert (select count(*) from public.contacts where organization_id = (select v from t_ids where k = 'orgD1')) = 0, 'contatos invisíveis após 30 dias';
+  assert public.is_org_member((select v from t_ids where k = 'orgD2')), 'outras organizações da pessoa seguem normais';
+end $$;
+reset role;
+select public.purge_organization((select v from t_ids where k = 'orgD1'));
+do $$ begin
+  assert (select count(*) from public.contacts where organization_id = (select v from t_ids where k = 'orgD1')) = 0, 'contatos apagados';
+  assert (select count(*) from public.memberships where organization_id = (select v from t_ids where k = 'orgD1')) = 0, 'membros removidos';
+  assert (select purged_at is not null from public.organizations where id = (select v from t_ids where k = 'orgD1')), 'organização marcada como apagada';
+  assert exists (select 1 from public.audit_log where organization_id = (select v from t_ids where k = 'orgD1') and action = 'organization.purged'), 'auditoria guardada';
+end $$;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

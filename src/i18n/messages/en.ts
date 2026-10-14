@@ -277,6 +277,7 @@ const en: Messages = {
     company: ["About us", "Blog", "Contact", "Support"],
     terms: "Terms of use",
     privacy: "Privacy policy",
+    cookies: "Cookie preferences",
     rights: "All rights reserved.",
   },
   lead: {

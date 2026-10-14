@@ -91,6 +91,34 @@ const es: AppMessages = {
       high_volume: "Enviar muchos documentos con regularidad",
     } as Record<string, string>,
   },
+  account: {
+    exportTitle: "Exportar documentos",
+    exportText:
+      "Descargue los {n} documentos de la organización en ZIP ({parts} parte(s) de hasta 25), con los PDF firmados y una lista.csv con la situación de cada uno.",
+    export: "Descargar todos los documentos (ZIP)",
+    exporting: "Preparando parte {part} de {parts}…",
+    exported: "Exportación concluida.",
+    exportAdminOnly: "Solo el propietario o un administrador puede exportar todos los documentos.",
+    closeTitle: "Cerrar cuenta",
+    closeRules: [
+      "La suscripción de pago, si existe, se cancela y no hay nuevos cobros.",
+      "No se pueden crear documentos nuevos.",
+      "Durante 30 días puede acceder y exportar los documentos, y deshacer el cierre.",
+      "El día 60 MDSign elimina los datos operativos (contactos, plantillas, formularios, invitaciones y miembros). Los documentos firmados y las evidencias de firma se conservan por el plazo legal, sin acceso.",
+      "Detalles en los Términos de Uso, sección 7.",
+    ],
+    confirmLabel: "Para confirmar, escriba el nombre de la organización: {name}",
+    close: "Cerrar cuenta",
+    closed: "Cuenta cerrada. Tiene 30 días para exportar los documentos.",
+    closedText:
+      "Cuenta cerrada el {closed}. Puede exportar los documentos y deshacer el cierre hasta el {until}. Los datos operativos se eliminarán el {purge}.",
+    reopen: "Deshacer cierre",
+    reopenHint:
+      "La organización vuelve en el plan Cedro; un plan de pago debe contratarse de nuevo.",
+    reopened: "Cierre deshecho. La organización volvió al plan Cedro.",
+    banner: "Esta cuenta fue cerrada. Exporte sus documentos hasta el {until}.",
+    bannerAction: "Exportar o deshacer",
+  },
   cedro: {
     availability:
       "Cada documento de Cedro está disponible para consulta y descarga por 6 meses desde su creación.",
@@ -204,6 +232,7 @@ const es: AppMessages = {
     tabNotifications: "Notificaciones",
     tabAudit: "Auditoría",
     tabProfile: "Datos de la organización",
+    tabAccount: "Exportar y cerrar",
     tabPlan: "Plan y cobro",
     members: "Miembros",
     invite: "Invitar persona",
@@ -834,6 +863,8 @@ const es: AppMessages = {
     widget: "No pudimos abrir la firma. Recarga la página e inténtalo de nuevo.",
     cedro_document_expired:
       "En el plan Cedro, cada documento está disponible por 6 meses desde su creación, y este plazo terminó. No se eliminó nada. Para volver a descargar, elija un plan en Organización → Plan y cobro.",
+    confirm_name_mismatch: "El nombre escrito no coincide con el de la organización.",
+    organization_closed: "Esta cuenta ya fue cerrada.",
     plan_limit_reached:
       "Alcanzó el límite de documentos de su plan. Elija un plan en Organización → Plan y cobro para continuar. Sus documentos siguen disponibles (en Cedro, por 6 meses desde su creación).",
     plan_users_limit:

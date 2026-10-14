@@ -302,6 +302,7 @@ const es: Messages = {
     company: ["Quiénes somos", "Blog", "Contacto", "Soporte"],
     terms: "Términos de uso",
     privacy: "Política de privacidad",
+    cookies: "Preferencias de cookies",
     rights: "Todos los derechos reservados.",
   },
   lead: {

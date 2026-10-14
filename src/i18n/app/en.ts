@@ -89,6 +89,33 @@ const en: AppMessages = {
       high_volume: "Send many documents regularly",
     } as Record<string, string>,
   },
+  account: {
+    exportTitle: "Export documents",
+    exportText:
+      "Download all {n} of the organization's documents as ZIP ({parts} part(s) of up to 25), with the signed PDFs and a lista.csv with each one's status.",
+    export: "Download all documents (ZIP)",
+    exporting: "Preparing part {part} of {parts}…",
+    exported: "Export finished.",
+    exportAdminOnly: "Only the owner or an administrator can export all documents.",
+    closeTitle: "Close account",
+    closeRules: [
+      "The paid subscription, if any, is canceled and there are no new charges.",
+      "No new documents can be created.",
+      "For 30 days you can still access and export the documents, and undo the closure.",
+      "On day 60 MDSign deletes the operational data (contacts, templates, forms, invitations and members). Signed documents and signature evidence are kept for the legal period, without access.",
+      "Details in the Terms of Use, section 7.",
+    ],
+    confirmLabel: "To confirm, type the organization name: {name}",
+    close: "Close account",
+    closed: "Account closed. You have 30 days to export the documents.",
+    closedText:
+      "Account closed on {closed}. You can export the documents and undo the closure until {until}. Operational data will be deleted on {purge}.",
+    reopen: "Undo closure",
+    reopenHint: "The organization returns on the Cedro plan; a paid plan must be purchased again.",
+    reopened: "Closure undone. The organization is back on the Cedro plan.",
+    banner: "This account was closed. Export your documents by {until}.",
+    bannerAction: "Export or undo",
+  },
   cedro: {
     availability:
       "Each Cedro document is available to view and download for 6 months from creation.",
@@ -203,6 +230,7 @@ const en: AppMessages = {
     tabNotifications: "Notifications",
     tabAudit: "Audit",
     tabProfile: "Organization details",
+    tabAccount: "Export and close",
     tabPlan: "Plan and billing",
     members: "Members",
     invite: "Invite person",
@@ -828,6 +856,8 @@ const en: AppMessages = {
     widget: "We couldn't open the signing step. Reload the page and try again.",
     cedro_document_expired:
       "On the Cedro plan, each document is available for 6 months from creation, and this period has ended. Nothing was deleted. To download again, choose a plan in Organization → Plan and billing.",
+    confirm_name_mismatch: "The name typed does not match the organization name.",
+    organization_closed: "This account has already been closed.",
     plan_limit_reached:
       "You have reached your plan's document limit. Choose a plan in Organization → Plan and billing to continue. Your documents remain available (on Cedro, for 6 months from creation).",
     plan_users_limit:

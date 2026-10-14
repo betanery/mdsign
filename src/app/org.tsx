@@ -36,6 +36,9 @@ export type Organization = {
   locale: string;
   status: string;
   role: OrgRole;
+  /** Conta encerrada: data do encerramento e fim da janela de exportação (30 dias). */
+  closed_at?: string | null;
+  export_until?: string | null;
 };
 
 type OrgState = {
@@ -71,7 +74,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const { data } = await supabase
       .from("memberships")
-      .select("role, organizations (id, name, cnpj, locale, status)")
+      .select("role, organizations (id, name, cnpj, locale, status, closed_at, export_until)")
       .eq("user_id", user.id)
       .eq("status", "active");
     const list: Organization[] = (data ?? [])

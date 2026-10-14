@@ -4,6 +4,7 @@ import { Copy, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/app/auth";
+import { AccountTab } from "@/app/components/account-tab";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { BillingPanel } from "@/app/components/billing-panel";
@@ -70,7 +71,8 @@ function OrganizationPage() {
       <PageHeader title={t.organization.title} subtitle={current.name} />
       <Tabs
         defaultValue={
-          search.tab && ["plan", "groups", "delegations", "notifications"].includes(search.tab)
+          search.tab &&
+          ["plan", "groups", "delegations", "notifications", "account"].includes(search.tab)
             ? search.tab
             : "members"
         }
@@ -84,6 +86,7 @@ function OrganizationPage() {
           {can("audit.view") && <TabsTrigger value="audit">{t.organization.tabAudit}</TabsTrigger>}
           <TabsTrigger value="profile">{t.organization.tabProfile}</TabsTrigger>
           <TabsTrigger value="plan">{t.organization.tabPlan}</TabsTrigger>
+          <TabsTrigger value="account">{t.organization.tabAccount}</TabsTrigger>
         </TabsList>
         <TabsContent value="members">
           <MembersTab orgId={current.id} />
@@ -110,6 +113,9 @@ function OrganizationPage() {
         </TabsContent>
         <TabsContent value="plan">
           <PlanTab checkout={search.checkout} />
+        </TabsContent>
+        <TabsContent value="account">
+          <AccountTab />
         </TabsContent>
       </Tabs>
     </>

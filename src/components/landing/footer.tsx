@@ -4,6 +4,7 @@ import { siteConfig } from "@/config/site";
 import { footerCompanyLinks, footerProductLinks } from "@/content/landing";
 import { useI18n } from "@/i18n";
 import mundoDigitalTechLogo from "@/assets/brand/mundo-digital-tech-branca.svg";
+import { openCookiePreferences } from "@/lib/consent";
 import { Container } from "./section";
 
 export function Footer() {
@@ -85,6 +86,9 @@ export function Footer() {
             <a href={path("/privacidade")} className="hover:text-white">
               {t.footer.privacy}
             </a>
+            <button type="button" onClick={openCookiePreferences} className="hover:text-white">
+              {t.footer.cookies}
+            </button>
           </nav>
         </Container>
       </div>

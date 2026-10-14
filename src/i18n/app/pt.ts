@@ -87,6 +87,33 @@ const pt = {
       high_volume: "Enviar muitos documentos regularmente",
     } as Record<string, string>,
   },
+  account: {
+    exportTitle: "Exportar documentos",
+    exportText:
+      "Baixe todos os {n} documentos da organização em ZIP ({parts} parte(s) de até 25), com os PDFs assinados e uma lista.csv com a situação de cada um.",
+    export: "Baixar todos os documentos (ZIP)",
+    exporting: "Preparando parte {part} de {parts}…",
+    exported: "Exportação concluída.",
+    exportAdminOnly: "Só o proprietário ou um administrador pode exportar todos os documentos.",
+    closeTitle: "Encerrar conta",
+    closeRules: [
+      "A assinatura paga, se houver, é cancelada e não há novas cobranças.",
+      "Nenhum documento novo pode ser criado.",
+      "Por 30 dias você ainda acessa e exporta os documentos, e pode desfazer o encerramento.",
+      "No 60º dia o MDSign apaga os dados operacionais (contatos, modelos, formulários, convites e membros). Os documentos assinados e as evidências de assinatura ficam guardados pelo prazo legal, sem acesso.",
+      "Detalhes nos Termos de Uso, seção 7.",
+    ],
+    confirmLabel: "Para confirmar, digite o nome da organização: {name}",
+    close: "Encerrar conta",
+    closed: "Conta encerrada. Você tem 30 dias para exportar os documentos.",
+    closedText:
+      "Conta encerrada em {closed}. Você pode exportar os documentos e desfazer o encerramento até {until}. Os dados operacionais serão apagados em {purge}.",
+    reopen: "Desfazer encerramento",
+    reopenHint: "A organização volta no plano Cedro; um plano pago precisa ser contratado de novo.",
+    reopened: "Encerramento desfeito. A organização voltou ao plano Cedro.",
+    banner: "Esta conta foi encerrada. Exporte seus documentos até {until}.",
+    bannerAction: "Exportar ou desfazer",
+  },
   cedro: {
     availability:
       "Cada documento do Cedro fica disponível para consulta e download por 6 meses a partir da criação.",
@@ -202,6 +229,7 @@ const pt = {
     tabNotifications: "Notificações",
     tabAudit: "Auditoria",
     tabProfile: "Dados da organização",
+    tabAccount: "Exportar e encerrar",
     tabPlan: "Plano e cobrança",
     members: "Membros",
     invite: "Convidar pessoa",
@@ -831,6 +859,8 @@ const pt = {
     widget: "Não foi possível abrir a assinatura. Recarregue a página e tente de novo.",
     cedro_document_expired:
       "No plano Cedro, cada documento fica disponível por 6 meses a partir da criação, e este prazo terminou. Nada foi apagado. Para voltar a baixar, escolha um plano em Organização → Plano e cobrança.",
+    confirm_name_mismatch: "O nome digitado não confere com o nome da organização.",
+    organization_closed: "Esta conta já foi encerrada.",
     plan_limit_reached:
       "Você atingiu o limite de documentos do seu plano. Escolha um plano em Organização → Plano e cobrança para continuar. Seus documentos continuam disponíveis (no Cedro, por 6 meses a partir da criação).",
     plan_users_limit:
