@@ -28,8 +28,9 @@ const es: AppMessages = {
     hidePassword: "Ocultar contraseña",
     loginTitle: "Inicia sesión en MDSign",
     loginSubtitle: "Accede a tu cuenta para firmar y seguir documentos.",
-    signupTitle: "Crea tu cuenta gratis",
-    signupSubtitle: "Empieza con el plan Cedro: 5 documentos para conocer MDSign.",
+    signupTitle: "Empiece con Cedro — 5 documentos gratis",
+    signupSubtitle:
+      "Sin tarjeta de crédito. Tiene 5 documentos gratuitos en total, sin renovación mensual. Después, elija un plan si necesita seguir creando documentos.",
     name: "Nombre completo",
     email: "Correo electrónico",
     password: "Contraseña",
@@ -64,10 +65,12 @@ const es: AppMessages = {
     emailNotSent:
       "No pudimos enviar el correo de confirmación ahora. Inténtalo de nuevo en unos minutos o contacta con soporte.",
     logout: "Cerrar sesión",
-    acceptTerms: "He leído y acepto los {terms} y la {privacy} de MDSign.",
-    termsLink: "términos de uso",
-    privacyLink: "política de privacidad",
-    marketingOptIn: "Quiero recibir novedades y ofertas de MDSign por correo (opcional).",
+    signupFree: "Crear cuenta gratis",
+    acceptTerms: "He leído y acepto los {terms} de MDSign y conozco la {privacy}.",
+    termsLink: "Términos de Uso",
+    privacyLink: "Política de Privacidad",
+    marketingOptIn:
+      "Quiero recibir novedades, contenidos y ofertas de MDSign por correo (opcional).",
     termsRequired: "Para crear la cuenta, acepte los términos de uso y la política de privacidad.",
     terms: "Al crear la cuenta, aceptas los términos de uso y la política de privacidad.",
   },
@@ -89,6 +92,9 @@ const es: AppMessages = {
     } as Record<string, string>,
   },
   cedro: {
+    availability:
+      "Cada documento de Cedro está disponible para consulta y descarga por 6 meses desde su creación.",
+    conditions: "Condiciones del plan Cedro",
     usage: "Documentos gratuitos: {used} de {limit} utilizados.",
     left: "Todavía tiene {n} documentos gratuitos disponibles.",
     left1: "Todavía tiene 1 documento gratuito disponible.",
@@ -655,6 +661,12 @@ const es: AppMessages = {
     } as Record<string, string>,
   },
   documents: {
+    cedroAvailable:
+      "Plan Cedro: disponible para consulta y descarga hasta el {date} (6 meses desde la creación).",
+    cedroExpired:
+      "La disponibilidad de este documento terminó el {date}: en el plan Cedro, cada documento está disponible por 6 meses desde su creación. No se eliminó nada y las evidencias de firma siguen guardadas. Para volver a consultar y descargar, elija un plan.",
+    cedroUntilShort: "disponible hasta el {date}",
+    cedroExpiredShort: "disponibilidad terminada el {date}",
     deletedBanner:
       "Este documento fue eliminado el {date}. Ya no aparece en la lista y no acepta nuevas acciones.",
     delegatedFrom: "en delegación de {name}",
@@ -820,8 +832,10 @@ const es: AppMessages = {
       "El servicio de firma rechazó el documento. Revisa el archivo y los datos e inténtalo de nuevo.",
     forbidden: "No tienes permiso para esta acción en esta organización.",
     widget: "No pudimos abrir la firma. Recarga la página e inténtalo de nuevo.",
+    cedro_document_expired:
+      "En el plan Cedro, cada documento está disponible por 6 meses desde su creación, y este plazo terminó. No se eliminó nada. Para volver a descargar, elija un plan en Organización → Plan y cobro.",
     plan_limit_reached:
-      "Alcanzó el límite de documentos de su plan. Elija un plan en Organización → Plan y cobro para continuar. Sus documentos siguen disponibles.",
+      "Alcanzó el límite de documentos de su plan. Elija un plan en Organización → Plan y cobro para continuar. Sus documentos siguen disponibles (en Cedro, por 6 meses desde su creación).",
     plan_users_limit:
       "Su plan no permite más usuarios. Elija un plan mayor en Organización → Plan y cobro.",
     invalid_participants: "Revisa los participantes destacados.",

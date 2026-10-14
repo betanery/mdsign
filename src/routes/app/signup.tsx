@@ -134,6 +134,16 @@ function Signup() {
               )}
             </span>
           </label>
+          <p className="-mt-2 pl-6 text-xs text-muted-foreground">
+            <a
+              href={`/${locale}/condicoes-cedro`}
+              target="_blank"
+              rel="noreferrer"
+              className="underline-offset-2 hover:underline"
+            >
+              {t.cedro.conditions}
+            </a>
+          </p>
           <label className="flex items-start gap-2 text-sm text-muted-foreground">
             <input
               type="checkbox"
@@ -150,7 +160,7 @@ function Signup() {
             className="bg-brand hover:bg-brand-strong"
           >
             {busy && <Loader2 className="animate-spin" aria-hidden />}
-            {t.auth.signup}
+            {t.auth.signupFree}
           </Button>
         </form>
       )}

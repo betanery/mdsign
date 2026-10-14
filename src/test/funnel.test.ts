@@ -63,3 +63,12 @@ describe("origem da campanha (first-touch)", () => {
     expect(a.first_seen_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });
+
+describe("Cedro: disponibilidade de 6 meses", () => {
+  it("soma os meses como o banco, inclusive no fim do mês", async () => {
+    const { availableUntil } = await import("@/app/availability");
+    expect(availableUntil("2026-10-14T12:00:00", 6).getMonth()).toBe(3); // abril
+    const end = availableUntil("2026-08-31T12:00:00", 6);
+    expect([end.getMonth(), end.getDate()]).toEqual([1, 28]); // 28/02
+  });
+});

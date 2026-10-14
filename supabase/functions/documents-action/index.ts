@@ -86,6 +86,10 @@ Deno.serve(async (req) => {
       }
 
       case "download": {
+        // Cedro: cada documento fica disponível por 6 meses a partir da criação (nada é apagado).
+        const { data: until } = await admin.rpc("document_available_until", { doc: doc.id });
+        if (until && new Date(until as string).getTime() < Date.now())
+          throw new AppError("cedro_document_expired", 403, { until });
         const type =
           body.version === "original"
             ? "Original"

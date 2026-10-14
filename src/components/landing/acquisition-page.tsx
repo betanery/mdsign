@@ -97,6 +97,20 @@ export function AcquisitionPage({ variant }: { variant: AcquisitionVariant }) {
                 {c.secondary}
               </a>
             </div>
+            <p className="mx-auto mt-4 max-w-xl text-xs text-muted-foreground">
+              {c.ctaNote}{" "}
+              <a href={path("/termos")} className="underline underline-offset-2 hover:text-brand">
+                {c.termsLabel}
+              </a>{" "}
+              {locale === "en" ? "and the" : locale === "es" ? "y las" : "e as"}{" "}
+              <a
+                href={path("/condicoes-cedro")}
+                className="underline underline-offset-2 hover:text-brand"
+              >
+                {c.cedroLabel}
+              </a>
+              .
+            </p>
             <ul className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-semibold">
               {c.badges.map((b) => (
                 <li key={b} className="flex items-center gap-2">

@@ -14,6 +14,7 @@ import { Route as LangRouteRouteImport } from './routes/$lang/route'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as AssinarGratisRouteImport } from './routes/assinar-gratis'
+import { Route as CondicoesCedroRouteImport } from './routes/condicoes-cedro'
 import { Route as DesenvolvedoresRouteImport } from './routes/desenvolvedores'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
@@ -22,6 +23,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as LangIndexRouteImport } from './routes/$lang/index'
 import { Route as LangAssinarGratisRouteImport } from './routes/$lang/assinar-gratis'
+import { Route as LangCondicoesCedroRouteImport } from './routes/$lang/condicoes-cedro'
 import { Route as LangDesenvolvedoresRouteImport } from './routes/$lang/desenvolvedores'
 import { Route as LangEntrarRouteImport } from './routes/$lang/entrar'
 import { Route as LangPrivacidadeRouteImport } from './routes/$lang/privacidade'
@@ -81,6 +83,11 @@ const AssinarGratisRoute = AssinarGratisRouteImport.update({
   path: '/assinar-gratis',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CondicoesCedroRoute = CondicoesCedroRouteImport.update({
+  id: '/condicoes-cedro',
+  path: '/condicoes-cedro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DesenvolvedoresRoute = DesenvolvedoresRouteImport.update({
   id: '/desenvolvedores',
   path: '/desenvolvedores',
@@ -119,6 +126,11 @@ const LangIndexRoute = LangIndexRouteImport.update({
 const LangAssinarGratisRoute = LangAssinarGratisRouteImport.update({
   id: '/assinar-gratis',
   path: '/assinar-gratis',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangCondicoesCedroRoute = LangCondicoesCedroRouteImport.update({
+  id: '/condicoes-cedro',
+  path: '/condicoes-cedro',
   getParentRoute: () => LangRouteRoute,
 } as any)
 const LangDesenvolvedoresRoute = LangDesenvolvedoresRouteImport.update({
@@ -292,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/assinar-gratis': typeof AssinarGratisRoute
+  '/condicoes-cedro': typeof CondicoesCedroRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -299,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
+  '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/$lang/privacidade': typeof LangPrivacidadeRoute
@@ -338,6 +352,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppShellIndexRoute
   '/admin': typeof AdminRoute
   '/assinar-gratis': typeof AssinarGratisRoute
+  '/condicoes-cedro': typeof CondicoesCedroRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -345,6 +360,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
+  '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/$lang/privacidade': typeof LangPrivacidadeRoute
@@ -385,6 +401,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/assinar-gratis': typeof AssinarGratisRoute
+  '/condicoes-cedro': typeof CondicoesCedroRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -392,6 +409,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
+  '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/$lang/privacidade': typeof LangPrivacidadeRoute
@@ -435,6 +453,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/admin'
     | '/assinar-gratis'
+    | '/condicoes-cedro'
     | '/desenvolvedores'
     | '/entrar'
     | '/privacidade'
@@ -442,6 +461,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/termos'
     | '/$lang/assinar-gratis'
+    | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/$lang/privacidade'
@@ -481,6 +501,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/admin'
     | '/assinar-gratis'
+    | '/condicoes-cedro'
     | '/desenvolvedores'
     | '/entrar'
     | '/privacidade'
@@ -488,6 +509,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/termos'
     | '/$lang/assinar-gratis'
+    | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/$lang/privacidade'
@@ -527,6 +549,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/admin'
     | '/assinar-gratis'
+    | '/condicoes-cedro'
     | '/desenvolvedores'
     | '/entrar'
     | '/privacidade'
@@ -534,6 +557,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/termos'
     | '/$lang/assinar-gratis'
+    | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/$lang/privacidade'
@@ -576,6 +600,7 @@ export interface RootRouteChildren {
   AppRouteRoute: typeof AppRouteRouteWithChildren
   AdminRoute: typeof AdminRoute
   AssinarGratisRoute: typeof AssinarGratisRoute
+  CondicoesCedroRoute: typeof CondicoesCedroRoute
   DesenvolvedoresRoute: typeof DesenvolvedoresRoute
   EntrarRoute: typeof EntrarRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
@@ -621,6 +646,13 @@ declare module '@tanstack/react-router' {
       path: '/assinar-gratis'
       fullPath: '/assinar-gratis'
       preLoaderRoute: typeof AssinarGratisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/condicoes-cedro': {
+      id: '/condicoes-cedro'
+      path: '/condicoes-cedro'
+      fullPath: '/condicoes-cedro'
+      preLoaderRoute: typeof CondicoesCedroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/desenvolvedores': {
@@ -677,6 +709,13 @@ declare module '@tanstack/react-router' {
       path: '/assinar-gratis'
       fullPath: '/$lang/assinar-gratis'
       preLoaderRoute: typeof LangAssinarGratisRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/condicoes-cedro': {
+      id: '/$lang/condicoes-cedro'
+      path: '/condicoes-cedro'
+      fullPath: '/$lang/condicoes-cedro'
+      preLoaderRoute: typeof LangCondicoesCedroRouteImport
       parentRoute: typeof LangRouteRoute
     }
     '/$lang/desenvolvedores': {
@@ -915,6 +954,7 @@ declare module '@tanstack/react-router' {
 
 interface LangRouteRouteChildren {
   LangAssinarGratisRoute: typeof LangAssinarGratisRoute
+  LangCondicoesCedroRoute: typeof LangCondicoesCedroRoute
   LangDesenvolvedoresRoute: typeof LangDesenvolvedoresRoute
   LangEntrarRoute: typeof LangEntrarRoute
   LangPrivacidadeRoute: typeof LangPrivacidadeRoute
@@ -925,6 +965,7 @@ interface LangRouteRouteChildren {
 
 const LangRouteRouteChildren: LangRouteRouteChildren = {
   LangAssinarGratisRoute: LangAssinarGratisRoute,
+  LangCondicoesCedroRoute: LangCondicoesCedroRoute,
   LangDesenvolvedoresRoute: LangDesenvolvedoresRoute,
   LangEntrarRoute: LangEntrarRoute,
   LangPrivacidadeRoute: LangPrivacidadeRoute,
@@ -1015,6 +1056,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   AdminRoute: AdminRoute,
   AssinarGratisRoute: AssinarGratisRoute,
+  CondicoesCedroRoute: CondicoesCedroRoute,
   DesenvolvedoresRoute: DesenvolvedoresRoute,
   EntrarRoute: EntrarRoute,
   PrivacidadeRoute: PrivacidadeRoute,

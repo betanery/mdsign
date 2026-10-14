@@ -724,4 +724,18 @@ do $$ begin
 end $$;
 reset role;
 
+-- Cedro: disponibilidade de 6 meses por documento (sem apagar); plano pago não tem prazo.
+do $$ begin
+  assert public.document_available_until((select id from public.documents where name = 'Doc observado'))
+    between now() + interval '5 months' and now() + interval '7 months', 'documento do Cedro disponível por 6 meses';
+  assert public.document_available_until((select id from public.documents where name = 'Doc webhook')) is null, 'plano pago sem prazo';
+  assert public.cedro_availability_months() = 6, 'prazo padrão de 6 meses';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert public.document_available_until((select id from public.documents where name = 'Doc observado' limit 1)) is null, 'quem não vê o documento não recebe a data';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

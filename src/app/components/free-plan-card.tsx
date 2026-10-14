@@ -102,6 +102,7 @@ export function FreePlanCard({ usage }: { usage: OrgUsage }) {
           {f(free.left === 1 ? t.cedro.left1 : t.cedro.left, { n: String(free.left) })}
         </p>
       )}
+      <p className="text-xs text-muted-foreground">{t.cedro.availability}</p>
       <UpgradeButton
         where="free_card"
         variant={free.used >= free.limit - 1 ? "default" : "outline"}

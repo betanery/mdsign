@@ -18,7 +18,9 @@ import { useAppConfig } from "@/app/app-config";
 import { errorText } from "@/app/errors";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
+import { useCedroAvailability } from "@/app/availability";
 import { FormMessage } from "@/app/components/auth-layout";
+import { UpgradeButton } from "@/app/components/free-plan-card";
 import {
   EditFlowDialog,
   ReplaceDocumentDialog,
@@ -67,6 +69,7 @@ function DocumentDetail() {
     }[]
   >([]);
   const config = useAppConfig();
+  const availability = useCedroAvailability();
   const [editing, setEditing] = useState<"flow" | "replace" | null>(null);
 
   const load = useCallback(async () => {
@@ -153,6 +156,7 @@ function DocumentDetail() {
   const parts = [...doc.document_participants].sort((a, b) => a.step - b.step);
   // Documento excluído (link direto): só leitura, com aviso.
   const deletedAt = doc.deleted_at ?? null;
+  const avail = availability(doc.created_at);
   const myTurn =
     !deletedAt &&
     doc.status === "pending" &&
@@ -181,6 +185,20 @@ function DocumentDetail() {
         </div>
       )}
 
+      {avail &&
+        (avail.expired ? (
+          <div className="mb-4 grid gap-3 rounded-2xl border border-orange-300 bg-orange-50 p-4 text-sm">
+            <p>
+              {f(t.documents.cedroExpired, { date: formatDate(avail.until.toISOString(), locale) })}
+            </p>
+            <UpgradeButton where="document_expired" className="w-fit" />
+          </div>
+        ) : (
+          <p className="mb-4 text-sm text-muted-foreground">
+            {f(t.documents.cedroAvailable, { date: formatDate(avail.until.toISOString(), locale) })}
+          </p>
+        ))}
+
       <div className="mb-6 flex flex-wrap gap-2">
         {myTurn && (
           <Button
@@ -204,11 +222,13 @@ function DocumentDetail() {
             {t.documents.actions.sign}
           </Button>
         )}
-        <Button variant="outline" disabled={busy !== null} onClick={() => void download()}>
-          <Download aria-hidden />
-          {t.documents.actions.download}
-        </Button>
-        {doc.status === "concluded" && (
+        {!avail?.expired && (
+          <Button variant="outline" disabled={busy !== null} onClick={() => void download()}>
+            <Download aria-hidden />
+            {t.documents.actions.download}
+          </Button>
+        )}
+        {doc.status === "concluded" && !avail?.expired && (
           <Button
             variant="ghost"
             disabled={busy !== null}

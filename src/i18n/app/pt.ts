@@ -26,8 +26,9 @@ const pt = {
     hidePassword: "Ocultar senha",
     loginTitle: "Entrar no MDSign",
     loginSubtitle: "Acesse sua conta para assinar e acompanhar documentos.",
-    signupTitle: "Crie sua conta grátis",
-    signupSubtitle: "Comece com o plano Cedro: 5 documentos para conhecer o MDSign.",
+    signupTitle: "Comece com o Cedro — 5 documentos grátis",
+    signupSubtitle:
+      "Sem cartão de crédito. Você tem 5 documentos gratuitos no total, sem renovação mensal. Depois, escolha um plano se precisar continuar criando documentos.",
     name: "Nome completo",
     email: "E-mail",
     password: "Senha",
@@ -61,10 +62,11 @@ const pt = {
     emailNotSent:
       "Não conseguimos enviar o e-mail de confirmação agora. Tente novamente em alguns minutos ou fale com o suporte.",
     logout: "Sair",
-    acceptTerms: "Li e aceito os {terms} e a {privacy} do MDSign.",
-    termsLink: "termos de uso",
-    privacyLink: "política de privacidade",
-    marketingOptIn: "Quero receber novidades e ofertas do MDSign por e-mail (opcional).",
+    signupFree: "Criar conta grátis",
+    acceptTerms: "Li e concordo com os {terms} MDSign e estou ciente da {privacy}.",
+    termsLink: "Termos de Uso",
+    privacyLink: "Política de Privacidade",
+    marketingOptIn: "Quero receber novidades, conteúdos e ofertas do MDSign por e-mail (opcional).",
     termsRequired: "Para criar a conta, aceite os termos de uso e a política de privacidade.",
     terms: "Ao criar a conta, você concorda com os termos de uso e a política de privacidade.",
   },
@@ -86,6 +88,9 @@ const pt = {
     } as Record<string, string>,
   },
   cedro: {
+    availability:
+      "Cada documento do Cedro fica disponível para consulta e download por 6 meses a partir da criação.",
+    conditions: "Condições do plano Cedro",
     usage: "Documentos gratuitos: {used} de {limit} utilizados.",
     left: "Você ainda tem {n} documentos gratuitos disponíveis.",
     left1: "Você ainda tem 1 documento gratuito disponível.",
@@ -653,6 +658,12 @@ const pt = {
     } as Record<string, string>,
   },
   documents: {
+    cedroAvailable:
+      "Plano Cedro: disponível para consulta e download até {date} (6 meses a partir da criação).",
+    cedroExpired:
+      "A disponibilidade deste documento terminou em {date}: no plano Cedro, cada documento fica disponível por 6 meses a partir da criação. Nada foi apagado e as evidências de assinatura continuam guardadas. Para voltar a consultar e baixar, escolha um plano.",
+    cedroUntilShort: "disponível até {date}",
+    cedroExpiredShort: "disponibilidade encerrada em {date}",
     deletedBanner:
       "Este documento foi excluído em {date}. Ele não aparece mais na lista e não aceita novas ações.",
     delegatedFrom: "em delegação de {name}",
@@ -818,8 +829,10 @@ const pt = {
       "O serviço de assinatura recusou o documento. Confira o arquivo e os dados e tente de novo.",
     forbidden: "Você não tem permissão para esta ação nesta organização.",
     widget: "Não foi possível abrir a assinatura. Recarregue a página e tente de novo.",
+    cedro_document_expired:
+      "No plano Cedro, cada documento fica disponível por 6 meses a partir da criação, e este prazo terminou. Nada foi apagado. Para voltar a baixar, escolha um plano em Organização → Plano e cobrança.",
     plan_limit_reached:
-      "Você atingiu o limite de documentos do seu plano. Escolha um plano em Organização → Plano e cobrança para continuar. Seus documentos continuam disponíveis.",
+      "Você atingiu o limite de documentos do seu plano. Escolha um plano em Organização → Plano e cobrança para continuar. Seus documentos continuam disponíveis (no Cedro, por 6 meses a partir da criação).",
     plan_users_limit:
       "Seu plano não permite mais usuários. Escolha um plano maior em Organização → Plano e cobrança.",
     invalid_participants: "Confira os participantes destacados.",

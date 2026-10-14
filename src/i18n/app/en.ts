@@ -27,8 +27,9 @@ const en: AppMessages = {
     hidePassword: "Hide password",
     loginTitle: "Sign in to MDSign",
     loginSubtitle: "Access your account to sign and track documents.",
-    signupTitle: "Create your free account",
-    signupSubtitle: "Start with the Cedro plan: 5 documents to get to know MDSign.",
+    signupTitle: "Start with Cedro — 5 free documents",
+    signupSubtitle:
+      "No credit card. You get 5 free documents in total, with no monthly renewal. Later, choose a plan if you need to keep creating documents.",
     name: "Full name",
     email: "Email",
     password: "Password",
@@ -63,10 +64,11 @@ const en: AppMessages = {
     emailNotSent:
       "We couldn't send the confirmation email right now. Try again in a few minutes or contact support.",
     logout: "Sign out",
-    acceptTerms: "I have read and accept the MDSign {terms} and {privacy}.",
-    termsLink: "terms of use",
-    privacyLink: "privacy policy",
-    marketingOptIn: "I want to receive MDSign news and offers by email (optional).",
+    signupFree: "Create free account",
+    acceptTerms: "I have read and agree to the MDSign {terms} and I am aware of the {privacy}.",
+    termsLink: "Terms of Use",
+    privacyLink: "Privacy Policy",
+    marketingOptIn: "I want to receive MDSign news, content and offers by email (optional).",
     termsRequired: "To create the account, accept the terms of use and privacy policy.",
     terms: "By creating an account, you agree to the terms of use and the privacy policy.",
   },
@@ -88,6 +90,9 @@ const en: AppMessages = {
     } as Record<string, string>,
   },
   cedro: {
+    availability:
+      "Each Cedro document is available to view and download for 6 months from creation.",
+    conditions: "Cedro plan conditions",
     usage: "Free documents: {used} of {limit} used.",
     left: "You still have {n} free documents available.",
     left1: "You still have 1 free document available.",
@@ -652,6 +657,12 @@ const en: AppMessages = {
     } as Record<string, string>,
   },
   documents: {
+    cedroAvailable:
+      "Cedro plan: available to view and download until {date} (6 months from creation).",
+    cedroExpired:
+      "This document's availability ended on {date}: on the Cedro plan, each document is available for 6 months from creation. Nothing was deleted and the signature evidence remains stored. To view and download again, choose a plan.",
+    cedroUntilShort: "available until {date}",
+    cedroExpiredShort: "availability ended on {date}",
     deletedBanner:
       "This document was deleted on {date}. It no longer appears in the list and accepts no further actions.",
     delegatedFrom: "on behalf of {name}",
@@ -815,8 +826,10 @@ const en: AppMessages = {
       "The signing service rejected the document. Check the file and the details and try again.",
     forbidden: "You don't have permission for this action in this organization.",
     widget: "We couldn't open the signing step. Reload the page and try again.",
+    cedro_document_expired:
+      "On the Cedro plan, each document is available for 6 months from creation, and this period has ended. Nothing was deleted. To download again, choose a plan in Organization → Plan and billing.",
     plan_limit_reached:
-      "You have reached your plan's document limit. Choose a plan in Organization → Plan and billing to continue. Your documents remain available.",
+      "You have reached your plan's document limit. Choose a plan in Organization → Plan and billing to continue. Your documents remain available (on Cedro, for 6 months from creation).",
     plan_users_limit:
       "Your plan does not allow more users. Choose a bigger plan in Organization → Plan and billing.",
     invalid_participants: "Check the highlighted participants.",

@@ -13,6 +13,10 @@ export type AcquisitionVariant = {
 };
 
 type Copy = {
+  /** Nota junto ao botão (Condições do Cedro), com links para os Termos e as Condições. */
+  ctaNote: string;
+  termsLabel: string;
+  cedroLabel: string;
   primary: string;
   secondary: string;
   badges: string[];
@@ -39,6 +43,9 @@ export const CAMPAIGN_SLUGS = [
 ] as const;
 
 const pt: Copy = {
+  ctaNote: "Franquia total de 5 documentos; não renovada mensalmente. Aplicam-se os",
+  termsLabel: "Termos de Uso",
+  cedroLabel: "Condições do plano Cedro",
   primary: "Começar grátis",
   secondary: "Conhecer o MDSign",
   badges: ["5 documentos grátis", "Sem cartão de crédito", "Validade jurídica"],
@@ -83,11 +90,11 @@ const pt: Copy = {
     },
     {
       q: "Os 5 documentos são por mês?",
-      a: "Não, são 5 documentos no total. Criar a conta não gasta nenhum.",
+      a: "Não, são 5 documentos no total por pessoa, sem renovação mensal. Criar a conta não gasta nenhum.",
     },
     {
       q: "E quando acabarem?",
-      a: "Seus documentos continuam disponíveis para consulta e download. Para criar novos, escolha um plano a partir de R$ 39,90/mês.",
+      a: "Cada documento fica disponível para consulta e download por 6 meses a partir da criação. Para criar novos documentos, escolha um plano a partir de R$ 39,90/mês.",
     },
   ],
   finalTitle: "Comece agora, de graça",
@@ -133,6 +140,9 @@ const pt: Copy = {
 };
 
 const en: Copy = {
+  ctaNote: "5 documents in total; not renewed monthly. Subject to the",
+  termsLabel: "Terms of Use",
+  cedroLabel: "Cedro plan conditions",
   primary: "Start for free",
   secondary: "Discover MDSign",
   badges: ["5 free documents", "No credit card", "Legally valid"],
@@ -174,11 +184,11 @@ const en: Copy = {
     },
     {
       q: "Are the 5 documents per month?",
-      a: "No, they are 5 documents in total. Creating the account uses none.",
+      a: "No, they are 5 documents in total per person, with no monthly renewal. Creating the account uses none.",
     },
     {
       q: "What happens when they run out?",
-      a: "Your documents remain available to view and download. To create new ones, choose a plan from R$ 39.90/month.",
+      a: "Each document is available to view and download for 6 months from creation. To create new documents, choose a plan from R$ 39.90/month.",
     },
   ],
   finalTitle: "Start now, for free",
@@ -224,6 +234,9 @@ const en: Copy = {
 };
 
 const es: Copy = {
+  ctaNote: "5 documentos en total; no se renueva mensualmente. Se aplican los",
+  termsLabel: "Términos de Uso",
+  cedroLabel: "Condiciones del plan Cedro",
   primary: "Empezar gratis",
   secondary: "Conocer MDSign",
   badges: ["5 documentos gratis", "Sin tarjeta de crédito", "Validez jurídica"],
@@ -265,11 +278,11 @@ const es: Copy = {
     },
     {
       q: "¿Los 5 documentos son por mes?",
-      a: "No, son 5 documentos en total. Crear la cuenta no consume ninguno.",
+      a: "No, son 5 documentos en total por persona, sin renovación mensual. Crear la cuenta no consume ninguno.",
     },
     {
       q: "¿Y cuando se acaben?",
-      a: "Sus documentos siguen disponibles para consulta y descarga. Para crear nuevos, elija un plan desde R$ 39,90/mes.",
+      a: "Cada documento está disponible para consulta y descarga por 6 meses desde su creación. Para crear nuevos documentos, elija un plan desde R$ 39,90/mes.",
     },
   ],
   finalTitle: "Empiece ahora, gratis",

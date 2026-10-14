@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/app/auth";
 import { documentAction } from "@/app/api";
+import { useCedroAvailability } from "@/app/availability";
 import { PageHeader } from "@/app/components/app-shell";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { RefuseDialog, SigningQueue } from "@/app/components/document-batch";
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/app/_shell/documents/")({
 
 function DocumentsPage() {
   const { t, f, locale } = useAppI18n();
+  const availability = useCedroAvailability();
   const { user } = useAuth();
   const { current, can } = useOrg();
   const search = Route.useSearch();
@@ -307,6 +309,19 @@ function DocumentsPage() {
                       <p className="truncate font-medium">{d.name}</p>
                       <p className="truncate text-sm text-muted-foreground">
                         {t.documents.kind[d.kind]} · {formatDate(d.created_at, locale)}
+                        {(() => {
+                          const a = availability(d.created_at);
+                          if (!a) return null;
+                          const date = formatDate(a.until.toISOString(), locale);
+                          return (
+                            <span className={a.expired ? "text-orange-700" : undefined}>
+                              {" · "}
+                              {a.expired
+                                ? f(t.documents.cedroExpiredShort, { date })
+                                : f(t.documents.cedroUntilShort, { date })}
+                            </span>
+                          );
+                        })()}
                       </p>
                     </div>
                   </Link>
