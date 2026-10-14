@@ -24,6 +24,8 @@ type Status = {
   purgeAfter: string | null;
   documents: number;
   parts: number;
+  /** Baixou todas as partes do ZIP nas últimas 24 horas (exigido para encerrar). */
+  exportedAll: boolean;
 };
 
 function useAccountStatus(orgId: string | undefined) {
@@ -39,7 +41,15 @@ function useAccountStatus(orgId: string | undefined) {
 }
 
 /** Baixa as partes do ZIP uma a uma (cada parte tem até 25 documentos). */
-function ExportButton({ orgId, parts }: { orgId: string; parts: number }) {
+function ExportButton({
+  orgId,
+  parts,
+  onDone,
+}: {
+  orgId: string;
+  parts: number;
+  onDone: () => void;
+}) {
   const { t, f } = useAppI18n();
   const [busy, setBusy] = useState<number | null>(null);
   async function run() {
@@ -54,6 +64,7 @@ function ExportButton({ orgId, parts }: { orgId: string; parts: number }) {
         downloadBlob(`mdsign-documentos-parte-${part}-de-${parts}.zip`, blob);
       }
       toast.success(t.account.exported);
+      onDone();
     } catch (e) {
       toast.error(errorText(t, e));
     } finally {
@@ -131,7 +142,7 @@ export function AccountTab() {
             : t.common.loading}
         </p>
         {status && can("members.manage") && status.documents > 0 && (
-          <ExportButton orgId={current.id} parts={status.parts} />
+          <ExportButton orgId={current.id} parts={status.parts} onDone={reload} />
         )}
         {!can("members.manage") && (
           <p className="text-sm text-muted-foreground">{t.account.exportAdminOnly}</p>
@@ -163,6 +174,12 @@ export function AccountTab() {
             </>
           ) : (
             <>
+              {status && !status.exportedAll && (
+                <p className="flex items-start gap-2 rounded-xl border border-orange-300 bg-orange-50 p-3 text-sm text-orange-800">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  {t.account.exportFirst}
+                </p>
+              )}
               <ul className="grid list-disc gap-1 pl-5 text-sm text-muted-foreground">
                 {t.account.closeRules.map((r) => (
                   <li key={r}>{r}</li>
@@ -184,7 +201,9 @@ export function AccountTab() {
                 variant="destructive"
                 className="w-fit"
                 disabled={
-                  busy || confirm.trim().toLowerCase() !== current.name.trim().toLowerCase()
+                  busy ||
+                  !status?.exportedAll ||
+                  confirm.trim().toLowerCase() !== current.name.trim().toLowerCase()
                 }
                 onClick={() => void close()}
               >

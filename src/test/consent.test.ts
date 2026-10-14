@@ -22,7 +22,7 @@ describe("consentimento de cookies", () => {
     const def = (window.dataLayer as unknown[][]).find(
       (a) => a[0] === "consent" && a[1] === "default",
     );
-    expect((def?.[2] as Record<string, string>).analytics_storage).toBe("denied");
+    expect((def?.[2] as Record<string, string>)["analytics_storage"]).toBe("denied");
   });
 
   it("recusar mantém o GTM desligado; aceitar análise carrega", () => {

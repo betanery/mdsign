@@ -58,6 +58,28 @@ Deno.serve(async (req) => {
       return count ?? 0;
     };
 
+    // Encerrar só depois de baixar o ZIP completo (todas as partes nas últimas 24 horas).
+    const exportedAll = async (userId: string) => {
+      const total = await countDocs();
+      if (total === 0) return true;
+      const parts = Math.ceil(total / PART);
+      const { data: rows } = await admin
+        .from("audit_log")
+        .select("data")
+        .eq("organization_id", organizationId)
+        .eq("actor_id", userId)
+        .eq("action", "documents.exported")
+        .gte("created_at", new Date(Date.now() - 24 * 3600 * 1000).toISOString());
+      const done = new Set(
+        (rows ?? [])
+          .map((r) => r.data as { part?: number; parts?: number })
+          .filter((d) => d.parts === parts)
+          .map((d) => d.part),
+      );
+      for (let i = 1; i <= parts; i++) if (!done.has(i)) return false;
+      return true;
+    };
+
     if (action === "status") {
       await requirePermission(caller, organizationId, "documents.view");
       const total = await countDocs();
@@ -68,6 +90,7 @@ Deno.serve(async (req) => {
           purgeAfter: org.purge_after,
           documents: total,
           parts: Math.max(1, Math.ceil(total / PART)),
+          exportedAll: await exportedAll(caller.user.id),
         },
         200,
         origin,
@@ -141,7 +164,11 @@ Deno.serve(async (req) => {
         act: "documents.exported",
         ent: "organization",
         ent_id: organizationId,
-        payload: { part, documents: rows.length },
+        payload: {
+          part,
+          parts: Math.max(1, Math.ceil((await countDocs()) / PART)),
+          documents: rows.length,
+        },
       });
       return new Response(zip(files) as BodyInit, {
         status: 200,
@@ -161,6 +188,7 @@ Deno.serve(async (req) => {
       const confirm = String(body["confirmName"] ?? "");
       if (confirm.trim().toLowerCase() !== String(org.name).trim().toLowerCase())
         throw new AppError("confirm_name_mismatch", 422);
+      if (!(await exportedAll(caller.user.id))) throw new AppError("export_required", 409);
       const { data: sub } = await admin
         .from("subscriptions")
         .select("asaas_subscription_id, cancel_at")
