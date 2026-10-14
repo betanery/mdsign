@@ -61,7 +61,9 @@ const pt = {
     emailNotSent:
       "Não conseguimos enviar o e-mail de confirmação agora. Tente novamente em alguns minutos ou fale com o suporte.",
     logout: "Sair",
-    acceptTerms: "Li e aceito os termos de uso e a política de privacidade do MDSign.",
+    acceptTerms: "Li e aceito os {terms} e a {privacy} do MDSign.",
+    termsLink: "termos de uso",
+    privacyLink: "política de privacidade",
     marketingOptIn: "Quero receber novidades e ofertas do MDSign por e-mail (opcional).",
     termsRequired: "Para criar a conta, aceite os termos de uso e a política de privacidade.",
     terms: "Ao criar a conta, você concorda com os termos de uso e a política de privacidade.",

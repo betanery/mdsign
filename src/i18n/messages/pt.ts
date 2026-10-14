@@ -293,6 +293,8 @@ const pt = {
     product: ["Funcionalidades", "Segurança", "Planos", "Integrações", "API"],
     companyTitle: "Empresa",
     company: ["Quem somos", "Blog", "Contato", "Suporte"],
+    terms: "Termos de uso",
+    privacy: "Política de privacidade",
     rights: "Todos os direitos reservados.",
   },
   lead: {

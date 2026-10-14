@@ -300,6 +300,8 @@ const es: Messages = {
     product: ["Funcionalidades", "Seguridad", "Planes", "Integraciones", "API"],
     companyTitle: "Empresa",
     company: ["Quiénes somos", "Blog", "Contacto", "Soporte"],
+    terms: "Términos de uso",
+    privacy: "Política de privacidad",
     rights: "Todos los derechos reservados.",
   },
   lead: {

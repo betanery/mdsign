@@ -74,8 +74,18 @@ export function Footer() {
         </address>
       </Container>
       <div className="border-t border-white/10">
-        <Container className="py-5 text-xs text-white/60">
-          © {new Date().getFullYear()} MDSign · {siteConfig.company}. {t.footer.rights}
+        <Container className="flex flex-wrap items-center justify-between gap-3 py-5 text-xs text-white/60">
+          <span>
+            © {new Date().getFullYear()} MDSign · {siteConfig.company}. {t.footer.rights}
+          </span>
+          <nav aria-label={`${t.footer.terms} · ${t.footer.privacy}`} className="flex gap-4">
+            <a href={path("/termos")} className="hover:text-white">
+              {t.footer.terms}
+            </a>
+            <a href={path("/privacidade")} className="hover:text-white">
+              {t.footer.privacy}
+            </a>
+          </nav>
         </Container>
       </div>
     </footer>

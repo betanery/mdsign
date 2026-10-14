@@ -64,7 +64,9 @@ const es: AppMessages = {
     emailNotSent:
       "No pudimos enviar el correo de confirmación ahora. Inténtalo de nuevo en unos minutos o contacta con soporte.",
     logout: "Cerrar sesión",
-    acceptTerms: "He leído y acepto los términos de uso y la política de privacidad de MDSign.",
+    acceptTerms: "He leído y acepto los {terms} y la {privacy} de MDSign.",
+    termsLink: "términos de uso",
+    privacyLink: "política de privacidad",
     marketingOptIn: "Quiero recibir novedades y ofertas de MDSign por correo (opcional).",
     termsRequired: "Para crear la cuenta, acepte los términos de uso y la política de privacidad.",
     terms: "Al crear la cuenta, aceptas los términos de uso y la política de privacidad.",

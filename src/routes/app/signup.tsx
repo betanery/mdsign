@@ -116,7 +116,23 @@ function Signup() {
               required
               className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)]"
             />
-            <span>{t.auth.acceptTerms}</span>
+            <span>
+              {t.auth.acceptTerms.split(/(\{terms\}|\{privacy\})/).map((part) =>
+                part === "{terms}" || part === "{privacy}" ? (
+                  <a
+                    key={part}
+                    href={`/${locale}/${part === "{terms}" ? "termos" : "privacidade"}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-brand underline-offset-2 hover:underline"
+                  >
+                    {part === "{terms}" ? t.auth.termsLink : t.auth.privacyLink}
+                  </a>
+                ) : (
+                  part
+                ),
+              )}
+            </span>
           </label>
           <label className="flex items-start gap-2 text-sm text-muted-foreground">
             <input

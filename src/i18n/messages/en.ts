@@ -275,6 +275,8 @@ const en: Messages = {
     product: ["Features", "Security", "Plans", "Integrations", "API"],
     companyTitle: "Company",
     company: ["About us", "Blog", "Contact", "Support"],
+    terms: "Terms of use",
+    privacy: "Privacy policy",
     rights: "All rights reserved.",
   },
   lead: {

@@ -16,12 +16,16 @@ import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as AssinarGratisRouteImport } from './routes/assinar-gratis'
 import { Route as DesenvolvedoresRouteImport } from './routes/desenvolvedores'
 import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as LangIndexRouteImport } from './routes/$lang/index'
 import { Route as LangAssinarGratisRouteImport } from './routes/$lang/assinar-gratis'
 import { Route as LangDesenvolvedoresRouteImport } from './routes/$lang/desenvolvedores'
 import { Route as LangEntrarRouteImport } from './routes/$lang/entrar'
+import { Route as LangPrivacidadeRouteImport } from './routes/$lang/privacidade'
+import { Route as LangTermosRouteImport } from './routes/$lang/termos'
 import { Route as AppShellRouteImport } from './routes/app/_shell'
 import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-password'
 import { Route as AppLoginRouteImport } from './routes/app/login'
@@ -87,6 +91,11 @@ const EntrarRoute = EntrarRouteImport.update({
   path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
@@ -95,6 +104,11 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LangIndexRoute = LangIndexRouteImport.update({
@@ -115,6 +129,16 @@ const LangDesenvolvedoresRoute = LangDesenvolvedoresRouteImport.update({
 const LangEntrarRoute = LangEntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangPrivacidadeRoute = LangPrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangTermosRoute = LangTermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => LangRouteRoute,
 } as any)
 const AppShellRoute = AppShellRouteImport.update({
@@ -270,11 +294,15 @@ export interface FileRoutesByFullPath {
   '/assinar-gratis': typeof AssinarGratisRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
+  '/$lang/privacidade': typeof LangPrivacidadeRoute
+  '/$lang/termos': typeof LangTermosRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
@@ -312,11 +340,15 @@ export interface FileRoutesByTo {
   '/assinar-gratis': typeof AssinarGratisRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
+  '/$lang/privacidade': typeof LangPrivacidadeRoute
+  '/$lang/termos': typeof LangTermosRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
@@ -355,11 +387,15 @@ export interface FileRoutesById {
   '/assinar-gratis': typeof AssinarGratisRoute
   '/desenvolvedores': typeof DesenvolvedoresRoute
   '/entrar': typeof EntrarRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
+  '/$lang/privacidade': typeof LangPrivacidadeRoute
+  '/$lang/termos': typeof LangTermosRoute
   '/app/_shell': typeof AppShellRouteWithChildren
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
@@ -401,11 +437,15 @@ export interface FileRouteTypes {
     | '/assinar-gratis'
     | '/desenvolvedores'
     | '/entrar'
+    | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/termos'
     | '/$lang/assinar-gratis'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
+    | '/$lang/privacidade'
+    | '/$lang/termos'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/reset-password'
@@ -443,11 +483,15 @@ export interface FileRouteTypes {
     | '/assinar-gratis'
     | '/desenvolvedores'
     | '/entrar'
+    | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/termos'
     | '/$lang/assinar-gratis'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
+    | '/$lang/privacidade'
+    | '/$lang/termos'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/reset-password'
@@ -485,11 +529,15 @@ export interface FileRouteTypes {
     | '/assinar-gratis'
     | '/desenvolvedores'
     | '/entrar'
+    | '/privacidade'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/termos'
     | '/$lang/assinar-gratis'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
+    | '/$lang/privacidade'
+    | '/$lang/termos'
     | '/app/_shell'
     | '/app/forgot-password'
     | '/app/login'
@@ -530,8 +578,10 @@ export interface RootRouteChildren {
   AssinarGratisRoute: typeof AssinarGratisRoute
   DesenvolvedoresRoute: typeof DesenvolvedoresRoute
   EntrarRoute: typeof EntrarRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermosRoute: typeof TermosRoute
   FTokenRoute: typeof FTokenRoute
   STokenRoute: typeof STokenRoute
 }
@@ -587,6 +637,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/robots.txt': {
       id: '/robots.txt'
       path: '/robots.txt'
@@ -599,6 +656,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$lang/': {
@@ -627,6 +691,20 @@ declare module '@tanstack/react-router' {
       path: '/entrar'
       fullPath: '/$lang/entrar'
       preLoaderRoute: typeof LangEntrarRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/privacidade': {
+      id: '/$lang/privacidade'
+      path: '/privacidade'
+      fullPath: '/$lang/privacidade'
+      preLoaderRoute: typeof LangPrivacidadeRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/termos': {
+      id: '/$lang/termos'
+      path: '/termos'
+      fullPath: '/$lang/termos'
+      preLoaderRoute: typeof LangTermosRouteImport
       parentRoute: typeof LangRouteRoute
     }
     '/app/_shell': {
@@ -839,6 +917,8 @@ interface LangRouteRouteChildren {
   LangAssinarGratisRoute: typeof LangAssinarGratisRoute
   LangDesenvolvedoresRoute: typeof LangDesenvolvedoresRoute
   LangEntrarRoute: typeof LangEntrarRoute
+  LangPrivacidadeRoute: typeof LangPrivacidadeRoute
+  LangTermosRoute: typeof LangTermosRoute
   LangIndexRoute: typeof LangIndexRoute
   LangLpSlugRoute: typeof LangLpSlugRoute
 }
@@ -847,6 +927,8 @@ const LangRouteRouteChildren: LangRouteRouteChildren = {
   LangAssinarGratisRoute: LangAssinarGratisRoute,
   LangDesenvolvedoresRoute: LangDesenvolvedoresRoute,
   LangEntrarRoute: LangEntrarRoute,
+  LangPrivacidadeRoute: LangPrivacidadeRoute,
+  LangTermosRoute: LangTermosRoute,
   LangIndexRoute: LangIndexRoute,
   LangLpSlugRoute: LangLpSlugRoute,
 }
@@ -935,8 +1017,10 @@ const rootRouteChildren: RootRouteChildren = {
   AssinarGratisRoute: AssinarGratisRoute,
   DesenvolvedoresRoute: DesenvolvedoresRoute,
   EntrarRoute: EntrarRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermosRoute: TermosRoute,
   FTokenRoute: FTokenRoute,
   STokenRoute: STokenRoute,
 }
