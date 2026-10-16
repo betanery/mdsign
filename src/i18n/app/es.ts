@@ -477,6 +477,18 @@ const es: AppMessages = {
     account: "Cuenta",
   },
   admin: {
+    engineErrors: "Errores del motor de firma",
+    engineErrorsHint:
+      "Respuestas de error, tiempos agotados y fallas de red de SignDoc, sin datos personales. Úselos para diagnosticar y abrir tickets con Lacuna.",
+    engineErrorsEmpty: "Ningún error registrado.",
+    engineOperation: "Operación",
+    engineStatus: "Resultado",
+    engineMessage: "Mensaje del motor",
+    engineDocument: "Documento en el motor",
+    engineKinds: {
+      timeout: "Tiempo agotado",
+      network: "Falla de red",
+    } as Record<string, string>,
     funnel: {
       title: "Embudo de adquisición y conversión",
       note: "Solo datos registrados desde la implantación del embudo. Nada es estimado.",
@@ -542,6 +554,7 @@ const es: AppMessages = {
       webhooks_failed_24h: "Webhooks con fallo (24h)",
       billing_events_pending: "Eventos de cobro pendientes",
       bulk_stuck: "Envíos masivos detenidos hace más de 1h",
+      engine_errors_24h: "Errores del motor de firma (24h)",
     } as Record<string, string>,
     jobsTitle: "Rutinas automáticas",
     jobNames: {

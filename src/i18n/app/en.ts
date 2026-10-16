@@ -465,6 +465,18 @@ const en: AppMessages = {
     account: "Account",
   },
   admin: {
+    engineErrors: "Signature engine errors",
+    engineErrorsHint:
+      "Error responses, timeouts and network failures from SignDoc, without personal data. Use them to diagnose and open tickets with Lacuna.",
+    engineErrorsEmpty: "No errors recorded.",
+    engineOperation: "Operation",
+    engineStatus: "Result",
+    engineMessage: "Engine message",
+    engineDocument: "Engine document",
+    engineKinds: {
+      timeout: "Timed out",
+      network: "Network failure",
+    } as Record<string, string>,
     funnel: {
       title: "Acquisition and conversion funnel",
       note: "Only data recorded since the funnel went live. Nothing is estimated.",
@@ -529,6 +541,7 @@ const en: AppMessages = {
       webhooks_failed_24h: "Failed webhooks (24h)",
       billing_events_pending: "Pending billing events",
       bulk_stuck: "Bulk sends stalled for over 1h",
+      engine_errors_24h: "Signature engine errors (24h)",
     } as Record<string, string>,
     jobsTitle: "Scheduled routines",
     jobNames: {

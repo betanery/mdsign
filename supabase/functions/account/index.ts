@@ -11,6 +11,7 @@
 import { asaas } from "../_shared/asaas.ts";
 import { admin, requirePermission, requireUser } from "../_shared/auth.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
+import { fetchWithTimeout } from "../_shared/net.ts";
 import { signdoc } from "../_shared/signdoc.ts";
 import { zip } from "../_shared/zip.ts";
 
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
           const url = ticket.location.startsWith("http")
             ? ticket.location
             : `${signdoc.baseUrl}${ticket.location}`;
-          const res = await fetch(url);
+          const res = await fetchWithTimeout(url);
           if (!res.ok) throw new Error(String(res.status));
           let base = `${d.created_at.slice(0, 10)}_${safeName(d.name)}`;
           for (let i = 2; used.has(base); i++)

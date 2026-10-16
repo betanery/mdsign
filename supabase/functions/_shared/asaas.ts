@@ -6,6 +6,7 @@
 // Não há fallback automático para produção. Para ativar produção no futuro, ver
 // docs/asaas-producao.md (exige autorização explícita e mudança de código revisada).
 
+import { fetchWithTimeout, maskPersonal, NetError } from "./net.ts";
 import { AppError } from "./http.ts";
 
 export type AsaasEnv = "sandbox" | "production";
@@ -46,20 +47,32 @@ export function webhookToken(): string {
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const env = asaasEnv();
-  const res = await fetch(`${BASE_URLS[env]}${path}`, {
-    method,
-    headers: {
-      access_token: apiKey(env),
-      "Content-Type": "application/json",
-      "User-Agent": "MDSign",
-    },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(`${BASE_URLS[env]}${path}`, {
+      method,
+      headers: {
+        access_token: apiKey(env),
+        "Content-Type": "application/json",
+        "User-Agent": "MDSign",
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+  } catch (e) {
+    console.error("asaas", method, path.split("?")[0], e instanceof NetError ? e.kind : e);
+    throw new AppError("billing_unavailable", 502, { errors: null });
+  }
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
     // O Asaas devolve { errors: [{ code, description }] }: registra e devolve um código estável.
-    console.error("asaas", method, path, res.status, text.slice(0, 500));
+    console.error(
+      "asaas",
+      method,
+      path.split("?")[0],
+      res.status,
+      maskPersonal(text.slice(0, 500)),
+    );
     throw new AppError(res.status >= 500 ? "billing_unavailable" : "billing_rejected", 502, {
       errors: Array.isArray(data?.errors)
         ? data.errors.map((e: { code?: string; description?: string }) => ({

@@ -33,7 +33,8 @@ export class AppError extends Error {
 }
 
 export function handleError(error: unknown, origin: string | null): Response {
-  if (error instanceof AppError) return json({ error: error.code, details: error.details }, error.status, origin);
+  if (error instanceof AppError)
+    return json({ error: error.code, details: error.details }, error.status, origin);
   console.error(error);
   return json({ error: "internal_error" }, 500, origin);
 }

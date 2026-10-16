@@ -35,7 +35,11 @@ export async function requireUser(req: Request): Promise<Caller> {
 }
 
 /** Confere a permissão no banco com a identidade do usuário (mesma regra das políticas). */
-export async function requirePermission(caller: Caller, organizationId: string, permission: string) {
+export async function requirePermission(
+  caller: Caller,
+  organizationId: string,
+  permission: string,
+) {
   const { data, error } = await caller.asUser.rpc("has_org_permission", {
     org: organizationId,
     perm: permission,

@@ -823,4 +823,27 @@ do $$ begin
 end $$;
 reset role;
 
+-- Erros do motor: só o servidor grava; só o Super Admin lê; saúde mostra a contagem.
+insert into public.engine_errors (operation, kind, http_status, message) values ('POST /api/documents', 'http', 500, 'teste');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform 1 from public.engine_errors;
+  assert false, 'navegador não lê erros do motor';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.admin_engine_errors(10);
+  assert false, 'só o Super Admin vê os erros do motor';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.admin_engine_errors(10)) >= 1, 'Super Admin vê os erros do motor';
+  assert (public.admin_health()->>'engine_errors_24h')::int >= 1, 'saúde conta os erros do motor';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

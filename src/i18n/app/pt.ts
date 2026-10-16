@@ -488,6 +488,18 @@ const pt = {
     account: "Conta",
   },
   admin: {
+    engineErrors: "Erros do motor de assinatura",
+    engineErrorsHint:
+      "Respostas de erro, tempo esgotado e falhas de rede do SignDoc, sem dados pessoais. Use para diagnosticar e abrir chamados à Lacuna.",
+    engineErrorsEmpty: "Nenhum erro registrado.",
+    engineOperation: "Operação",
+    engineStatus: "Resultado",
+    engineMessage: "Mensagem do motor",
+    engineDocument: "Documento no motor",
+    engineKinds: {
+      timeout: "Tempo esgotado",
+      network: "Falha de rede",
+    } as Record<string, string>,
     funnel: {
       title: "Funil de aquisição e conversão",
       note: "Somente dados registrados a partir da implantação do funil. Nada é estimado.",
@@ -552,6 +564,7 @@ const pt = {
       webhooks_failed_24h: "Webhooks com falha (24h)",
       billing_events_pending: "Eventos de cobrança pendentes",
       bulk_stuck: "Envios em massa parados há mais de 1h",
+      engine_errors_24h: "Erros do motor de assinatura (24h)",
     } as Record<string, string>,
     jobsTitle: "Rotinas automáticas",
     jobNames: {

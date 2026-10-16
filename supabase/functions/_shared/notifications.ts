@@ -12,6 +12,7 @@
 // - Descadastro por organização ("SAIR"), respeitado antes de cada envio.
 
 import { admin } from "./auth.ts";
+import { fetchWithTimeout } from "./net.ts";
 import { normalizePhone } from "./participants.ts";
 
 const BOTCONVERSA = "https://backend.botconversa.com.br/api/v1/webhook";
@@ -117,7 +118,9 @@ async function sendBotConversa(phone: string, name: string, text: string) {
   const digits = phone.replace(/\D/g, "");
   const headers = { "API-KEY": key, "Content-Type": "application/json" };
   const find = async () => {
-    const r = await fetch(`${BOTCONVERSA}/subscriber/get_by_phone/${digits}/`, { headers });
+    const r = await fetchWithTimeout(`${BOTCONVERSA}/subscriber/get_by_phone/${digits}/`, {
+      headers,
+    });
     if (r.status === 404) return null;
     if (!r.ok) throw new Error(`lookup_${r.status}`);
     return ((await r.json()) as { id?: number })?.id ?? null;
@@ -125,7 +128,7 @@ async function sendBotConversa(phone: string, name: string, text: string) {
   let id = await find();
   if (!id) {
     const [first, ...rest] = name.trim().split(/\s+/);
-    const created = await fetch(`${BOTCONVERSA}/subscriber/`, {
+    const created = await fetchWithTimeout(`${BOTCONVERSA}/subscriber/`, {
       method: "POST",
       headers,
       body: JSON.stringify({ phone: digits, first_name: first || name, last_name: rest.join(" ") }),
@@ -134,7 +137,7 @@ async function sendBotConversa(phone: string, name: string, text: string) {
     id = await find();
     if (!id) throw new Error("subscriber_missing");
   }
-  const sent = await fetch(`${BOTCONVERSA}/subscriber/${id}/send_message/`, {
+  const sent = await fetchWithTimeout(`${BOTCONVERSA}/subscriber/${id}/send_message/`, {
     method: "POST",
     headers,
     body: JSON.stringify({ type: "text", value: text }),

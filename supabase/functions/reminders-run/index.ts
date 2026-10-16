@@ -2,6 +2,7 @@
 // com lembretes ligados, lembra quem está com a ação pendente, respeitando primeiro lembrete,
 // recorrência e máximo. Para quando a pessoa assina (o status vem do motor).
 
+import { safeEqual } from "../_shared/net.ts";
 import { admin } from "../_shared/auth.ts";
 import { processBulk } from "../_shared/bulk.ts";
 import { runBilling } from "../_shared/billing.ts";
@@ -14,7 +15,11 @@ const SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const DAY = 24 * 60 * 60 * 1000;
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST" || !SECRET || req.headers.get("x-cron-secret") !== SECRET)
+  if (
+    req.method !== "POST" ||
+    !SECRET ||
+    !safeEqual(req.headers.get("x-cron-secret") ?? "", SECRET)
+  )
     return new Response(null, { status: 401 });
 
   const { data: docs } = await admin

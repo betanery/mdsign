@@ -1,6 +1,8 @@
 // Cliente da API SignDoc/Lacuna (somente no servidor). Chave em SIGNDOC_API_KEY.
 
+import { admin } from "./auth.ts";
 import { AppError } from "./http.ts";
+import { fetchWithTimeout, maskPersonal, NetError } from "./net.ts";
 
 const BASE_URL = (Deno.env.get("SIGNDOC_BASE_URL") ?? "https://sign.signdocmd.com.br").replace(
   /\/$/,
@@ -30,6 +32,33 @@ export type EngineDocument = {
   observers?: { id: string; user?: { name?: string; email?: string } }[];
 };
 
+const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+const maskPath = (path: string) => path.split("?")[0]!.replace(UUID, ":id");
+
+/** Grava o erro do motor (sem dados pessoais) para o Super Admin; nunca derruba a chamada. */
+async function recordEngineError(
+  method: string,
+  path: string,
+  kind: "http" | "timeout" | "network",
+  status: number | null,
+  code: string | null,
+  message: string | null,
+) {
+  try {
+    const doc = /\/documents\/([0-9a-f-]{36})/i.exec(path)?.[1] ?? null;
+    await admin.from("engine_errors").insert({
+      operation: `${method} ${maskPath(path)}`.slice(0, 200),
+      engine_document_id: doc,
+      kind,
+      http_status: status,
+      code: code?.slice(0, 120) ?? null,
+      message: message ? maskPersonal(message).slice(0, 500) : null,
+    });
+  } catch (e) {
+    console.error("engine_errors", e);
+  }
+}
+
 async function call<T>(
   method: string,
   path: string,
@@ -37,30 +66,49 @@ async function call<T>(
   init?: RequestInit,
 ): Promise<T> {
   if (!API_KEY) throw new AppError("engine_not_configured", 503);
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    ...init,
-    headers: {
-      "X-Api-Key": API_KEY,
-      ...(body !== undefined && !(body instanceof FormData)
-        ? { "Content-Type": "application/json" }
-        : {}),
-      ...(init?.headers ?? {}),
-    },
-    body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(`${BASE_URL}${path}`, {
+      method,
+      ...init,
+      headers: {
+        "X-Api-Key": API_KEY,
+        ...(body !== undefined && !(body instanceof FormData)
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...(init?.headers ?? {}),
+      },
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+    });
+  } catch (e) {
+    // Motor lento ou fora do ar: erro amigável e registro para diagnóstico.
+    const kind = e instanceof NetError ? e.kind : "network";
+    await recordEngineError(method, path, kind, null, null, String((e as Error)?.message ?? e));
+    throw new AppError("engine_unavailable", 502, { code: kind, message: null, errors: null });
+  }
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data: Record<string, unknown> | null = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
   if (!res.ok) {
-    console.error("signdoc", method, path, res.status, text.slice(0, 500));
+    const code = String(data?.["code"] ?? data?.["exceptionCode"] ?? "") || null;
+    const message = typeof data?.["message"] === "string" ? (data["message"] as string) : text;
+    console.error("signdoc", method, maskPath(path), res.status, maskPersonal(text.slice(0, 500)));
+    await recordEngineError(method, path, "http", res.status, code, message);
     // 400/422 trazem o motivo; 500 traz exceptionCode para os logs do servidor.
     throw new AppError(
       res.status >= 500 ? "engine_unavailable" : "engine_rejected",
       res.status >= 500 ? 502 : 422,
       {
-        code: data?.code ?? data?.exceptionCode ?? null,
-        message: typeof data?.message === "string" ? data.message.slice(0, 300) : null,
-        errors: data?.errors ?? null,
+        code,
+        message:
+          typeof data?.["message"] === "string"
+            ? maskPersonal((data["message"] as string).slice(0, 300))
+            : null,
+        errors: data?.["errors"] ?? null,
       },
     );
   }

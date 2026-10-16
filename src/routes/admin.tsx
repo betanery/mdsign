@@ -95,9 +95,15 @@ const healthKeys = [
   "webhooks_failed_24h",
   "billing_events_pending",
   "bulk_stuck",
+  "engine_errors_24h",
 ] as const;
 // Filas com algo pendente são normais; falhas e travamentos pedem atenção.
-const alarmKeys = new Set(["notifications_failed_24h", "webhooks_failed_24h", "bulk_stuck"]);
+const alarmKeys = new Set([
+  "notifications_failed_24h",
+  "webhooks_failed_24h",
+  "bulk_stuck",
+  "engine_errors_24h",
+]);
 const needsAttention = (o: Org) =>
   o.subscription_status === "past_due" ||
   o.subscription_status === "suspended" ||
@@ -293,6 +299,7 @@ function AdminPage() {
 
         <TabsContent value="overview" className="mt-4">
           <Overview orgs={orgs} health={health} planName={planName} fmtDate={fmtDate} />
+          <EngineErrors fmtDate={fmtDate} />
         </TabsContent>
 
         <TabsContent value="funnel" className="mt-4">
@@ -933,6 +940,73 @@ function BillingAdmin() {
           </tbody>
         </table>
       </div>
+    </section>
+  );
+}
+
+type EngineError = {
+  id: number;
+  created_at: string;
+  operation: string;
+  engine_document_id: string | null;
+  kind: string;
+  http_status: number | null;
+  code: string | null;
+  message: string | null;
+};
+
+/** Erros do motor de assinatura (sem dados pessoais), para diagnóstico e chamados à Lacuna. */
+function EngineErrors({ fmtDate }: { fmtDate: (v: string | null, withTime?: boolean) => string }) {
+  const { t } = useAppI18n();
+  const [rows, setRows] = useState<EngineError[] | null>(null);
+  useEffect(() => {
+    void supabase
+      .rpc("admin_engine_errors", { lim: 30 })
+      .then(({ data }) => setRows((data as EngineError[] | null) ?? []));
+  }, []);
+  return (
+    <section className="mt-6 rounded-2xl border bg-white shadow-sm">
+      <div className="border-b p-4">
+        <h2 className="font-display text-lg font-semibold">{t.admin.engineErrors}</h2>
+        <p className="text-sm text-muted-foreground">{t.admin.engineErrorsHint}</p>
+      </div>
+      {rows === null ? (
+        <p className="p-5 text-muted-foreground">{t.common.loading}</p>
+      ) : rows.length === 0 ? (
+        <p className="p-5 text-sm text-muted-foreground">{t.admin.engineErrorsEmpty}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-muted-foreground">
+              <tr>
+                <th className="p-3 font-medium">{t.admin.activityWhen}</th>
+                <th className="p-3 font-medium">{t.admin.engineOperation}</th>
+                <th className="p-3 font-medium">{t.admin.engineStatus}</th>
+                <th className="p-3 font-medium">{t.admin.engineMessage}</th>
+                <th className="p-3 font-medium">{t.admin.engineDocument}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="whitespace-nowrap p-3">{fmtDate(r.created_at, true)}</td>
+                  <td className="p-3 font-mono text-xs">{r.operation}</td>
+                  <td className="p-3">
+                    {r.kind === "http"
+                      ? `HTTP ${r.http_status ?? "?"}`
+                      : (t.admin.engineKinds[r.kind] ?? r.kind)}
+                    {r.code && (
+                      <span className="block text-xs text-muted-foreground">{r.code}</span>
+                    )}
+                  </td>
+                  <td className="max-w-md p-3 text-xs break-words">{r.message ?? "—"}</td>
+                  <td className="p-3 font-mono text-xs">{r.engine_document_id ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }
