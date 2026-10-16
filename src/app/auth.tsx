@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 
 import { supabase } from "@/lib/supabase";
+import { MfaChallenge } from "./components/mfa";
 
 type AuthState = {
   session: Session | null;
@@ -26,6 +27,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  // Verificação em duas etapas: quem ativou precisa do código antes de entrar em qualquer tela.
+  const [needsCode, setNeedsCode] = useState(false);
+  useEffect(() => {
+    if (!session) {
+      setNeedsCode(false);
+      return;
+    }
+    void supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
+      setNeedsCode(data?.nextLevel === "aal2" && data.currentLevel !== "aal2");
+    });
+  }, [session]);
+
   const value: AuthState = {
     session,
     user: session?.user ?? null,
@@ -39,7 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
   };
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      {needsCode ? <MfaChallenge onSignOut={() => void value.signOut()} /> : children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth(): AuthState {

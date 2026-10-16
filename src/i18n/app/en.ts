@@ -276,6 +276,32 @@ const en: AppMessages = {
       ],
     } as Record<string, { title: string; text: string }[]>,
   },
+  mfa: {
+    title: "Two-step verification",
+    text: "Besides your password, ask for a 6-digit code from your phone when signing in. Required for the Super Admin.",
+    enable: "Enable with an authenticator app",
+    step1:
+      "Open an authenticator app (Google Authenticator, Microsoft Authenticator, Authy…) and scan the QR code.",
+    step2: "Type the 6-digit code shown in the app.",
+    qrAlt: "QR code for the authenticator app",
+    manual: "No camera? Type this key in the app:",
+    code: "6-digit code",
+    confirm: "Confirm and enable",
+    enabled: "Two-step verification enabled.",
+    on: "Enabled for this user.",
+    disable: "Disable",
+    disabled: "Two-step verification disabled.",
+    removeError: "To disable it, sign out and sign in again using the code.",
+    enrollError: "Could not start the setup. Try again.",
+    invalidCode: "Invalid or expired code. Check the app and try again.",
+    noFactor: "No active authenticator app on this account.",
+    challengeTitle: "Enter the code",
+    challengeText: "Open your authenticator app and type the 6-digit MDSign code.",
+    verify: "Sign in",
+    useOtherAccount: "Sign out and use another account",
+    adminRequired:
+      "The Super Admin requires two-step verification. Enable it in Settings and sign in again using the code.",
+  },
   cedro: {
     availability:
       "Each Cedro document is available to view and download for 6 months from creation.",

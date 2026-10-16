@@ -6,6 +6,7 @@ import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { LanguageSelect } from "@/app/components/language-select";
+import { MfaSettings } from "@/app/components/mfa";
 import { useAppI18n } from "@/app/i18n";
 import { formatCpf, formatPhone, friendlyError, isValidCpf, onlyDigits } from "@/app/validation";
 import { Button } from "@/components/ui/button";
@@ -114,25 +115,28 @@ function SettingsPage() {
           </Button>
         </form>
 
-        <section className="grid content-start gap-4 rounded-2xl border bg-white p-5 shadow-sm">
-          <h2 className="font-display text-lg font-semibold">{t.settings.account}</h2>
-          <p className="text-sm">
-            <span className="text-muted-foreground">{t.auth.email}: </span>
-            {user?.email}
-          </p>
-          <div className="grid gap-1.5">
-            <span className="text-sm font-medium">{t.settings.language}</span>
-            <LanguageSelect
-              className="w-fit"
-              onChange={(locale) => {
-                if (user) void supabase.from("profiles").update({ locale }).eq("id", user.id);
-              }}
-            />
-          </div>
-          <Button variant="outline" className="w-fit" onClick={() => void signOut()}>
-            {t.auth.logout}
-          </Button>
-        </section>
+        <div className="grid content-start gap-6">
+          <section className="grid content-start gap-4 rounded-2xl border bg-white p-5 shadow-sm">
+            <h2 className="font-display text-lg font-semibold">{t.settings.account}</h2>
+            <p className="text-sm">
+              <span className="text-muted-foreground">{t.auth.email}: </span>
+              {user?.email}
+            </p>
+            <div className="grid gap-1.5">
+              <span className="text-sm font-medium">{t.settings.language}</span>
+              <LanguageSelect
+                className="w-fit"
+                onChange={(locale) => {
+                  if (user) void supabase.from("profiles").update({ locale }).eq("id", user.id);
+                }}
+              />
+            </div>
+            <Button variant="outline" className="w-fit" onClick={() => void signOut()}>
+              {t.auth.logout}
+            </Button>
+          </section>
+          <MfaSettings />
+        </div>
       </div>
     </>
   );

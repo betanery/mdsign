@@ -288,6 +288,32 @@ const es: AppMessages = {
       ],
     } as Record<string, { title: string; text: string }[]>,
   },
+  mfa: {
+    title: "Verificación en dos pasos",
+    text: "Además de la contraseña, pida un código de 6 dígitos de su celular al entrar. Obligatoria para el Super Admin.",
+    enable: "Activar con app autenticadora",
+    step1:
+      "Abra una app autenticadora (Google Authenticator, Microsoft Authenticator, Authy…) y lea el código QR.",
+    step2: "Escriba el código de 6 dígitos que aparece en la app.",
+    qrAlt: "Código QR para la app autenticadora",
+    manual: "¿Sin cámara? Escriba esta clave en la app:",
+    code: "Código de 6 dígitos",
+    confirm: "Confirmar y activar",
+    enabled: "Verificación en dos pasos activada.",
+    on: "Activada para este usuario.",
+    disable: "Desactivar",
+    disabled: "Verificación en dos pasos desactivada.",
+    removeError: "Para desactivarla, salga y entre de nuevo usando el código.",
+    enrollError: "No fue posible iniciar la activación. Intente de nuevo.",
+    invalidCode: "Código inválido o vencido. Revise la app e intente de nuevo.",
+    noFactor: "Ninguna app autenticadora activa en esta cuenta.",
+    challengeTitle: "Escriba el código",
+    challengeText: "Abra su app autenticadora y escriba el código de 6 dígitos de MDSign.",
+    verify: "Entrar",
+    useOtherAccount: "Salir y usar otra cuenta",
+    adminRequired:
+      "El Super Admin exige la verificación en dos pasos. Actívela en Configuración y entre de nuevo usando el código.",
+  },
   cedro: {
     availability:
       "Cada documento de Cedro está disponible para consulta y descarga por 6 meses desde su creación.",
