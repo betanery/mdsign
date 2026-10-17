@@ -1,6 +1,7 @@
 /** Textos do app MDSign (Fase 2), em pt-BR. en.ts e es.ts seguem esta estrutura. */
 const pt = {
   common: {
+    leaveConfirm: "Sair sem concluir? O que você preencheu nesta tela será perdido.",
     loading: "Carregando…",
     save: "Salvar",
     saved: "Alterações salvas.",
@@ -1409,6 +1410,8 @@ const pt = {
     copyLink: "Copiar link",
     open: "Abrir",
     responses: "{n} respostas",
+    responsesOne: "1 resposta",
+    createdOn: "Criado em {date}",
     responsesMax: "{n} de {max} respostas",
     activate: "Ativar",
     deactivate: "Desativar",
@@ -1481,6 +1484,8 @@ const pt = {
       sending: "Enviando",
       done: "Concluído",
       canceled: "Cancelado",
+      partial: "Concluído com erros",
+      failed: "Não enviado",
     } as Record<string, string>,
     cancel: "Cancelar envio",
     cancelConfirm: "Cancelar? As linhas que ainda não foram enviadas não serão mais enviadas.",
@@ -1664,7 +1669,7 @@ const pt = {
     } as Record<string, string>,
     signerName: "Nome do signatário",
     stampHint:
-      "A data da assinatura só existe depois de assinar: o carimbo do SignDoc mostra nome, data e hora.",
+      "A data da assinatura só existe depois de assinar: o carimbo da assinatura mostra nome, data e hora.",
     formFields: "Campos do formulário do PDF",
     properties: "Propriedades",
     nothingSelected: "Selecione um campo ou uma assinatura no PDF.",
@@ -1693,7 +1698,7 @@ const pt = {
     positions: "{n} posições no documento",
     formField: "Campo do formulário do PDF: {name}",
     noSignatureWarn:
-      "{role} ainda não tem posição de assinatura. Sem ela, o SignDoc posiciona automaticamente.",
+      "{role} ainda não tem posição de assinatura. Sem ela, a assinatura vai automaticamente para a página de assinaturas.",
     testTitle: "Testar modelo",
     testHint:
       "Use dados fictícios. Nada é enviado nem consumido do seu plano. Campos em branco saem vazios na prévia.",
@@ -1818,7 +1823,7 @@ const pt = {
     docName: "Nome dos documentos",
     signaturePosition: "Posição da assinatura",
     signatureHint:
-      "Clique ou arraste na amostra ao lado. Sem posição, o SignDoc posiciona automaticamente.",
+      "Clique ou arraste na amostra ao lado. Sem posição, a assinatura vai automaticamente para a página de assinaturas.",
     pageRef: { first: "Na primeira página", last: "Na última página" } as Record<string, string>,
     autoPosition: "Deixar automático",
     summaryReady: "{n} documentos prontos",
@@ -1878,7 +1883,7 @@ const pt = {
   marks: {
     title: "Posição das assinaturas",
     hint: "Escolha o participante e o tipo, depois clique ou arraste no PDF.",
-    auto: "Sem posição, o SignDoc coloca a assinatura automaticamente na página de assinaturas.",
+    auto: "Sem posição, a assinatura vai automaticamente para a página de assinaturas.",
     me: "Você",
     optional: "Posicionar assinaturas (opcional)",
   },
@@ -1892,7 +1897,7 @@ const pt = {
     edit: "Editar participantes",
     replace: "Substituir documento",
     title: "Editar participantes e observadores",
-    hint: "Só é possível alterar quem ainda não assinou. As alterações são enviadas ao SignDoc na hora.",
+    hint: "Só é possível alterar quem ainda não assinou. As alterações valem na hora.",
     locked: "Já concluiu",
     newEmail: "E-mail",
     newPhone: "Celular",
@@ -1904,7 +1909,7 @@ const pt = {
     newPeople: "Novos participantes",
     step: "Passo",
     save: "Salvar alterações",
-    saved: "Alterações enviadas ao SignDoc.",
+    saved: "Alterações salvas.",
     replaceTitle: "Substituir o documento",
     replaceHint:
       "Envie a nova versão do PDF. O fluxo de assinatura recomeça e todos assinam a nova versão.",

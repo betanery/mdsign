@@ -33,6 +33,7 @@ import {
 import { errorCode, errorText, participantProblems } from "@/app/errors";
 import { CedroAfterDocument } from "@/app/components/free-plan-card";
 import { notifyUsageChanged, useOrgUsage } from "@/app/components/plan-usage";
+import { useLeaveGuard } from "@/app/leave-guard";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
@@ -81,6 +82,7 @@ function SendPage() {
   const [sending, setSending] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const usage = useOrgUsage();
+  useLeaveGuard(Boolean(file) && !documentId && !sending);
 
   function next() {
     setError(null);
@@ -171,6 +173,13 @@ function SendPage() {
     );
 
   const r = options.reminders;
+  // Na Revisão, um grupo com quórum é uma etapa só (mesmo número para todos do grupo).
+  const reviewSteps: number[] = [];
+  participants.forEach((p, i) => {
+    const prev = participants[i - 1];
+    const same = Boolean(p.rule && prev?.rule?.key === p.rule.key);
+    reviewSteps.push(i === 0 ? 1 : same ? reviewSteps[i - 1]! : reviewSteps[i - 1]! + 1);
+  });
   return (
     <>
       <PageHeader title={t.send.title} subtitle={t.send.subtitle} />
@@ -247,9 +256,15 @@ function SendPage() {
               <ol className="grid gap-1">
                 {participants.map((p, i) => (
                   <li key={p.key}>
-                    {sequential ? `${i + 1}. ` : ""}
+                    {sequential ? `${reviewSteps[i]}. ` : ""}
                     <strong>{p.name}</strong> · {p.email} · {t.participants.roles[p.role]} ·{" "}
                     {t.participants.levels[p.authLevel]}
+                    {p.rule && (
+                      <span className="ml-1 rounded bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+                        {p.rule.name} ·{" "}
+                        {t.participants.quorumAny.replace("{n}", String(p.rule.required))}
+                      </span>
+                    )}
                     {p.role === "approver" && delegates[p.email.trim().toLowerCase()] && (
                       <span className="block text-xs text-brand">
                         {t.send.review.delegated.replace(

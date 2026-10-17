@@ -42,6 +42,7 @@ import {
   type TemplateRow,
 } from "@/app/components/template-fields";
 import { errorText } from "@/app/errors";
+import { useLeaveGuard } from "@/app/leave-guard";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import {
@@ -289,6 +290,8 @@ function TemplateBulk({
   const [builtFrom, setBuiltFrom] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // Ao iniciar, o envio segue sozinho: o aviso de saída vale só enquanto se prepara.
+  useLeaveGuard(Boolean(sheet) && busy !== "start");
   const [sampleRow, setSampleRow] = useState(0);
   const [sampleUrl, setSampleUrl] = useState<string | null>(null);
 

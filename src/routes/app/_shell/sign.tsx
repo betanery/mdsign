@@ -18,6 +18,7 @@ import {
 import { SigningFrame } from "@/app/components/signing-frame";
 import { CedroAfterDocument } from "@/app/components/free-plan-card";
 import { notifyUsageChanged, useOrgUsage } from "@/app/components/plan-usage";
+import { useLeaveGuard } from "@/app/leave-guard";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ function SelfSign() {
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
   const [doc, setDoc] = useState<{ documentId: string; embedUrl: string } | null>(null);
+  useLeaveGuard(Boolean(file) && !doc);
   const input = useRef<HTMLInputElement>(null);
 
   const errorText = (code: string) => t.errors[code] ?? t.common.genericError;

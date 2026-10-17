@@ -399,17 +399,20 @@ export function ParticipantsEditor({
                 onChange={(e) => update(i, { cpf: formatCpf(e.target.value) })}
                 aria-invalid={bad?.includes("cpf")}
               />
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={p.noCpf}
-                  disabled={!config.foreignSigners && !p.noCpf}
-                  onChange={(e) => update(i, { noCpf: e.target.checked })}
-                  className="size-4 accent-[var(--color-brand)]"
-                />
-                {t.participants.noCpf}
-              </label>
-              {!config.foreignSigners && (
+              {/* Sem CPF só aparece quando liberado (ou num rascunho antigo que já marcou). */}
+              {(config.foreignSigners || p.noCpf) && (
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={p.noCpf}
+                    disabled={!config.foreignSigners && !p.noCpf}
+                    onChange={(e) => update(i, { noCpf: e.target.checked })}
+                    className="size-4 accent-[var(--color-brand)]"
+                  />
+                  {t.participants.noCpf}
+                </label>
+              )}
+              {!config.foreignSigners && p.noCpf && (
                 <p className="text-xs text-muted-foreground">{t.participants.noCpfOff}</p>
               )}
               <FieldError fields={bad} field="cpf" />

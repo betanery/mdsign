@@ -4,7 +4,7 @@ import { Download, Loader2, RotateCcw, Save, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { callFunction } from "@/app/api";
-import { bulkTone, type BulkJob } from "@/app/bulk";
+import { bulkLabel, bulkTone, type BulkJob } from "@/app/bulk";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import { useConfirm } from "@/app/components/confirm-dialog";
@@ -178,9 +178,12 @@ function BulkJobPage() {
       <section className="grid gap-3 rounded-2xl border bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <span
-            className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", bulkTone[job.status])}
+            className={cn(
+              "rounded-full px-2.5 py-0.5 text-xs font-semibold",
+              bulkTone[bulkLabel(job)],
+            )}
           >
-            {t.bulk.status[job.status]}
+            {t.bulk.status[bulkLabel(job)]}
           </span>
           {job.status === "sending" && (
             <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden />

@@ -2,6 +2,7 @@ import type { AppMessages } from "./pt";
 
 const es: AppMessages = {
   common: {
+    leaveConfirm: "¿Salir sin terminar? Lo que completaste en esta pantalla se perderá.",
     loading: "Cargando…",
     save: "Guardar",
     saved: "Cambios guardados.",
@@ -1406,6 +1407,8 @@ const es: AppMessages = {
     copyLink: "Copiar enlace",
     open: "Abrir",
     responses: "{n} respuestas",
+    responsesOne: "1 respuesta",
+    createdOn: "Creado el {date}",
     responsesMax: "{n} de {max} respuestas",
     activate: "Activar",
     deactivate: "Desactivar",
@@ -1479,6 +1482,8 @@ const es: AppMessages = {
       sending: "Enviando",
       done: "Completado",
       canceled: "Cancelado",
+      partial: "Completado con errores",
+      failed: "No enviado",
     } as Record<string, string>,
     cancel: "Cancelar envío",
     cancelConfirm: "¿Cancelar? Las filas que aún no se enviaron ya no se enviarán.",
@@ -1662,7 +1667,7 @@ const es: AppMessages = {
     } as Record<string, string>,
     signerName: "Nombre del firmante",
     stampHint:
-      "La fecha de la firma solo existe después de firmar: el sello de SignDoc muestra nombre, fecha y hora.",
+      "La fecha de la firma solo existe después de firmar: el sello de la firma muestra nombre, fecha y hora.",
     formFields: "Campos del formulario del PDF",
     properties: "Propiedades",
     nothingSelected: "Selecciona un campo o una firma en el PDF.",
@@ -1691,7 +1696,7 @@ const es: AppMessages = {
     positions: "{n} posiciones en el documento",
     formField: "Campo del formulario del PDF: {name}",
     noSignatureWarn:
-      "{role} aún no tiene posición de firma. Sin ella, SignDoc la posiciona automáticamente.",
+      "{role} aún no tiene posición de firma. Sin ella, la firma va automáticamente a la página de firmas.",
     testTitle: "Probar plantilla",
     testHint:
       "Usa datos ficticios. No se envía nada ni se consume de tu plan. Los campos en blanco quedan vacíos en la vista previa.",
@@ -1817,7 +1822,7 @@ const es: AppMessages = {
     docName: "Nombre de los documentos",
     signaturePosition: "Posición de la firma",
     signatureHint:
-      "Haz clic o arrastra en la muestra. Sin posición, SignDoc la posiciona automáticamente.",
+      "Haz clic o arrastra en la muestra. Sin posición, la firma va automáticamente a la página de firmas.",
     pageRef: { first: "En la primera página", last: "En la última página" } as Record<
       string,
       string
@@ -1881,7 +1886,7 @@ const es: AppMessages = {
   marks: {
     title: "Posición de las firmas",
     hint: "Elige el participante y el tipo, luego haz clic o arrastra en el PDF.",
-    auto: "Sin posición, SignDoc coloca la firma automáticamente en la página de firmas.",
+    auto: "Sin posición, la firma va automáticamente a la página de firmas.",
     me: "Tú",
     optional: "Posicionar firmas (opcional)",
   },
@@ -1895,7 +1900,7 @@ const es: AppMessages = {
     edit: "Editar participantes",
     replace: "Sustituir documento",
     title: "Editar participantes y observadores",
-    hint: "Solo se puede cambiar a quien aún no firmó. Los cambios se envían a SignDoc en el momento.",
+    hint: "Solo se puede cambiar a quien aún no firmó. Los cambios valen en el momento.",
     locked: "Ya concluyó",
     newEmail: "Correo",
     newPhone: "Celular",
@@ -1907,7 +1912,7 @@ const es: AppMessages = {
     newPeople: "Nuevos participantes",
     step: "Paso",
     save: "Guardar cambios",
-    saved: "Cambios enviados a SignDoc.",
+    saved: "Cambios guardados.",
     replaceTitle: "Sustituir el documento",
     replaceHint:
       "Sube la nueva versión del PDF. El flujo de firma se reinicia y todos firman la nueva versión.",

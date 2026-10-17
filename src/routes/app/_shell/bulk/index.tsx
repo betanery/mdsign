@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
-import { bulkTone, type BulkJob } from "@/app/bulk";
+import { bulkLabel, bulkTone, type BulkJob } from "@/app/bulk";
 import { PageHeader } from "@/app/components/app-shell";
 import { formatDate } from "@/app/documents";
 import { useAppI18n } from "@/app/i18n";
@@ -73,10 +73,10 @@ function BulkList() {
                 <span
                   className={cn(
                     "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                    bulkTone[job.status],
+                    bulkTone[bulkLabel(job)],
                   )}
                 >
-                  {t.bulk.status[job.status]}
+                  {t.bulk.status[bulkLabel(job)]}
                 </span>
               </Link>
             </li>

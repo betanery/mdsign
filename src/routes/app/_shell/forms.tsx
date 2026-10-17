@@ -49,6 +49,7 @@ type FormRow = {
   expires_at: string | null;
   max_responses: number | null;
   responses_count: number;
+  created_at: string;
   template_id: string;
   templates: { name: string } | null;
 };
@@ -66,7 +67,7 @@ function FormsPage() {
     const { data } = await supabase
       .from("forms")
       .select(
-        "id, token, name, active, expires_at, max_responses, responses_count, template_id, templates (name)",
+        "id, token, name, active, expires_at, max_responses, responses_count, created_at, template_id, templates (name)",
       )
       .eq("organization_id", current.id)
       .order("created_at", { ascending: false });
@@ -150,13 +151,18 @@ function FormsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{form.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {form.templates?.name} ·{" "}
+                    {form.templates?.name && form.templates.name !== form.name
+                      ? `${form.templates.name} · `
+                      : ""}
+                    {f(t.forms.createdOn, { date: fmt.format(new Date(form.created_at)) })} ·{" "}
                     {form.max_responses
                       ? f(t.forms.responsesMax, {
                           n: String(form.responses_count),
                           max: String(form.max_responses),
                         })
-                      : f(t.forms.responses, { n: String(form.responses_count) })}
+                      : form.responses_count === 1
+                        ? t.forms.responsesOne
+                        : f(t.forms.responses, { n: String(form.responses_count) })}
                     {form.expires_at &&
                       ` · ${t.forms.expiresAt} ${fmt.format(new Date(form.expires_at))}`}
                   </p>

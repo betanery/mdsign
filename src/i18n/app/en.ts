@@ -2,6 +2,7 @@ import type { AppMessages } from "./pt";
 
 const en: AppMessages = {
   common: {
+    leaveConfirm: "Leave without finishing? What you filled in on this screen will be lost.",
     loading: "Loading…",
     save: "Save",
     saved: "Changes saved.",
@@ -1385,6 +1386,8 @@ const en: AppMessages = {
     copyLink: "Copy link",
     open: "Open",
     responses: "{n} responses",
+    responsesOne: "1 response",
+    createdOn: "Created on {date}",
     responsesMax: "{n} of {max} responses",
     activate: "Activate",
     deactivate: "Deactivate",
@@ -1457,6 +1460,8 @@ const en: AppMessages = {
       sending: "Sending",
       done: "Completed",
       canceled: "Canceled",
+      partial: "Completed with errors",
+      failed: "Not sent",
     } as Record<string, string>,
     cancel: "Cancel send",
     cancelConfirm: "Cancel? Rows not sent yet will no longer be sent.",
@@ -1640,7 +1645,7 @@ const en: AppMessages = {
     } as Record<string, string>,
     signerName: "Signer name",
     stampHint:
-      "The signing date only exists after signing: the SignDoc stamp shows name, date and time.",
+      "The signing date only exists after signing: the signature stamp shows name, date and time.",
     formFields: "PDF form fields",
     properties: "Properties",
     nothingSelected: "Select a field or a signature on the PDF.",
@@ -1666,7 +1671,7 @@ const en: AppMessages = {
     positions: "{n} positions in the document",
     formField: "PDF form field: {name}",
     noSignatureWarn:
-      "{role} has no signature position yet. Without it, SignDoc places it automatically.",
+      "{role} has no signature position yet. Without it, the signature goes automatically to the signatures page.",
     testTitle: "Test template",
     testHint:
       "Use fictitious data. Nothing is sent or deducted from your plan. Blank fields stay empty in the preview.",
@@ -1791,7 +1796,7 @@ const en: AppMessages = {
     docName: "Documents' name",
     signaturePosition: "Signature position",
     signatureHint:
-      "Click or drag on the sample. Without a position, SignDoc places it automatically.",
+      "Click or drag on the sample. Without a position, the signature goes automatically to the signatures page.",
     pageRef: { first: "On the first page", last: "On the last page" } as Record<string, string>,
     autoPosition: "Leave automatic",
     summaryReady: "{n} documents ready",
@@ -1850,7 +1855,7 @@ const en: AppMessages = {
   marks: {
     title: "Signature positions",
     hint: "Choose the participant and the type, then click or drag on the PDF.",
-    auto: "Without a position, SignDoc places the signature automatically on the signatures page.",
+    auto: "Without a position, the signature goes automatically to the signatures page.",
     me: "You",
     optional: "Place signatures (optional)",
   },
@@ -1864,7 +1869,7 @@ const en: AppMessages = {
     edit: "Edit participants",
     replace: "Replace document",
     title: "Edit participants and observers",
-    hint: "Only people who haven't signed yet can be changed. Changes are sent to SignDoc right away.",
+    hint: "Only people who haven't signed yet can be changed. Changes apply right away.",
     locked: "Already done",
     newEmail: "Email",
     newPhone: "Mobile",
@@ -1876,7 +1881,7 @@ const en: AppMessages = {
     newPeople: "New participants",
     step: "Step",
     save: "Save changes",
-    saved: "Changes sent to SignDoc.",
+    saved: "Changes saved.",
     replaceTitle: "Replace the document",
     replaceHint:
       "Upload the new version of the PDF. The signing flow restarts and everyone signs the new version.",
