@@ -675,6 +675,7 @@ const pt = {
     jobNames: {
       "mdsign-reminders-run": "Lembretes (de hora em hora)",
       "mdsign-webhooks-run": "Webhooks e notificações (a cada minuto)",
+      "mdsign-cron-cleanup": "Limpeza do histórico das rotinas (diária)",
     } as Record<string, string>,
     jobLast: "Última execução",
     jobFailed: "{n} falhas em 24h",

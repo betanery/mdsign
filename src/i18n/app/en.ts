@@ -652,6 +652,7 @@ const en: AppMessages = {
     jobNames: {
       "mdsign-reminders-run": "Reminders (hourly)",
       "mdsign-webhooks-run": "Webhooks and notifications (every minute)",
+      "mdsign-cron-cleanup": "Routine history cleanup (daily)",
     } as Record<string, string>,
     jobLast: "Last run",
     jobFailed: "{n} failures in 24h",
