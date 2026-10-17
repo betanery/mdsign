@@ -21,6 +21,8 @@ import { AuthProvider, useAuth } from "@/app/auth";
 import { AdminDataRequests } from "@/app/components/admin-data-requests";
 import { CommercialAdmin } from "@/app/components/admin-commercial";
 import { GrowthModule } from "@/app/growth/module";
+import { PlansAdminModule } from "@/app/plans-admin/module";
+import { usePlansAdminTexts } from "@/app/plans-admin/texts";
 import { useGrowthTexts } from "@/app/growth/texts";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { errorText } from "@/app/errors";
@@ -131,6 +133,7 @@ function AdminPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [confirm, confirmDialog] = useConfirm();
   const growthTexts = useGrowthTexts();
+  const plansTexts = usePlansAdminTexts();
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -299,10 +302,23 @@ function AdminPage() {
         <div className="overflow-x-auto">
           <TabsList>
             {(
-              ["overview", "growth", "orgs", "billing", "dsr", "policies", "activity"] as const
+              [
+                "overview",
+                "growth",
+                "plans",
+                "orgs",
+                "billing",
+                "dsr",
+                "policies",
+                "activity",
+              ] as const
             ).map((k) => (
               <TabsTrigger key={k} value={k}>
-                {k === "growth" ? growthTexts.tab : t.admin.tabs[k]}
+                {k === "growth"
+                  ? growthTexts.tab
+                  : k === "plans"
+                    ? plansTexts.tab
+                    : t.admin.tabs[k]}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -316,6 +332,10 @@ function AdminPage() {
 
         <TabsContent value="growth" className="mt-4">
           <GrowthModule />
+        </TabsContent>
+
+        <TabsContent value="plans" className="mt-4">
+          <PlansAdminModule />
         </TabsContent>
 
         <TabsContent value="orgs" className="mt-4">
