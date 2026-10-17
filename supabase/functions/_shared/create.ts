@@ -132,6 +132,40 @@ export function ruleMembers(a: EngineFlowAction) {
   return a.ruleUsers ?? a.signRuleUsers ?? [];
 }
 
+const SENT_BY: Record<string, { person: string; org: string }> = {
+  pt: {
+    person: "Enviado por {person} ({org}) pelo MDSign.",
+    org: "Enviado por {org} pelo MDSign.",
+  },
+  en: { person: "Sent by {person} ({org}) via MDSign.", org: "Sent by {org} via MDSign." },
+  es: {
+    person: "Enviado por {person} ({org}) a través de MDSign.",
+    org: "Enviado por {org} a través de MDSign.",
+  },
+};
+
+/**
+ * Descrição do documento no motor (aparece nos e-mails de convite): quem enviou + a mensagem.
+ * Link público e integração (API) não têm uma pessoa remetente: vai só o nome da organização.
+ */
+export async function engineDescription(
+  input: Pick<CreateInput, "organizationId" | "actorName" | "origin" | "locale" | "message">,
+) {
+  const { data: org } = await admin
+    .from("organizations")
+    .select("name")
+    .eq("id", input.organizationId)
+    .maybeSingle();
+  const texts = SENT_BY[input.locale] ?? SENT_BY["pt"]!;
+  const person = ["form", "api"].includes(input.origin) ? "" : input.actorName.trim();
+  const orgName = (org?.name as string | undefined)?.trim() || "MDSign";
+  const line = (person ? texts.person : texts.org)
+    .replace("{person}", person)
+    .replace("{org}", orgName);
+  const message = input.message?.trim();
+  return (message ? `${line}\n\n${message}` : line).slice(0, 600);
+}
+
 export async function createDocument(input: CreateInput): Promise<Created> {
   // PDF com conteúdo ativo (scripts, anexos, ações) é recusado antes de consumir o plano.
   await assertSafePdf(input.pdf);
@@ -164,7 +198,8 @@ export async function createDocument(input: CreateInput): Promise<Created> {
         const marks = p.role !== "approver" ? (input.marks?.[i] ?? []) : [];
         return marks.length ? { prePositionedMarks: toEngineMarks(marks, sizes) } : {};
       }).actions,
-      ...(input.message ? { description: input.message } : {}),
+      // O e-mail do motor diz "submetido por <aplicação>": a descrição traz quem enviou de fato.
+      description: await engineDescription(input),
       ...(input.expiresAt ? { expirationDate: input.expiresAt } : {}),
       disablePendingActionNotifications: !input.notify,
       ...(input.observers?.length
