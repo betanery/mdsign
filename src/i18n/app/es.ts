@@ -353,6 +353,12 @@ const es: AppMessages = {
     create: "Crear organización",
     cnpjInvalid: "CNPJ inválido. Revisa los 14 dígitos.",
   },
+  sections: {
+    templates: "Plantillas",
+    forms: "Enlaces públicos",
+    bulk: "Envíos",
+    processes: "Procesos guardados",
+  },
   nav: {
     home: "Inicio",
     documents: "Documentos",
@@ -424,6 +430,7 @@ const es: AppMessages = {
     finance: "Accede a facturación e informes financieros.",
   },
   organization: {
+    rolesHelp: "Qué puede hacer cada rol",
     title: "Organización",
     tabMembers: "Miembros",
     tabUnits: "Unidades y departamentos",
@@ -1253,7 +1260,7 @@ const es: AppMessages = {
   send: {
     title: "Enviar para firma",
     subtitle: "Define quién firma, en qué orden y cómo se autentica cada persona.",
-    steps: ["Documento", "Participantes", "Flujo", "Firmas", "Configuración", "Revisión"],
+    steps: ["Documento", "Quién firma", "Revisar y enviar"],
     next: "Continuar",
     back: "Volver",
     submit: "Enviar documento",
@@ -1263,6 +1270,18 @@ const es: AppMessages = {
       "Los participantes recibirán la invitación por correo. Sigue todo en la línea de tiempo.",
     view: "Seguir documento",
     another: "Enviar otro",
+    adjust: {
+      title: "Ajustes (opcional)",
+      hint: "Ya vienen con el valor predeterminado. Ábrelos solo si necesitas cambiar algo.",
+      flow: "Orden, rol y autenticación",
+      marks: "Posición de las firmas en el PDF",
+      marksAuto: "Automática, en la página de firmas",
+      marksCount: "{n} posiciones definidas",
+      options: "Plazo, recordatorios, mensaje y observadores",
+      change: "Cambiar",
+      close: "Cerrar",
+      remindersOn: "activados",
+    },
     review: {
       document: "Documento",
       participants: "Participantes",

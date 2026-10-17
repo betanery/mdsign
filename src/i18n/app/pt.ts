@@ -364,6 +364,12 @@ const pt = {
     create: "Criar organização",
     cnpjInvalid: "CNPJ inválido. Confira os 14 dígitos.",
   },
+  sections: {
+    templates: "Modelos",
+    forms: "Links públicos",
+    bulk: "Envios",
+    processes: "Processos salvos",
+  },
   nav: {
     home: "Início",
     documents: "Documentos",
@@ -435,6 +441,7 @@ const pt = {
     finance: "Acessa cobrança e relatórios financeiros.",
   },
   organization: {
+    rolesHelp: "O que cada papel pode fazer",
     title: "Organização",
     tabMembers: "Membros",
     tabUnits: "Unidades e departamentos",
@@ -1263,7 +1270,7 @@ const pt = {
   send: {
     title: "Enviar para assinatura",
     subtitle: "Defina quem assina, em que ordem e como cada pessoa se autentica.",
-    steps: ["Documento", "Participantes", "Fluxo", "Assinaturas", "Configurações", "Revisão"],
+    steps: ["Documento", "Quem assina", "Revisar e enviar"],
     next: "Continuar",
     back: "Voltar",
     submit: "Enviar documento",
@@ -1272,6 +1279,18 @@ const pt = {
     doneText: "Os participantes vão receber o convite por e-mail. Acompanhe tudo na timeline.",
     view: "Acompanhar documento",
     another: "Enviar outro",
+    adjust: {
+      title: "Ajustes (opcional)",
+      hint: "Já vêm com o padrão. Abra só se precisar mudar.",
+      flow: "Ordem, papel e autenticação",
+      marks: "Posição das assinaturas no PDF",
+      marksAuto: "Automática, na página de assinaturas",
+      marksCount: "{n} posições definidas",
+      options: "Prazo, lembretes, mensagem e observadores",
+      change: "Alterar",
+      close: "Fechar",
+      remindersOn: "ligados",
+    },
     review: {
       document: "Documento",
       participants: "Participantes",

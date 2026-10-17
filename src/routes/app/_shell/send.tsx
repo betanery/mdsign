@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 
 import { callFunction } from "@/app/api";
 import { supabase } from "@/lib/supabase";
@@ -39,8 +39,11 @@ import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-// "Enviar para assinatura" (PRD §9): Documento → Participantes → Fluxo → Configurações → Revisão.
+// "Enviar para assinatura" (PRD §9) em 3 etapas: Documento → Quem assina → Revisar e enviar.
+// Ordem, autenticação, posição, prazo e lembretes ficam em "Ajustes (opcional)" na revisão,
+// já com o padrão: quem só quer mandar para alguém assinar não passa por eles.
 export const Route = createFileRoute("/app/_shell/send")({ component: SendPage });
 
 function SendPage() {
@@ -51,7 +54,7 @@ function SendPage() {
   // Aprovações delegadas: avisa na Revisão para quem a aprovação vai de fato.
   const [delegates, setDelegates] = useState<Record<string, string>>({});
   useEffect(() => {
-    if (step !== 5 || !current) return;
+    if (step !== 2 || !current) return;
     const emails = participants
       .filter((p) => p.role === "approver" && p.email.trim())
       .map((p) => p.email.trim().toLowerCase());
@@ -81,26 +84,37 @@ function SendPage() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<"flow" | "marks" | "options" | null>(null);
   const usage = useOrgUsage();
   useLeaveGuard(Boolean(file) && !documentId && !sending);
 
   function next() {
     setError(null);
     if (step === 0 && !file) return setError(t.errors["file_required"]!);
-    if (step === 1 || step === 2) {
-      const all = validateParticipants(participants, config);
-      const relevant =
-        step === 1 ? onlyFields(all, identityFields) : onlyFields(all, ["authLevel", "phone"]);
+    if (step === 1) {
+      const relevant = onlyFields(validateParticipants(participants, config), identityFields);
       setProblems(relevant);
       if (Object.keys(relevant).length) return setError(t.errors["invalid_participants"]!);
     }
-    if (step === 4 && !observersValid(options.observers))
-      return setError(t.errors["invalid_observers"]!);
     setStep((s) => s + 1);
   }
 
   async function submit() {
     if (!file || !current) return;
+    // Os ajustes também são conferidos aqui: o bloco com problema abre sozinho.
+    const flowProblems = onlyFields(validateParticipants(participants, config), [
+      "authLevel",
+      "phone",
+    ]);
+    if (Object.keys(flowProblems).length) {
+      setProblems(flowProblems);
+      setPanel("flow");
+      return setError(t.errors["invalid_participants"]!);
+    }
+    if (!observersValid(options.observers)) {
+      setPanel("options");
+      return setError(t.errors["invalid_observers"]!);
+    }
     setSending(true);
     setError(null);
     const form = new FormData();
@@ -129,9 +143,11 @@ function SendPage() {
         const p = participantProblems(e);
         setProblems(p);
         const identity = Object.values(p).some((l) => l.some((f) => identityFields.includes(f)));
-        setStep(identity ? 1 : 2);
+        if (identity) setStep(1);
+        else setPanel("flow");
       }
-      if (errorCode(e) === "invalid_expiration" || errorCode(e) === "invalid_observers") setStep(4);
+      if (errorCode(e) === "invalid_expiration" || errorCode(e) === "invalid_observers")
+        setPanel("options");
     } finally {
       setSending(false);
     }
@@ -145,6 +161,7 @@ function SendPage() {
     setOptions(defaultSendOptions(locale));
     setDocumentId(null);
     setProblems({});
+    setPanel(null);
   }
 
   if (documentId)
@@ -173,6 +190,7 @@ function SendPage() {
     );
 
   const r = options.reminders;
+  const markCount = Object.values(marks).reduce((n, list) => n + list.length, 0);
   // Na Revisão, um grupo com quórum é uma etapa só (mesmo número para todos do grupo).
   const reviewSteps: number[] = [];
   participants.forEach((p, i) => {
@@ -191,7 +209,7 @@ function SendPage() {
           setStep(i);
         }}
       />
-      <div className={step === 3 ? "grid gap-5" : "grid max-w-3xl gap-5"}>
+      <div className={step === 2 && panel === "marks" ? "grid gap-5" : "grid max-w-3xl gap-5"}>
         {step === 0 && (
           <>
             <PdfDrop
@@ -227,27 +245,6 @@ function SendPage() {
           />
         )}
         {step === 2 && (
-          <FlowEditor
-            value={participants}
-            onChange={setParticipants}
-            sequential={sequential}
-            onSequentialChange={setSequential}
-            config={config}
-            problems={problems}
-          />
-        )}
-        {step === 3 && (
-          <MarksEditor
-            source={fileBytes}
-            people={participants
-              .filter((p) => p.role !== "approver")
-              .map((p) => ({ key: p.key, label: p.name || p.email }))}
-            value={marks}
-            onChange={setMarks}
-          />
-        )}
-        {step === 4 && <SendOptions value={options} onChange={setOptions} />}
-        {step === 5 && delegates && (
           <dl className="grid gap-4 rounded-2xl border bg-white p-5 text-sm shadow-sm sm:grid-cols-[10rem_1fr]">
             <dt className="font-medium text-muted-foreground">{t.send.review.document}</dt>
             <dd>{name || file?.name}</dd>
@@ -316,6 +313,103 @@ function SendPage() {
             <dd className="text-muted-foreground sm:col-span-2">{t.send.review.consumption}</dd>
           </dl>
         )}
+        {step === 2 && (
+          <section className="grid gap-3" aria-labelledby="send-adjust">
+            <div>
+              <h2 id="send-adjust" className="font-display text-lg font-semibold">
+                {t.send.adjust.title}
+              </h2>
+              <p className="text-sm text-muted-foreground">{t.send.adjust.hint}</p>
+            </div>
+            {(
+              [
+                {
+                  id: "flow",
+                  title: t.send.adjust.flow,
+                  summary: [
+                    sequential ? t.send.review.sequential : t.send.review.parallel,
+                    [...new Set(participants.map((p) => t.participants.levels[p.authLevel]))].join(
+                      ", ",
+                    ),
+                  ].join(" · "),
+                },
+                {
+                  id: "marks",
+                  title: t.send.adjust.marks,
+                  summary: markCount
+                    ? t.send.adjust.marksCount.replace("{n}", String(markCount))
+                    : t.send.adjust.marksAuto,
+                },
+                {
+                  id: "options",
+                  title: t.send.adjust.options,
+                  summary: [
+                    options.expiresAt
+                      ? new Date(`${options.expiresAt}T12:00:00`).toLocaleDateString(
+                          locale === "pt" ? "pt-BR" : locale,
+                        )
+                      : t.sendOptions.noExpiration,
+                    `${t.send.review.reminders}: ${r.enabled ? t.send.adjust.remindersOn : t.send.review.off}`,
+                  ].join(" · "),
+                },
+              ] as const
+            ).map((item) => {
+              const open = panel === item.id;
+              return (
+                <div key={item.id} className="rounded-2xl border bg-white shadow-sm">
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-controls={`adjust-${item.id}`}
+                    onClick={() => setPanel(open ? null : item.id)}
+                    className="flex w-full items-center gap-3 p-4 text-left"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium">{item.title}</span>
+                      <span className="block truncate text-sm text-muted-foreground">
+                        {item.summary}
+                      </span>
+                    </span>
+                    <span className="text-sm font-medium text-brand">
+                      {open ? t.send.adjust.close : t.send.adjust.change}
+                    </span>
+                    <ChevronDown
+                      className={cn("size-4 text-brand transition-transform", open && "rotate-180")}
+                      aria-hidden
+                    />
+                  </button>
+                  {open && (
+                    <div id={`adjust-${item.id}`} className="border-t p-4">
+                      {item.id === "flow" && (
+                        <FlowEditor
+                          value={participants}
+                          onChange={setParticipants}
+                          sequential={sequential}
+                          onSequentialChange={setSequential}
+                          config={config}
+                          problems={problems}
+                        />
+                      )}
+                      {item.id === "marks" && (
+                        <MarksEditor
+                          source={fileBytes}
+                          people={participants
+                            .filter((p) => p.role !== "approver")
+                            .map((p) => ({ key: p.key, label: p.name || p.email }))}
+                          value={marks}
+                          onChange={setMarks}
+                        />
+                      )}
+                      {item.id === "options" && (
+                        <SendOptions value={options} onChange={setOptions} />
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </section>
+        )}
 
         {error && <FormMessage kind="error">{error}</FormMessage>}
         <div className="flex flex-wrap gap-3">
@@ -324,7 +418,7 @@ function SendPage() {
               {t.send.back}
             </Button>
           )}
-          {step < 5 ? (
+          {step < 2 ? (
             <Button className="bg-brand hover:bg-brand-strong" onClick={next}>
               {t.send.next}
             </Button>

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { needsPhone, useAppConfig, type AuthLevel } from "@/app/app-config";
 import { useAuth } from "@/app/auth";
-import { PageHeader } from "@/app/components/app-shell";
+import { PageHeader, SectionTabs } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import {
   FieldInput,
@@ -124,6 +124,12 @@ function FormsPage() {
             {t.forms.new}
           </Button>
         }
+      />
+      <SectionTabs
+        tabs={[
+          { to: "/app/templates", label: t.sections.templates },
+          { to: "/app/forms", label: t.sections.forms },
+        ]}
       />
       {forms === null ? (
         <p className="text-muted-foreground">{t.common.loading}</p>

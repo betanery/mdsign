@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eye, Play, Save, Trash2, Workflow } from "lucide-react";
 import { toast } from "sonner";
 
-import { PageHeader } from "@/app/components/app-shell";
+import { PageHeader, SectionTabs } from "@/app/components/app-shell";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { SaveProcessDialog } from "@/app/components/save-process-dialog";
 import { formatDate } from "@/app/documents";
@@ -94,6 +94,12 @@ function ProcessesPage() {
   return (
     <>
       <PageHeader title={t.processes.title} subtitle={t.processes.subtitle} />
+      <SectionTabs
+        tabs={[
+          { to: "/app/bulk", label: t.sections.bulk },
+          { to: "/app/processes", label: t.sections.processes },
+        ]}
+      />
       {rows === null ? (
         <p className="text-muted-foreground">{t.common.loading}</p>
       ) : (

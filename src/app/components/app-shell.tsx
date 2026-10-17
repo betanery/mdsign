@@ -8,7 +8,6 @@ import {
   FilePen,
   FileStack,
   Files,
-  FormInput,
   Home,
   LayoutTemplate,
   LogOut,
@@ -19,7 +18,6 @@ import {
   Settings,
   ShieldCheck,
   Users,
-  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,7 +49,12 @@ type NavKey =
   | "reports"
   | "settings";
 
-type NavItem = { key: NavKey; icon: LucideIcon } & (
+type NavItem = {
+  key: NavKey;
+  icon: LucideIcon;
+  /** Outras rotas que acendem o mesmo item (abas da seção). */
+  also?: string[];
+} & (
   | {
       to:
         | "/app"
@@ -74,10 +77,8 @@ type NavItem = { key: NavKey; icon: LucideIcon } & (
 const navItems: NavItem[] = [
   { key: "home", to: "/app", icon: Home },
   { key: "documents", to: "/app/documents", icon: Files },
-  { key: "templates", to: "/app/templates", icon: LayoutTemplate },
-  { key: "processes", to: "/app/processes", icon: Workflow },
-  { key: "bulk", to: "/app/bulk", icon: FileStack },
-  { key: "forms", to: "/app/forms", icon: FormInput },
+  { key: "templates", to: "/app/templates", icon: LayoutTemplate, also: ["/app/forms"] },
+  { key: "bulk", to: "/app/bulk", icon: FileStack, also: ["/app/processes"] },
   { key: "contacts", to: "/app/contacts", icon: Users },
   { key: "organization", to: "/app/organization", icon: Building2 },
   { key: "integrations", to: "/app/integrations", icon: Plug },
@@ -98,7 +99,9 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const path = item.section ? `/app/${item.section}` : item.to;
   const active =
-    path === "/app" ? pathname === "/app" || pathname === "/app/" : pathname.startsWith(path);
+    path === "/app"
+      ? pathname === "/app" || pathname === "/app/"
+      : [path, ...(item.also ?? [])].some((p) => pathname.startsWith(p));
   const Icon = item.icon;
   const className = cn(
     "flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
@@ -128,6 +131,8 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void
   ) : (
     <Link
       to={item.to}
+      // "/app" é pai de todas as rotas: sem exact, "Início" ficava como página atual em tudo.
+      activeOptions={{ exact: item.to === "/app" }}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={className}
@@ -169,7 +174,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: (() => void) | undefined 
   const { isPlatformAdmin } = useOrg();
   return (
     <div className="flex h-full flex-col gap-4 bg-brand-strong p-3 text-white">
-      <Link to="/app" onClick={onNavigate} className="flex items-center gap-2 px-2 pt-1">
+      <Link
+        to="/app"
+        activeOptions={{ exact: true }}
+        onClick={onNavigate}
+        className="flex items-center gap-2 px-2 pt-1"
+      >
         <img
           src={logoIcon}
           alt=""
@@ -269,7 +279,7 @@ function MobileBar({ onMore, onPlus }: { onMore: () => void; onPlus: () => void 
       aria-label="MDSign"
       className="fixed inset-x-0 bottom-0 z-30 flex h-16 border-t bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <Link to="/app" className={item}>
+      <Link to="/app" activeOptions={{ exact: true }} className={item}>
         <Home className="size-5" aria-hidden />
         {t.nav.home}
       </Link>
@@ -321,6 +331,36 @@ export function AppShell({ children }: { children: ReactNode }) {
       <MobileBar onMore={() => setMoreOpen(true)} onPlus={() => setPlusOpen(true)} />
       <OnboardingHost />
     </div>
+  );
+}
+
+/**
+ * Abas entre telas irmãs que dividem um item do menu (Modelos | Links públicos;
+ * Envios | Processos salvos). Cada aba é uma rota própria.
+ */
+export function SectionTabs({ tabs }: { tabs: { to: string; label: string }[] }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  return (
+    <nav className="mb-5 flex gap-1 border-b" aria-label={tabs.map((x) => x.label).join(" / ")}>
+      {tabs.map((tab) => {
+        const active = pathname === tab.to || pathname === `${tab.to}/`;
+        return (
+          <Link
+            key={tab.to}
+            to={tab.to}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "-mb-px border-b-2 px-3 py-2 text-sm font-medium",
+              active
+                ? "border-brand text-brand"
+                : "border-transparent text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {tab.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 

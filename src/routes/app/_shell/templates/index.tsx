@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { callFunction } from "@/app/api";
 import { useAuth } from "@/app/auth";
-import { PageHeader } from "@/app/components/app-shell";
+import { PageHeader, SectionTabs } from "@/app/components/app-shell";
 import { templateSelect, type TemplateRow } from "@/app/components/template-fields";
 import { errorText } from "@/app/errors";
 import { useAppI18n } from "@/app/i18n";
@@ -104,6 +104,12 @@ function TemplatesPage() {
             </Button>
           )
         }
+      />
+      <SectionTabs
+        tabs={[
+          { to: "/app/templates", label: t.sections.templates },
+          { to: "/app/forms", label: t.sections.forms },
+        ]}
       />
       <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
         <TabsList className="mb-4 flex h-auto flex-wrap justify-start">

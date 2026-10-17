@@ -342,6 +342,12 @@ const en: AppMessages = {
     create: "Create organization",
     cnpjInvalid: "Invalid CNPJ. Check the 14 digits.",
   },
+  sections: {
+    templates: "Templates",
+    forms: "Public links",
+    bulk: "Sends",
+    processes: "Saved processes",
+  },
   nav: {
     home: "Home",
     documents: "Documents",
@@ -413,6 +419,7 @@ const en: AppMessages = {
     finance: "Accesses billing and financial reports.",
   },
   organization: {
+    rolesHelp: "What each role can do",
     title: "Organization",
     tabMembers: "Members",
     tabUnits: "Units and departments",
@@ -1237,7 +1244,7 @@ const en: AppMessages = {
   send: {
     title: "Send for signature",
     subtitle: "Choose who signs, in which order and how each person authenticates.",
-    steps: ["Document", "Participants", "Flow", "Signatures", "Settings", "Review"],
+    steps: ["Document", "Who signs", "Review and send"],
     next: "Continue",
     back: "Back",
     submit: "Send document",
@@ -1247,6 +1254,18 @@ const en: AppMessages = {
       "Participants will receive the invitation by email. Track everything in the timeline.",
     view: "Track document",
     another: "Send another",
+    adjust: {
+      title: "Adjustments (optional)",
+      hint: "They already come with the default. Open only if you need to change something.",
+      flow: "Order, role and authentication",
+      marks: "Signature position on the PDF",
+      marksAuto: "Automatic, on the signatures page",
+      marksCount: "{n} positions set",
+      options: "Deadline, reminders, message and observers",
+      change: "Change",
+      close: "Close",
+      remindersOn: "on",
+    },
     review: {
       document: "Document",
       participants: "Participants",

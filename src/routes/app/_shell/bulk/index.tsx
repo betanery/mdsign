@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
 import { bulkLabel, bulkTone, type BulkJob } from "@/app/bulk";
-import { PageHeader } from "@/app/components/app-shell";
+import { PageHeader, SectionTabs } from "@/app/components/app-shell";
 import { formatDate } from "@/app/documents";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
@@ -45,6 +45,12 @@ function BulkList() {
             </Link>
           </Button>
         }
+      />
+      <SectionTabs
+        tabs={[
+          { to: "/app/bulk", label: t.sections.bulk },
+          { to: "/app/processes", label: t.sections.processes },
+        ]}
       />
       {jobs === null ? (
         <p className="text-muted-foreground">{t.common.loading}</p>

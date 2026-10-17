@@ -213,6 +213,20 @@ function MembersTab({ orgId }: { orgId: string }) {
             </Button>
           )}
         </div>
+        {/* Papéis explicados: os nomes sozinhos (Gestor, Operador, Usuário) se confundem. */}
+        <details className="border-b px-4 py-3 text-sm">
+          <summary className="cursor-pointer font-medium text-brand">
+            {t.organization.rolesHelp}
+          </summary>
+          <dl className="mt-3 grid gap-x-4 gap-y-1.5 sm:grid-cols-[9rem_1fr]">
+            {roles.map((r) => (
+              <div key={r} className="contents">
+                <dt className="font-medium">{t.roles[r]}</dt>
+                <dd className="text-muted-foreground">{t.roleDescriptions[r]}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
         <ul className="divide-y">
           {members.map((m) => {
             const self = m.user_id === user?.id;
@@ -230,6 +244,9 @@ function MembersTab({ orgId }: { orgId: string }) {
                     )}
                   </p>
                   <p className="truncate text-sm text-muted-foreground">{m.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.roles[m.role]}: {t.roleDescriptions[m.role]}
+                  </p>
                 </div>
                 <label className="sr-only" htmlFor={`role-${m.user_id}`}>
                   {t.organization.inviteRole}
