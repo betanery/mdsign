@@ -28,7 +28,7 @@ export type AppConfig = {
 };
 
 const fallback: AppConfig = {
-  authLevels: ["basic", "qualified"],
+  authLevels: ["basic"],
   foreignSigners: false,
   billingEnvironment: null,
   whatsappConfigured: false,

@@ -12,9 +12,10 @@ export type AuthLevel =
   | "qualified";
 
 /**
- * Métodos contratados/ativos na instância (segredo SIGNDOC_AUTH_METHODS, ex.:
- * "sms,whatsapp,selfie,datavalid"; "liveness" libera a prova de vida). Sem configuração, só
- * e-mail e certificado. "Não prometer método não confirmado" (PRD §10).
+ * Métodos liberados para oferecer (segredo SIGNDOC_AUTH_METHODS, ex.:
+ * "sms,whatsapp,selfie,datavalid,liveness,certificate"). Sem configuração, só e-mail.
+ * "Não prometer método não confirmado" (PRD §10): cada método entra na lista só depois de
+ * testado de verdade com o motor (homologação de 17/10/2026).
  */
 const methods = new Set(
   (Deno.env.get("SIGNDOC_AUTH_METHODS") ?? "")
@@ -39,7 +40,7 @@ export function availableAuthLevels(): AuthLevel[] {
   return [
     "basic",
     ...levelMethods.filter(([, method]) => methods.has(method)).map(([level]) => level),
-    "qualified",
+    ...(methods.has("certificate") ? (["qualified"] as AuthLevel[]) : []),
   ];
 }
 

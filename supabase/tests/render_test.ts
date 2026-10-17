@@ -1,4 +1,4 @@
-// Testes do preenchimento de modelos PDF (Deno): `npx -y deno test -A supabase/tests/render_test.ts`
+// Testes do preenchimento de modelos PDF (Deno). Rodam no CI; localmente, numa cópia da pasta supabase (ver server_test.ts).
 import { PDFDocument } from "npm:pdf-lib@1.17.1";
 import { renderPdfTemplate, type TemplateField } from "../functions/_shared/render.ts";
 

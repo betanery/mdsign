@@ -31,3 +31,24 @@ jobs:
         run: bunx vite build
       - name: Dependências vulneráveis (falha em alta ou crítica)
         run: bun audit --audit-level=high
+
+  # Funções do servidor (Deno): tipos das 22 funções e testes da lógica (sem rede, sem banco).
+  # Roda numa cópia da pasta supabase: o Deno não deve tocar o node_modules da raiz.
+  servidor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "2.9.6"
+      - name: Tipos e testes das funções
+        env:
+          SUPABASE_URL: http://127.0.0.1:9
+          SUPABASE_SERVICE_ROLE_KEY: teste
+          SUPABASE_ANON_KEY: teste
+        run: |
+          cp -R supabase "$RUNNER_TEMP/supabase"
+          cd "$RUNNER_TEMP/supabase"
+          deno check functions/*/index.ts
+          deno test -A tests/

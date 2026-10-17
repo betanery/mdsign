@@ -937,4 +937,24 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Homologação 17/10 (SEC-13): visitante não executa funções privilegiadas; quem está logado sim.
+set local role anon;
+do $$ begin
+  perform public.entitlement_exists(gen_random_uuid(), 'integrations_access');
+  assert false, 'anônimo não executa entitlement_exists';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.is_org_member(gen_random_uuid());
+  assert false, 'anônimo não executa is_org_member';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert public.is_org_member(gen_random_uuid()) = false, 'logado executa is_org_member';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;
