@@ -115,7 +115,9 @@ export function Integrations() {
               id="api-tabpanel"
               role="tabpanel"
               aria-labelledby={`api-tab-${tab}`}
-              className="max-h-80 overflow-y-auto"
+              // Rolável: precisa receber foco para quem navega pelo teclado (WCAG 2.1.1).
+              tabIndex={0}
+              className="max-h-80 overflow-y-auto focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:outline-none"
             >
               <CodeBlock code={tab === "request" ? apiExample.body : apiExample.response} />
             </div>

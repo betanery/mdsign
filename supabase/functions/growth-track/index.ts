@@ -45,12 +45,30 @@ Deno.serve(async (req) => {
     } catch {
       throw new AppError("invalid_request");
     }
+    const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0]!.trim();
+    if (ip && limited(ip)) return json({ ok: true }, 200, origin);
+
+    // Comprovante de consentimento de cookies (registro anônimo da escolha).
+    if (body["kind"] === "cookie_consent") {
+      const consentId = String(body["consentId"] ?? "");
+      if (!/^[0-9a-f-]{36}$/i.test(consentId)) throw new AppError("invalid_request");
+      await admin.from("cookie_consents").insert({
+        consent_id: consentId,
+        analytics: body["analytics"] === true,
+        marketing: body["marketing"] === true,
+        version: Math.min(1000, Math.max(1, Number(body["version"]) || 1)),
+        page:
+          String(body["page"] ?? "")
+            .split("?")[0]!
+            .slice(0, 200) || null,
+      });
+      return json({ ok: true }, 200, origin);
+    }
+
     const event = String(body["event"] ?? "");
     const session = String(body["session"] ?? "");
     if (!EVENTS.has(event) || !/^[A-Za-z0-9_-]{8,64}$/.test(session))
       throw new AppError("invalid_request");
-    const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0]!.trim();
-    if (ip && limited(ip)) return json({ ok: true }, 200, origin);
 
     const raw = (body["data"] ?? {}) as Record<string, unknown>;
     const data: Record<string, string> = {};

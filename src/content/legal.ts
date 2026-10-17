@@ -234,7 +234,7 @@ const privacy: LegalDoc = {
     {
       title: "7. Cookies, analytics e campanhas",
       paragraphs: [
-        "A aplicação utiliza o cookie funcional mdsign_lang para o idioma; armazenamento local para a sessão de acesso; sessionStorage para parâmetros UTM e para um código anônimo de sessão usado na contagem de visitas; e eventos próprios enviados à camada dataLayer. Há integração condicional com Google Tag Manager (GTM), cujo contêiner pode carregar outras tags conforme configuração. Tags não essenciais (análise e marketing) só são carregadas depois do consentimento, dado no aviso de cookies; o Google Consent Mode começa negado. As preferências podem ser revistas a qualquer momento em “Preferências de cookies”, no rodapé do site.",
+        "A aplicação utiliza o cookie funcional mdsign_lang para o idioma; armazenamento local para a sessão de acesso; sessionStorage para parâmetros UTM e para um código anônimo de sessão usado na contagem de visitas; e eventos próprios enviados à camada dataLayer. Há integração condicional com Google Tag Manager (GTM), cujo contêiner pode carregar outras tags conforme configuração. Tags não essenciais (análise e marketing) só são carregadas depois do consentimento, dado no aviso de cookies; o Google Consent Mode começa negado. As preferências podem ser revistas a qualquer momento em “Preferências de cookies”, no rodapé do site. Cada escolha é registrada de forma anônima (um código aleatório do navegador, a opção escolhida e a data), como comprovante do consentimento.",
         "Não serão enviados a plataformas publicitárias CPF, conteúdo documental, dados sensíveis ou informações pessoais desnecessárias.",
       ],
     },

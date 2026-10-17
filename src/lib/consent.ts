@@ -2,11 +2,20 @@
 // consentimento. O Google Tag Manager só é carregado depois do consentimento, e o Consent Mode
 // do Google começa negado (script no <head>, em src/routes/__root.tsx).
 
+import { siteConfig } from "@/config/site";
+
 export const CONSENT_KEY = "mdsign_consent";
 export const CONSENT_VERSION = 1;
 export const OPEN_PREFS_EVENT = "mdsign:cookie-preferences";
 
-export type Consent = { v: number; analytics: boolean; marketing: boolean; at: string };
+export type Consent = {
+  v: number;
+  analytics: boolean;
+  marketing: boolean;
+  at: string;
+  /** Código anônimo deste navegador, para o comprovante guardado no servidor. */
+  id?: string;
+};
 
 declare global {
   interface Window {
@@ -25,7 +34,13 @@ export function readConsent(): Consent | null {
 }
 
 export function saveConsent(choice: { analytics: boolean; marketing: boolean }) {
-  const c: Consent = { v: CONSENT_VERSION, ...choice, at: new Date().toISOString() };
+  const previous = readConsent();
+  const c: Consent = {
+    v: CONSENT_VERSION,
+    ...choice,
+    at: new Date().toISOString(),
+    id: previous?.id ?? crypto.randomUUID(),
+  };
   try {
     localStorage.setItem(CONSENT_KEY, JSON.stringify(c));
   } catch {
@@ -39,6 +54,21 @@ export function saveConsent(choice: { analytics: boolean; marketing: boolean }) 
     ad_personalization: g(c.marketing),
   });
   if (c.analytics || c.marketing) window.__mdsignLoadGtm?.();
+  // Comprovante no servidor (anônimo). Falha de rede não impede a escolha valer no navegador.
+  const endpoint = siteConfig.leadEndpoint.replace(/lead-submit$/, "growth-track");
+  void fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify({
+      kind: "cookie_consent",
+      consentId: c.id,
+      analytics: c.analytics,
+      marketing: c.marketing,
+      version: c.v,
+      page: window.location.pathname,
+    }),
+    keepalive: true,
+  }).catch(() => undefined);
   return c;
 }
 

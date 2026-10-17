@@ -926,4 +926,15 @@ do $$ begin
 end $$;
 reset role;
 
+-- Comprovante de cookies: só o servidor grava e lê.
+insert into public.cookie_consents (consent_id, analytics, marketing, version) values (gen_random_uuid(), true, false, 1);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform 1 from public.cookie_consents;
+  assert false, 'navegador não lê os comprovantes de cookies';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;
