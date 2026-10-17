@@ -17,8 +17,8 @@ de dados pessoais). O projeto atual (`vrksxqbopteeyeovdwpu`) passa a ser o ambie
 | Arquivos | Buckets privados `templates` e `bulk-sources` | Copiar objeto a objeto (script com a API do Storage) |
 | Funções do servidor | `supabase/functions` (22 funções) | `supabase functions deploy` no projeto novo |
 | Segredos das funções | ALLOWED_ORIGINS, ASAAS_API_KEY, ASAAS_ENV, ASAAS_WEBHOOK_TOKEN, CRON_SECRET, SIGNDOC_ADMIN_API_KEY, SIGNDOC_API_KEY, SIGNDOC_AUTH_METHODS, SIGNDOC_WEBHOOK_TOKEN, WHATSAPP_WEBHOOK_SECRET (+ BOTCONVERSA_API_KEY quando existir) | Gravar no projeto novo pelos scripts `read -s` (nunca no chat) |
-| Segredo no Vault | `mdsign_cron_secret` (usado pelas rotinas) | Recriar no Vault do projeto novo |
-| Rotinas agendadas | `mdsign-reminders-run` (de hora em hora), `mdsign-webhooks-run` (a cada minuto) | **Corrigir antes** (ver seção 2) |
+| Segredos no Vault | `mdsign_cron_secret` e `mdsign_functions_url` (usados pelas rotinas) | Recriar no Vault do projeto novo, com o endereço do projeto novo |
+| Rotinas agendadas | `mdsign-reminders-run` (de hora em hora), `mdsign-webhooks-run` (a cada minuto) | Criadas pelas migrações; leem o endereço do Vault (seção 2) |
 | Webhook do SignDoc | Cadastrado no motor apontando para `…/functions/v1/signdoc-webhook` | ⚠️ Repontar para o projeto novo |
 | Webhook do Asaas (Sandbox) | Cadastrado no Asaas apontando para `…/functions/v1/asaas-webhook` | Repontar (Super Admin → Cobrança → Configurar webhook) |
 | Front (Lovable) | `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` (com valores padrão no código) | Trocar as variáveis no Lovable e os valores padrão no código |
@@ -26,10 +26,11 @@ de dados pessoais). O projeto atual (`vrksxqbopteeyeovdwpu`) passa a ser o ambie
 
 ## 2. Correções antes de migrar (no código, sem efeito na produção atual)
 
-1. **Rotinas agendadas com endereço fixo.** As migrações `20261005160000_agendador_lembretes.sql`,
-   `20261005220000_integracoes_api_webhooks.sql` e `20261008091000_cron_notificacoes.sql` gravam
-   `https://vrksxqbopteeyeovdwpu.supabase.co/functions/v1/...` no `cron.job`. Nova migração:
-   ler a URL base do Vault (`mdsign_functions_url`) e recriar os dois jobs com ela.
+1. ✅ **Rotinas agendadas com endereço fixo** (feito em 16/10/2026, migração
+   `20261016180000_rotinas_endereco_no_cofre.sql`). As rotinas leem a URL base do Vault
+   (`mdsign_functions_url`, ex.: `https://<projeto>.supabase.co/functions/v1`). No projeto novo,
+   gravar esse segredo e o `mdsign_cron_secret` antes de ligar as rotinas; sem o segredo, a
+   chamada não acontece.
 2. **Valores padrão do projeto no front**: `src/lib/supabase.ts`, `src/config/site.ts`
    (`leadEndpoint`) e `src/lib/security-headers.ts` caem no projeto atual quando a variável não
    existe. Passar a exigir as variáveis em produção (ou trocar os padrões no dia da migração).
