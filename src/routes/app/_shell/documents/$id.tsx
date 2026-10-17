@@ -69,6 +69,7 @@ function DocumentDetail() {
   const [notes, setNotes] = useState<
     {
       participant_id: string | null;
+      channel: "whatsapp" | "email";
       status: string;
       error: string | null;
       sent_at: string | null;
@@ -101,9 +102,8 @@ function DocumentDetail() {
     setReminders((rem.data as ReminderInfo[] | null) ?? []);
     const nt = await supabase
       .from("notifications")
-      .select("participant_id, status, error, sent_at, created_at")
+      .select("participant_id, channel, status, error, sent_at, created_at")
       .eq("document_id", id)
-      .eq("channel", "whatsapp")
       .order("created_at", { ascending: false });
     setNotes((nt.data as typeof notes | null) ?? []);
     setDoc((d.data as (DocumentRow & { deleted_at?: string | null }) | null) ?? null);
@@ -345,24 +345,26 @@ function DocumentDetail() {
                     </p>
                   )}
                   <p className="truncate text-sm text-muted-foreground">{p.email}</p>
-                  {(() => {
-                    // Última notificação de WhatsApp desta pessoa (status honesto: enviado ≠ entregue).
-                    const n = notes.find((x) => x.participant_id === p.id);
+                  {(["email", "whatsapp"] as const).map((channel) => {
+                    // Última notificação do canal para esta pessoa (status honesto: enviado ≠ entregue).
+                    const n = notes.find((x) => x.participant_id === p.id && x.channel === channel);
                     if (!n) return null;
+                    const labels = channel === "email" ? t.notify.emailStatus : t.notify.status;
                     return (
                       <p
+                        key={channel}
                         className={cn(
                           "text-xs",
                           n.status === "failed" ? "text-destructive" : "text-muted-foreground",
                         )}
                       >
-                        {f(t.notify.status[n.status] ?? n.status, {
+                        {f(labels[n.status] ?? n.status, {
                           date: formatDate(n.sent_at ?? n.created_at, locale),
                           reason: t.notify.reasons[n.error ?? ""] ?? n.error ?? "",
                         })}
                       </p>
                     );
-                  })()}
+                  })}
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {t.documents.participantStatus[p.status]}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { Mail, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +11,7 @@ import { useOrg } from "../org";
 import { friendlyError } from "../validation";
 
 type Settings = {
+  email_enabled: boolean;
   whatsapp_enabled: boolean;
   whatsapp_on_invite: boolean;
   whatsapp_on_reminder: boolean;
@@ -24,6 +25,7 @@ export function NotificationsTab({ orgId }: { orgId: string }) {
   const config = useAppConfig();
   const manage = can("members.manage");
   const [s, setS] = useState<Settings>({
+    email_enabled: false,
     whatsapp_enabled: false,
     whatsapp_on_invite: true,
     whatsapp_on_reminder: true,
@@ -32,7 +34,7 @@ export function NotificationsTab({ orgId }: { orgId: string }) {
   useEffect(() => {
     void supabase
       .from("notification_settings")
-      .select("whatsapp_enabled, whatsapp_on_invite, whatsapp_on_reminder")
+      .select("email_enabled, whatsapp_enabled, whatsapp_on_invite, whatsapp_on_reminder")
       .eq("organization_id", orgId)
       .maybeSingle()
       .then(({ data }) => data && setS(data as Settings));
@@ -68,8 +70,25 @@ export function NotificationsTab({ orgId }: { orgId: string }) {
   return (
     <div className="grid max-w-2xl gap-4">
       <section className="rounded-2xl border bg-white p-5 shadow-sm">
-        <h3 className="mb-1 font-display font-semibold">{t.notify.emailTitle}</h3>
-        <p className="text-sm text-muted-foreground">{t.notify.emailHint}</p>
+        <h3 className="mb-1 flex items-center gap-2 font-display font-semibold">
+          <Mail className="size-4 text-brand" aria-hidden />
+          {t.notify.emailTitle}
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          {s.email_enabled && config.ownEmail !== "off"
+            ? t.notify.emailOwnHint
+            : t.notify.emailHint}
+        </p>
+        {config.ownEmail === "test" && (
+          <p className="mt-2 rounded-lg bg-orange-50 px-3 py-2 text-sm text-orange-900">
+            {t.notify.emailTestMode}
+          </p>
+        )}
+        {config.ownEmail && config.ownEmail !== "off" && (
+          <div className="mt-2 divide-y">
+            {row("email_enabled", t.notify.emailOwn, t.notify.emailOwnToggleHint)}
+          </div>
+        )}
       </section>
       <section className="rounded-2xl border bg-white p-5 shadow-sm">
         <h3 className="mb-1 flex items-center gap-2 font-display font-semibold">

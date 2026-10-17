@@ -3,6 +3,7 @@
 import { asaasEnv } from "../_shared/asaas.ts";
 import { admin, requireUser } from "../_shared/auth.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
+import { emailConfigured, emailTestMode } from "../_shared/email.ts";
 import { availableAuthLevels, identifierOptional } from "../_shared/participants.ts";
 
 Deno.serve(async (req) => {
@@ -24,6 +25,14 @@ Deno.serve(async (req) => {
         // WhatsApp do MDSign (provedor configurado nos segredos; só o sim/não vem para o app).
         whatsappConfigured: Boolean(Deno.env.get("BOTCONVERSA_API_KEY")),
         quorumGroups: Boolean(policy?.active || platformAdmin),
+        // E-mail próprio (Resend): "test" = remetente de teste, só para o Super Admin.
+        ownEmail: !emailConfigured()
+          ? "off"
+          : emailTestMode()
+            ? platformAdmin
+              ? "test"
+              : "off"
+            : "on",
         // Ambiente de cobrança (só o nome, nunca a chave); null = cobrança não configurada.
         billingEnvironment: (() => {
           try {

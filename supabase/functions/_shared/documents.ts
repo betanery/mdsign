@@ -3,7 +3,7 @@
 import { admin } from "./auth.ts";
 import { AppError } from "./http.ts";
 import { mapDocumentStatus, signdoc, type EngineDocument } from "./signdoc.ts";
-import { enqueueWhatsApp } from "./notifications.ts";
+import { enqueueChannels } from "./notifications.ts";
 import { deliverDue } from "./webhooks.ts";
 
 type DocRow = { id: string; organization_id: string; status: string; engine_document_id: string };
@@ -179,8 +179,9 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
       })),
     );
   if (events.length) await deliverDue(20, doc.organization_id).catch(() => undefined);
-  // Chegou a vez de alguém (fluxo em ordem): convite também por WhatsApp, se ligado.
+  // Chegou a vez de alguém (fluxo em ordem): convite pelos canais do MDSign (e-mail próprio,
+  // WhatsApp), se o documento/organização usar.
   if (nowPending.length && status === "pending")
-    await enqueueWhatsApp(doc.id, nowPending, "signature_requested").catch(() => undefined);
+    await enqueueChannels(doc.id, nowPending, "signature_requested");
   return { status, engine: current };
 }

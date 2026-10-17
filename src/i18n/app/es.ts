@@ -933,7 +933,14 @@ const es: AppMessages = {
   notify: {
     emailTitle: "Correo",
     emailHint:
-      "Las invitaciones y recordatorios por correo los envía siempre el servicio de firma.",
+      "De forma predeterminada, las invitaciones y recordatorios por correo los envía el servicio de firma.",
+    emailOwn: "Enviar correos por MDSign",
+    emailOwnToggleHint:
+      "Invitaciones y recordatorios con la marca MDSign y el nombre de quien envió. Vale para los documentos enviados después de activarlo.",
+    emailOwnHint:
+      "Las invitaciones y recordatorios de nuevos documentos salen de MDSign. Los documentos ya enviados siguen como estaban.",
+    emailTestMode:
+      "Modo de prueba: el remitente aún es el de prueba de Resend, que solo entrega al correo de la cuenta de Resend. Vale solo para documentos enviados por un Super Admin.",
     whatsappTitle: "WhatsApp",
     whatsappHint:
       "MDSign envía por WhatsApp un enlace seguro que abre la firma. La autenticación exigida (código, selfie, certificado) sigue igual.",
@@ -955,6 +962,14 @@ const es: AppMessages = {
       failed: "WhatsApp no enviado: {reason}",
       blocked: "WhatsApp bloqueado: {reason}",
       skipped: "WhatsApp no enviado: {reason}",
+    } as Record<string, string>,
+    emailStatus: {
+      pending: "Correo en cola ({date})",
+      sent: "Correo enviado el {date}",
+      delivered: "Correo entregado el {date}",
+      failed: "Correo no enviado: {reason}",
+      blocked: "Correo bloqueado: {reason}",
+      skipped: "Correo no enviado: {reason}",
     } as Record<string, string>,
     reasons: {
       provider_not_configured: "proveedor no configurado",

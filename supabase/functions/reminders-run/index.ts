@@ -6,7 +6,7 @@ import { safeEqual } from "../_shared/net.ts";
 import { admin } from "../_shared/auth.ts";
 import { processBulk } from "../_shared/bulk.ts";
 import { runBilling } from "../_shared/billing.ts";
-import { enqueueWhatsApp } from "../_shared/notifications.ts";
+import { enqueueChannels } from "../_shared/notifications.ts";
 import { runAccountPurge, runRetention } from "../_shared/retention.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { signdoc } from "../_shared/signdoc.ts";
@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
   const { data: docs } = await admin
     .from("documents")
     .select(
-      "id, organization_id, status, engine_document_id, created_at, reminder_first_days, reminder_every_days, reminder_max, document_participants (id, name, status, engine_flow_action_id, last_reminded_at, reminder_count)",
+      "id, organization_id, status, engine_document_id, own_email, created_at, reminder_first_days, reminder_every_days, reminder_max, document_participants (id, name, status, engine_flow_action_id, last_reminded_at, reminder_count)",
     )
     .eq("status", "pending")
     .eq("reminders_enabled", true)
@@ -53,9 +53,9 @@ Deno.serve(async (req) => {
         : new Date(doc.created_at).getTime() + doc.reminder_first_days * DAY;
       if (now < due) continue;
       try {
-        await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
-        // Mesmo lembrete também por WhatsApp (se a organização ligou o canal).
-        await enqueueWhatsApp(doc.id, [p.id], "reminder").catch(() => undefined);
+        // E-mail próprio: o lembrete sai do MDSign (o motor não é acionado, para não dobrar).
+        if (!doc.own_email) await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
+        await enqueueChannels(doc.id, [p.id], "reminder");
         await admin
           .from("document_participants")
           .update({

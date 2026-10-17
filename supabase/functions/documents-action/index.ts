@@ -5,6 +5,7 @@ import { admin, requireUser, type Caller } from "../_shared/auth.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import {
+  enqueueChannels,
   enqueueWhatsApp,
   processNotifications,
   whatsappConfigured,
@@ -26,13 +27,15 @@ type Doc = {
   created_by: string | null;
   status: string;
   engine_document_id: string;
+  /** E-mail próprio: o MDSign manda convites e lembretes (o motor não). */
+  own_email: boolean;
 };
 
 async function loadVisible(caller: Caller, documentId: string): Promise<Doc> {
   // Leitura com a identidade do usuário: se o RLS não deixa ver, não existe para ele.
   const { data } = await caller.asUser
     .from("documents")
-    .select("id, organization_id, created_by, status, engine_document_id")
+    .select("id, organization_id, created_by, status, engine_document_id, own_email")
     .eq("id", documentId)
     .maybeSingle();
   if (!data) throw new AppError("document_not_found", 404);
@@ -213,8 +216,10 @@ Deno.serve(async (req) => {
           .maybeSingle();
         if (!p?.engine_flow_action_id || p.status !== "pending")
           throw new AppError("nothing_to_remind", 409);
-        await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
-        await enqueueWhatsApp(doc.id, [p.id], "reminder", caller.user.id).catch(() => undefined);
+        // E-mail próprio: o lembrete sai do MDSign (o motor não é acionado, para não dobrar).
+        if (!doc.own_email) await signdoc.remind(doc.engine_document_id, p.engine_flow_action_id);
+        await enqueueChannels(doc.id, [p.id], "reminder", caller.user.id);
+        await processNotifications(5).catch(() => undefined);
         // Lembrete manual também conta (o resumo mostra quantos e quando foi o último).
         await admin
           .from("document_participants")

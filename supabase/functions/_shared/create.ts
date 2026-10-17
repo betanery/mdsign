@@ -3,7 +3,7 @@
 
 import { admin } from "./auth.ts";
 import { AppError } from "./http.ts";
-import { enqueueWhatsApp } from "./notifications.ts";
+import { enqueueChannels, ownEmailFor } from "./notifications.ts";
 import {
   toFlowActions,
   toObserver,
@@ -180,6 +180,11 @@ export async function createDocument(input: CreateInput): Promise<Created> {
   if (allowed === false) throw new AppError("plan_limit_reached", 402);
   const delegated = await applyDelegations(input.organizationId, input.participants);
   input = { ...input, participants: delegated.list };
+  // E-mail próprio: o MDSign manda convite e lembretes; o motor não manda os de ação pendente.
+  const ownEmail =
+    input.kind === "send" &&
+    input.notify &&
+    (await ownEmailFor(input.organizationId, input.createdBy).catch(() => false));
 
   try {
     const sizes = input.marks?.some((m) => m?.length) ? pageSizes(await loadPdf(input.pdf)) : [];
@@ -201,7 +206,7 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       // O e-mail do motor diz "submetido por <aplicação>": a descrição traz quem enviou de fato.
       description: await engineDescription(input),
       ...(input.expiresAt ? { expirationDate: input.expiresAt } : {}),
-      disablePendingActionNotifications: !input.notify,
+      disablePendingActionNotifications: !input.notify || ownEmail,
       ...(input.observers?.length
         ? { observers: input.observers.map((o) => toObserver(o, input.locale)) }
         : {}),
@@ -221,6 +226,8 @@ export async function createDocument(input: CreateInput): Promise<Created> {
         template_id: input.templateId ?? null,
         expires_at: engine.expirationDate ?? null,
         message: input.message ?? null,
+        own_email: ownEmail,
+        email_locale: ["pt", "en", "es"].includes(input.locale) ? input.locale : "pt",
         reminders_enabled: input.reminders?.enabled ?? input.notify,
         reminder_first_days: input.reminders?.firstDays ?? 2,
         reminder_every_days: input.reminders?.everyDays ?? 3,
@@ -280,14 +287,14 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       .from("document_participants")
       .insert(rows)
       .select("id, status");
-    // Convite também por WhatsApp (se a organização ligou o canal) para quem já está com a vez.
+    // Convite pelos canais do MDSign (e-mail próprio e WhatsApp) para quem já está com a vez.
     if (input.kind === "send" && input.notify)
-      await enqueueWhatsApp(
+      await enqueueChannels(
         doc.id,
         (inserted ?? []).filter((r) => r.status === "pending").map((r) => r.id as string),
         "signature_requested",
         input.createdBy,
-      ).catch((e) => console.error("enqueue whatsapp", e));
+      );
     if (input.observers?.length)
       await saveObservers(doc.id, input.organizationId, input.observers, engine);
 

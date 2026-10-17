@@ -1,7 +1,8 @@
 // Serviço de notificações do MDSign: um único motor para os canais.
 //
 //   Evento MDSign (convite, lembrete, reenvio) → notifications (fila) → canal
-//     e-mail   → o motor de assinatura (SignDoc) envia o convite/lembrete
+//     e-mail   → o motor (SignDoc) envia; ou o MDSign, pelo Resend, quando a organização ligou o
+//                e-mail próprio (documents.own_email: aí o motor não manda o convite)
 //     WhatsApp → o MDSign envia, pelo provedor configurado (BotConversa)
 //
 // Regras (Bloco E):
@@ -12,6 +13,7 @@
 // - Descadastro por organização ("SAIR"), respeitado antes de cada envio.
 
 import { admin } from "./auth.ts";
+import { emailConfigured, emailTestMode, sendEmail, signatureEmail } from "./email.ts";
 import { fetchWithTimeout } from "./net.ts";
 import { normalizePhone } from "./participants.ts";
 
@@ -103,6 +105,81 @@ export async function enqueueWhatsApp(
   return rows.length;
 }
 
+/**
+ * E-mail próprio vale para este documento? Organização ligou e o Resend está configurado. Em
+ * modo de teste (remetente @resend.dev) só para documentos de Super Admin.
+ */
+export async function ownEmailFor(organizationId: string, createdBy: string | null) {
+  if (!emailConfigured()) return false;
+  const { data: settings } = await admin
+    .from("notification_settings")
+    .select("email_enabled")
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (!settings?.email_enabled) return false;
+  if (!emailTestMode()) return true;
+  if (!createdBy) return false;
+  const { data: pa } = await admin
+    .from("platform_admins")
+    .select("user_id")
+    .eq("user_id", createdBy)
+    .maybeSingle();
+  return Boolean(pa);
+}
+
+/** Enfileira e-mails do MDSign (só em documentos criados com o e-mail próprio). */
+export async function enqueueEmail(
+  documentId: string,
+  participantIds: string[],
+  kind: Kind,
+  createdBy: string | null = null,
+) {
+  if (!participantIds.length) return 0;
+  const { data: doc } = await admin
+    .from("documents")
+    .select("id, organization_id, kind, status, own_email")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc?.own_email || doc.kind !== "send" || doc.status !== "pending") return 0;
+  const { data: people } = await admin
+    .from("document_participants")
+    .select("id, email, status")
+    .eq("document_id", documentId)
+    .in("id", participantIds);
+  const rows = (people ?? [])
+    .filter((p) => p.status === "pending" && p.email)
+    .map((p) => ({
+      organization_id: doc.organization_id,
+      document_id: documentId,
+      participant_id: p.id,
+      channel: "email",
+      kind,
+      created_by: createdBy,
+    }));
+  if (rows.length) await admin.from("notifications").insert(rows);
+  return rows.length;
+}
+
+/** Convite/lembrete nos canais do MDSign: e-mail próprio (se o documento usa) e WhatsApp. */
+export async function enqueueChannels(
+  documentId: string,
+  participantIds: string[],
+  kind: Kind,
+  createdBy: string | null = null,
+) {
+  const [email, whatsapp] = await Promise.all([
+    enqueueEmail(documentId, participantIds, kind, createdBy).catch((e) => {
+      console.error("enqueue email", e);
+      return 0;
+    }),
+    enqueueWhatsApp(documentId, participantIds, kind, createdBy).catch((e) => {
+      console.error("enqueue whatsapp", e);
+      return 0;
+    }),
+  ]);
+  return { email, whatsapp };
+}
+
 /** Texto curto e sem conteúdo do documento (LGPD): quem enviou, o que fazer e o link. */
 function message(kind: Kind, role: string, firstName: string, org: string, link: string) {
   const action = role === "approver" ? "aprovar" : "assinar";
@@ -151,7 +228,7 @@ export async function processNotifications(limit = 30) {
   const { data: queue } = await admin
     .from("notifications")
     .select(
-      "id, organization_id, document_id, participant_id, channel, kind, attempts, document_participants (id, name, phone, role, status), documents (status, organizations (name))",
+      "id, organization_id, document_id, participant_id, channel, kind, attempts, document_participants (id, name, email, phone, role, status), documents (name, status, origin, created_by, message, email_locale, organizations (name))",
     )
     .eq("status", "pending")
     .lte("scheduled_at", new Date().toISOString())
@@ -159,41 +236,67 @@ export async function processNotifications(limit = 30) {
     .limit(limit);
   if (!queue?.length) return out;
 
-  const { data: rate } = await admin
+  const { data: rates } = await admin
     .from("policies")
-    .select("config, active")
-    .eq("id", "whatsapp_rate")
-    .maybeSingle();
-  const cfg = (rate?.active ? rate.config : {}) as { per_run?: number; per_day?: number };
+    .select("id, config, active")
+    .in("id", ["whatsapp_rate", "email_rate"]);
+  const rateOf = (id: string) =>
+    ((rates ?? []).find((r) => r.id === id && r.active)?.config ?? {}) as {
+      per_run?: number;
+      per_day?: number;
+    };
+  const cfg = rateOf("whatsapp_rate");
   const perRun = cfg.per_run ?? 15;
   const perDay = cfg.per_day ?? 150;
+  const emailCfg = rateOf("email_rate");
+  const emailPerRun = emailCfg.per_run ?? 30;
+  const emailPerDay = emailCfg.per_day ?? 90;
   const today = new Date(new Date().toISOString().slice(0, 10)).toISOString();
   const sentToday = new Map<string, number>();
   let thisRun = 0;
+  let emailThisRun = 0;
+  let emailToday: number | null = null;
+  const senderNames = new Map<string, string>();
 
   for (const n of queue as unknown as {
     id: string;
     organization_id: string;
     document_id: string;
     participant_id: string;
+    channel: "whatsapp" | "email";
     kind: Kind;
     attempts: number;
     document_participants: {
       id: string;
       name: string;
+      email: string;
       phone: string | null;
       role: string;
       status: string;
     } | null;
-    documents: { status: string; organizations: { name: string } | null } | null;
+    documents: {
+      name: string;
+      status: string;
+      origin: string | null;
+      created_by: string | null;
+      message: string | null;
+      email_locale: string;
+      organizations: { name: string } | null;
+    } | null;
   }[]) {
-    const finish = async (status: string, error: string | null = null) => {
+    const provider = n.channel === "email" ? "resend" : "botconversa";
+    const finish = async (
+      status: string,
+      error: string | null = null,
+      messageId?: string | null,
+    ) => {
       await admin
         .from("notifications")
         .update({
           status,
           error,
-          provider: status === "sent" || status === "failed" ? "botconversa" : null,
+          provider: status === "sent" || status === "failed" ? provider : null,
+          ...(messageId ? { provider_message_id: messageId } : {}),
           ...(status === "sent" ? { sent_at: new Date().toISOString() } : {}),
         })
         .eq("id", n.id);
@@ -207,6 +310,81 @@ export async function processNotifications(limit = 30) {
     // Já assinou, documento encerrado ou sem telefone válido: não envia.
     if (!p || p.status !== "pending" || n.documents?.status !== "pending") {
       await finish("skipped", "not_pending");
+      continue;
+    }
+    if (n.channel === "email") {
+      if (!emailConfigured()) {
+        await finish("skipped", "provider_not_configured");
+        continue;
+      }
+      if (emailToday === null) {
+        const { count } = await admin
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("channel", "email")
+          .eq("status", "sent")
+          .gte("sent_at", today);
+        emailToday = count ?? 0;
+      }
+      // Ritmo: deixa para a próxima rodada (sem gastar tentativa).
+      if (emailThisRun >= emailPerRun || emailToday >= emailPerDay) continue;
+      const d = n.documents!;
+      try {
+        // Link público e API não têm uma pessoa remetente: o e-mail cita só a organização.
+        let sender = "";
+        if (d.created_by && !["form", "api"].includes(d.origin ?? "")) {
+          if (!senderNames.has(d.created_by)) {
+            const { data: prof } = await admin
+              .from("profiles")
+              .select("full_name")
+              .eq("id", d.created_by)
+              .maybeSingle();
+            senderNames.set(d.created_by, (prof?.full_name as string | null) ?? "");
+          }
+          sender = senderNames.get(d.created_by) ?? "";
+        }
+        const link = await createSignLink({
+          organizationId: n.organization_id,
+          documentId: n.document_id,
+          participantId: p.id,
+        });
+        const mail = signatureEmail({
+          kind: n.kind,
+          locale: d.email_locale,
+          role: p.role,
+          name: p.name,
+          senderName: sender,
+          orgName: d.organizations?.name ?? "MDSign",
+          docName: d.name,
+          message: n.kind === "reminder" ? null : d.message,
+          link,
+        });
+        const id = await sendEmail({ to: p.email, ...mail, idempotencyKey: n.id });
+        await finish("sent", null, id);
+        emailThisRun++;
+        emailToday++;
+        await admin.from("document_events").insert({
+          document_id: n.document_id,
+          organization_id: n.organization_id,
+          type: "notification.sent",
+          actor_name: p.name,
+          source: "mdsign",
+          data: { channel: "email", kind: n.kind, notification: n.id },
+        });
+      } catch (e) {
+        const attempts = n.attempts + 1;
+        const retry = RETRY_MIN[attempts - 1];
+        if (retry)
+          await admin
+            .from("notifications")
+            .update({
+              attempts,
+              error: String(e).slice(0, 200),
+              scheduled_at: new Date(Date.now() + retry * 60000).toISOString(),
+            })
+            .eq("id", n.id);
+        else await finish("failed", String(e).slice(0, 200));
+      }
       continue;
     }
     if (!phone) {

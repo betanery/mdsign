@@ -23,6 +23,8 @@ export type AppConfig = {
   whatsappConfigured: boolean;
   /** Grupos com quórum ("qualquer N do grupo"): política ligada ou Super Admin. */
   quorumGroups?: boolean;
+  /** E-mail próprio (Resend): "test" = remetente de teste (só Super Admin). */
+  ownEmail?: "off" | "test" | "on";
 };
 
 const fallback: AppConfig = {

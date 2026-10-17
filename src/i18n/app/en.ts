@@ -919,7 +919,14 @@ const en: AppMessages = {
   },
   notify: {
     emailTitle: "Email",
-    emailHint: "Email invites and reminders are always sent by the signing service.",
+    emailHint: "By default, email invites and reminders are sent by the signing service.",
+    emailOwn: "Send emails through MDSign",
+    emailOwnToggleHint:
+      "Invitations and reminders with the MDSign brand and the sender's name. Applies to documents sent after turning it on.",
+    emailOwnHint:
+      "Invitations and reminders for new documents are sent by MDSign. Documents already sent stay as they were.",
+    emailTestMode:
+      "Test mode: the sender is still Resend's test sender, which only delivers to the Resend account email. Applies only to documents sent by a Super Admin.",
     whatsappTitle: "WhatsApp",
     whatsappHint:
       "MDSign sends a secure link over WhatsApp that opens the signature. The required authentication (code, selfie, certificate) stays the same.",
@@ -941,6 +948,14 @@ const en: AppMessages = {
       failed: "WhatsApp not sent: {reason}",
       blocked: "WhatsApp blocked: {reason}",
       skipped: "WhatsApp not sent: {reason}",
+    } as Record<string, string>,
+    emailStatus: {
+      pending: "Email queued ({date})",
+      sent: "Email sent on {date}",
+      delivered: "Email delivered on {date}",
+      failed: "Email not sent: {reason}",
+      blocked: "Email blocked: {reason}",
+      skipped: "Email not sent: {reason}",
     } as Record<string, string>,
     reasons: {
       provider_not_configured: "provider not configured",

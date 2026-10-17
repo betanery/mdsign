@@ -942,7 +942,15 @@ const pt = {
   },
   notify: {
     emailTitle: "E-mail",
-    emailHint: "Convites e lembretes por e-mail são enviados pelo serviço de assinatura, sempre.",
+    emailHint:
+      "Por padrão, convites e lembretes por e-mail são enviados pelo serviço de assinatura.",
+    emailOwn: "Enviar e-mails pelo MDSign",
+    emailOwnToggleHint:
+      "Convites e lembretes com a marca MDSign e o nome de quem enviou. Vale para os documentos enviados depois de ligar.",
+    emailOwnHint:
+      "Convites e lembretes de novos documentos saem do MDSign. Documentos já enviados continuam como estavam.",
+    emailTestMode:
+      "Modo de teste: o remetente ainda é o de teste do Resend, que só entrega para o e-mail da conta do Resend. Vale só para documentos enviados por Super Admin.",
     whatsappTitle: "WhatsApp",
     whatsappHint:
       "O MDSign envia pelo WhatsApp um link seguro que abre a assinatura. A autenticação exigida (código, selfie, certificado) continua a mesma.",
@@ -964,6 +972,14 @@ const pt = {
       failed: "WhatsApp não enviado: {reason}",
       blocked: "WhatsApp bloqueado: {reason}",
       skipped: "WhatsApp não enviado: {reason}",
+    } as Record<string, string>,
+    emailStatus: {
+      pending: "E-mail na fila ({date})",
+      sent: "E-mail enviado em {date}",
+      delivered: "E-mail entregue em {date}",
+      failed: "E-mail não enviado: {reason}",
+      blocked: "E-mail bloqueado: {reason}",
+      skipped: "E-mail não enviado: {reason}",
     } as Record<string, string>,
     reasons: {
       provider_not_configured: "provedor não configurado",
