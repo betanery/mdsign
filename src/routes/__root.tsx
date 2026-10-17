@@ -17,7 +17,11 @@ import { captureUtm } from "../lib/analytics";
 import { siteConfig } from "../config/site";
 import { CookieConsent } from "../components/cookie-consent";
 import { consentHeadScript } from "../lib/consent";
+import { installTranslateGuard } from "../lib/translate-guard";
 import { fallbackLocale, htmlLang, isLocale, messages } from "../i18n";
+
+// Antes de qualquer renderização no navegador (o servidor não tem DOM).
+if (typeof window !== "undefined") installTranslateGuard();
 
 function NotFoundComponent() {
   return (

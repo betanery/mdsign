@@ -32,6 +32,8 @@ export type ParticipantDraft = {
   authLevel: AuthLevel;
   /** Quórum: membros de um grupo em que basta N assinarem. */
   rule?: { key: string; name: string; required: number } | null;
+  /** Grupo de onde a pessoa veio (só na tela: permite escolher o quórum depois de adicionar). */
+  group?: { key: string; name: string } | null;
 };
 
 /** Mantém as regras de quórum coerentes depois de remover ou mover pessoas. */
@@ -167,8 +169,6 @@ export function ParticipantsEditor({
   const listId = useId();
   const { current } = useOrg();
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
-  // 0 = todos do grupo assinam; N = basta N (quórum).
-  const [quorum, setQuorum] = useState(0);
   const orgId = current?.id;
   useEffect(() => {
     if (!orgId || fixed) return;
@@ -211,14 +211,33 @@ export function ParticipantsEditor({
           phone: m.phone ?? c?.phone ?? "",
         };
       });
-    // Quórum: "qualquer N do grupo" — os membros formam uma regra (precisa de 2 ou mais).
-    const rule =
-      quorum > 0 && add.length >= 2
-        ? { key: crypto.randomUUID(), name: groupName, required: Math.min(quorum, add.length) }
-        : null;
+    const group = { key: crypto.randomUUID(), name: groupName };
     const keep = value.filter((p) => p.name || p.email);
-    onChange([...keep, ...add.map((p) => ({ ...p, rule }))].slice(0, 30));
+    onChange([...keep, ...add.map((p) => ({ ...p, group, rule: null }))].slice(0, 30));
   }
+
+  // Quórum escolhido depois de adicionar o grupo: 0 = todos assinam (um por vez);
+  // N = basta N, e os membros viram uma etapa só, juntos na lista.
+  function setGroupQuorum(groupKey: string, required: number) {
+    const members = value.filter((p) => p.group?.key === groupKey);
+    const name = members[0]?.group?.name ?? "";
+    const rule = required > 0 ? { key: groupKey, name, required } : null;
+    const list: ParticipantDraft[] = [];
+    for (const p of value) {
+      if (p.group?.key !== groupKey) list.push(p);
+      else if (p === members[0]) list.push(...members.map((m) => ({ ...m, rule })));
+    }
+    onChange(normalizeRules(list));
+  }
+  const addedGroups = [
+    ...new Map(value.filter((p) => p.group).map((p) => [p.group!.key, p.group!] as const)).values(),
+  ]
+    .map((g) => ({
+      ...g,
+      count: value.filter((p) => p.group?.key === g.key).length,
+      required: value.find((p) => p.group?.key === g.key)?.rule?.required ?? 0,
+    }))
+    .filter((g) => g.count >= 2);
 
   const update = (i: number, patch: Partial<ParticipantDraft>) =>
     onChange(value.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
@@ -262,6 +281,34 @@ export function ParticipantsEditor({
           </option>
         ))}
       </datalist>
+      {config.quorumGroups &&
+        addedGroups.map((g) => (
+          <div
+            key={g.key}
+            className="grid gap-1 rounded-xl border border-brand/30 bg-brand-soft/40 p-4 text-sm"
+          >
+            <label className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">
+                {g.name} · {t.participants.quorumLabel}
+              </span>
+              <select
+                value={g.required}
+                onChange={(e) => setGroupQuorum(g.key, Number(e.target.value))}
+                className={cn(selectClass, "h-10 w-auto")}
+              >
+                <option value={0}>{t.participants.quorumAll}</option>
+                {Array.from({ length: g.count - 1 }, (_, n) => n + 1).map((n) => (
+                  <option key={n} value={n}>
+                    {t.participants.quorumAny.replace("{n}", String(n))}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="text-muted-foreground">
+              {g.required > 0 ? t.participants.quorumHintAny : t.participants.quorumHintAll}
+            </p>
+          </div>
+        ))}
       {value.map((p, i) => {
         const bad = problems[i];
         return (
@@ -427,21 +474,6 @@ export function ParticipantsEditor({
             ))}
           </select>
         )}
-        {groups.length > 0 && config.quorumGroups && (
-          <select
-            aria-label={t.participants.quorumLabel}
-            value={quorum}
-            onChange={(e) => setQuorum(Number(e.target.value))}
-            className={cn(selectClass, "h-10 w-auto")}
-          >
-            <option value={0}>{t.participants.quorumAll}</option>
-            {[1, 2, 3].map((n) => (
-              <option key={n} value={n}>
-                {t.participants.quorumAny.replace("{n}", String(n))}
-              </option>
-            ))}
-          </select>
-        )}
       </div>
     </div>
   );
@@ -489,6 +521,13 @@ export function FlowEditor({
     [blocks[b], blocks[to]] = [blocks[to]!, blocks[b]!];
     onChange(blocks.flat());
   };
+  // Número da etapa: os membros de um grupo com quórum dividem o mesmo número.
+  const stepOf: number[] = [];
+  value.forEach((p, i) => {
+    const prev = value[i - 1];
+    const same = Boolean(p.rule && prev?.rule?.key === p.rule.key);
+    stepOf.push(i === 0 ? 1 : same ? stepOf[i - 1]! : stepOf[i - 1]! + 1);
+  });
   return (
     <div className="grid gap-4">
       <label className="flex items-start gap-3 rounded-xl border bg-white p-4">
@@ -513,7 +552,7 @@ export function FlowEditor({
             >
               <div className="flex items-center gap-1">
                 <span className="flex size-7 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand">
-                  {sequential ? i + 1 : "•"}
+                  {sequential ? stepOf[i] : "•"}
                 </span>
                 {sequential && !fixedOrder && (
                   <>
@@ -521,7 +560,7 @@ export function FlowEditor({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={i === 0}
+                      disabled={stepOf[i] === 1}
                       onClick={() => move(i, -1)}
                       aria-label={t.participants.moveUp}
                     >
@@ -531,7 +570,7 @@ export function FlowEditor({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      disabled={i === value.length - 1}
+                      disabled={stepOf[i] === stepOf[value.length - 1]}
                       onClick={() => move(i, 1)}
                       aria-label={t.participants.moveDown}
                     >
@@ -543,6 +582,11 @@ export function FlowEditor({
               <div className="min-w-0">
                 <p className="truncate font-medium">{p.name}</p>
                 <p className="truncate text-sm text-muted-foreground">{p.email}</p>
+                {p.rule && (
+                  <span className="mt-1 inline-block rounded bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+                    {ruleLabel(p.rule, value)}
+                  </span>
+                )}
               </div>
               <label className="grid gap-1 text-sm">
                 <span className="font-medium">{t.participants.role}</span>

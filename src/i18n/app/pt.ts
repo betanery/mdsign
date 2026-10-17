@@ -1206,6 +1206,9 @@ const pt = {
     quorumLabel: "Quem do grupo assina",
     quorumAll: "Todos do grupo assinam",
     quorumAny: "Basta {n} do grupo",
+    quorumHintAll: "Todas as pessoas do grupo assinam, uma de cada vez, na ordem da lista.",
+    quorumHintAny:
+      "As pessoas do grupo recebem ao mesmo tempo; o documento segue quando o número escolhido assinar.",
     addGroup: "Adicionar grupo…",
     name: "Nome completo",
     email: "E-mail",

@@ -1180,6 +1180,9 @@ const en: AppMessages = {
     quorumLabel: "Who in the group signs",
     quorumAll: "Everyone in the group signs",
     quorumAny: "Any {n} of the group",
+    quorumHintAll: "Everyone in the group signs, one at a time, in list order.",
+    quorumHintAny:
+      "Everyone in the group receives it at the same time; the document moves on once the chosen number has signed.",
     addGroup: "Add a group…",
     name: "Full name",
     email: "Email",

@@ -1196,6 +1196,9 @@ const es: AppMessages = {
     quorumLabel: "Quién del grupo firma",
     quorumAll: "Todos del grupo firman",
     quorumAny: "Basta {n} del grupo",
+    quorumHintAll: "Todas las personas del grupo firman, una a la vez, en el orden de la lista.",
+    quorumHintAny:
+      "Las personas del grupo lo reciben al mismo tiempo; el documento sigue cuando firma la cantidad elegida.",
     addGroup: "Agregar grupo…",
     name: "Nombre completo",
     email: "Correo electrónico",
