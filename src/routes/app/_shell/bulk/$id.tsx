@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Loader2, RotateCcw, Save, XCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -29,7 +30,14 @@ import { cn } from "@/lib/utils";
 
 // Acompanhamento de um envio em massa: status de cada documento, central de erros,
 // reenvio só dos itens com erro e "Salvar como Processo MDSign".
-export const Route = createFileRoute("/app/_shell/bulk/$id")({ component: BulkJobPage });
+export const Route = createFileRoute("/app/_shell/bulk/$id")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="bulk_send">
+      <BulkJobPage />
+    </FeatureGate>
+  ),
+});
 
 type Item = {
   row_number: number;

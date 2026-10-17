@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/app/components/app-shell";
@@ -8,7 +9,14 @@ import { templateSelect, type TemplateRow } from "@/app/components/template-fiel
 import { useAppI18n } from "@/app/i18n";
 import { supabase } from "@/lib/supabase";
 
-export const Route = createFileRoute("/app/_shell/templates/edit/$id")({ component: EditTemplate });
+export const Route = createFileRoute("/app/_shell/templates/edit/$id")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="templates">
+      <EditTemplate />
+    </FeatureGate>
+  ),
+});
 
 function EditTemplate() {
   const { t } = useAppI18n();

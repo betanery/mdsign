@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
+import { useFeaturePreview, useFeatures } from "@/app/features";
 import { createFileRoute } from "@tanstack/react-router";
 import { Copy, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -66,6 +68,9 @@ function OrganizationPage() {
   const { t } = useAppI18n();
   const { current, can } = useOrg();
   const search = Route.useSearch();
+  const { mode } = useFeatures();
+  // Gestão avançada (unidades, grupos, delegações): aba some se oculta; em prévia mostra a oferta.
+  const adv = mode("advanced_management") !== "hidden";
   if (!current) return <p>{t.notFoundOrg}</p>;
   return (
     <>
@@ -80,9 +85,9 @@ function OrganizationPage() {
       >
         <TabsList className="mb-4 flex h-auto flex-wrap justify-start">
           <TabsTrigger value="members">{t.organization.tabMembers}</TabsTrigger>
-          <TabsTrigger value="units">{t.organization.tabUnits}</TabsTrigger>
-          <TabsTrigger value="groups">{t.organization.tabGroups}</TabsTrigger>
-          <TabsTrigger value="delegations">{t.organization.tabDelegations}</TabsTrigger>
+          {adv && <TabsTrigger value="units">{t.organization.tabUnits}</TabsTrigger>}
+          {adv && <TabsTrigger value="groups">{t.organization.tabGroups}</TabsTrigger>}
+          {adv && <TabsTrigger value="delegations">{t.organization.tabDelegations}</TabsTrigger>}
           <TabsTrigger value="notifications">{t.organization.tabNotifications}</TabsTrigger>
           {can("audit.view") && <TabsTrigger value="audit">{t.organization.tabAudit}</TabsTrigger>}
           <TabsTrigger value="profile">{t.organization.tabProfile}</TabsTrigger>
@@ -93,13 +98,19 @@ function OrganizationPage() {
           <MembersTab orgId={current.id} />
         </TabsContent>
         <TabsContent value="units">
-          <UnitsTab orgId={current.id} />
+          <FeatureGate code="advanced_management">
+            <UnitsTab orgId={current.id} />
+          </FeatureGate>
         </TabsContent>
         <TabsContent value="groups">
-          <GroupsTab orgId={current.id} />
+          <FeatureGate code="advanced_management">
+            <GroupsTab orgId={current.id} />
+          </FeatureGate>
         </TabsContent>
         <TabsContent value="delegations">
-          <DelegationsTab orgId={current.id} />
+          <FeatureGate code="advanced_management">
+            <DelegationsTab orgId={current.id} />
+          </FeatureGate>
         </TabsContent>
         <TabsContent value="notifications">
           <NotificationsTab orgId={current.id} />
@@ -156,6 +167,8 @@ function MembersTab({ orgId }: { orgId: string }) {
   const [invites, setInvites] = useState<Invitation[]>([]);
   const [inviteOpen, setInviteOpen] = useState(false);
   const manage = can("members.manage");
+  const preview = useFeaturePreview();
+  const teamMode = useFeatures().mode("team");
   const isOwner = current?.role === "owner";
 
   const load = useCallback(async () => {
@@ -205,7 +218,9 @@ function MembersTab({ orgId }: { orgId: string }) {
           {manage && (
             <Button
               data-tour="members-invite"
-              onClick={() => setInviteOpen(true)}
+              onClick={() =>
+                teamMode === "available" ? setInviteOpen(true) : preview.open("team", "invite")
+              }
               className="bg-brand hover:bg-brand-strong"
             >
               <UserPlus aria-hidden />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
@@ -12,7 +13,14 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 // Envio em massa (PRD §17–§19): lotes da organização.
-export const Route = createFileRoute("/app/_shell/bulk/")({ component: BulkList });
+export const Route = createFileRoute("/app/_shell/bulk/")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="bulk_send">
+      <BulkList />
+    </FeatureGate>
+  ),
+});
 
 function BulkList() {
   const { t, f, locale } = useAppI18n();

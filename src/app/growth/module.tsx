@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import {
   BarChart3,
   Filter,
+  Gem,
   Link2,
   Megaphone,
   Settings2,
@@ -19,6 +20,7 @@ import { isoDay, type Filters, type GrowthSection, type Overview } from "./api";
 import { GrowthCampaigns, GrowthLinks } from "./campaigns";
 import { GrowthLeads } from "./leads";
 import { GrowthOpportunities } from "./opportunities";
+import { GrowthPlans } from "./plans";
 import { GrowthFunnel, GrowthOverview } from "./overview";
 import { GrowthSettingsPanel } from "./settings";
 import { useGrowthTexts } from "./texts";
@@ -31,6 +33,7 @@ const SECTIONS: { key: GrowthSection; icon: LucideIcon }[] = [
   { key: "leads", icon: Users },
   { key: "funnel", icon: Filter },
   { key: "opportunities", icon: Target },
+  { key: "plans", icon: Gem },
   { key: "settings", icon: Settings2 },
 ];
 
@@ -46,7 +49,8 @@ export function GrowthModule() {
   }));
   const [options, setOptions] = useState<Overview["filters"] | undefined>();
   const onOptions = useCallback((o: Overview["filters"]) => setOptions(o), []);
-  const withFilters = section === "overview" || section === "leads" || section === "funnel";
+  const withFilters =
+    section === "overview" || section === "leads" || section === "funnel" || section === "plans";
 
   return (
     <div className="grid gap-4">
@@ -97,7 +101,7 @@ export function GrowthModule() {
               onChange={setFilters}
               options={options}
               show={
-                section === "funnel"
+                section === "funnel" || section === "plans"
                   ? ["source", "campaign", "plan"]
                   : section === "leads"
                     ? ["source", "campaign", "plan", "stage"]
@@ -120,6 +124,7 @@ export function GrowthModule() {
           {section === "leads" && <GrowthLeads filters={filters} />}
           {section === "funnel" && <GrowthFunnel filters={filters} />}
           {section === "opportunities" && <GrowthOpportunities />}
+          {section === "plans" && <GrowthPlans filters={filters} />}
           {section === "settings" && <GrowthSettingsPanel />}
         </div>
       </div>

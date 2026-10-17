@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Eye, Play, Save, Trash2, Workflow } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +17,14 @@ import { supabase } from "@/lib/supabase";
 // Processos MDSign: configurações de envio em massa salvas para repetir ("Fazer de novo").
 // Um envio concluído só vira processo quando alguém o salva; por isso a página também lista os
 // envios concluídos ainda não salvos, com o botão de salvar ali mesmo.
-export const Route = createFileRoute("/app/_shell/processes")({ component: ProcessesPage });
+export const Route = createFileRoute("/app/_shell/processes")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="bulk_send">
+      <ProcessesPage />
+    </FeatureGate>
+  ),
+});
 
 type ProcessRow = {
   id: string;

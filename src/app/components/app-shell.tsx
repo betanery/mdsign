@@ -8,8 +8,10 @@ import {
   FilePen,
   FileStack,
   Files,
+  Gem,
   Home,
   LayoutTemplate,
+  Lock,
   LogOut,
   Menu,
   Plug,
@@ -27,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "../auth";
 import { useAppI18n } from "../i18n";
-import { useOrg } from "../org";
+import { useOrg, type Permission } from "../org";
 import { ClosedBanner } from "./account-tab";
 import { CedroBanner } from "./free-plan-card";
 import { OnboardingHost } from "./onboarding-panel";
@@ -35,6 +37,14 @@ import { openGuide } from "../onboarding";
 import { GlobalSearch } from "./global-search";
 import { LanguageSelect, SkipLink } from "./language-select";
 import { useOrgUsage } from "./plan-usage";
+import { FeaturePreviewDialog } from "./feature-preview";
+import {
+  FeaturePreviewProvider,
+  trackPlanEvent,
+  useFeaturePreview,
+  useFeatures,
+  type FeatureCode,
+} from "../features";
 
 type NavKey =
   | "home"
@@ -47,88 +57,171 @@ type NavKey =
   | "organization"
   | "integrations"
   | "reports"
+  | "plan"
   | "settings";
 
-type NavItem = {
+export type NavGroup = "operation" | "productivity" | "team" | "integrations" | "account";
+
+export type NavItem = {
   key: NavKey;
   icon: LucideIcon;
+  group: NavGroup;
+  to:
+    | "/app"
+    | "/app/documents"
+    | "/app/templates"
+    | "/app/bulk"
+    | "/app/contacts"
+    | "/app/integrations"
+    | "/app/organization"
+    | "/app/reports"
+    | "/app/plan"
+    | "/app/settings";
   /** Outras rotas que acendem o mesmo item (abas da seção). */
   also?: string[];
-} & (
-  | {
-      to:
-        | "/app"
-        | "/app/documents"
-        | "/app/templates"
-        | "/app/bulk"
-        | "/app/forms"
-        | "/app/contacts"
-        | "/app/processes"
-        | "/app/integrations"
-        | "/app/organization"
-        | "/app/reports"
-        | "/app/settings";
-      section?: never;
-    }
-  | { section: "reports"; to?: never }
-);
+  /** Funcionalidade do plano (navegação progressiva); sem ela, sempre disponível. */
+  feature?: FeatureCode;
+  /** Permissão do papel da pessoa; sem ela, o item não aparece. */
+  perm?: Permission;
+};
 
-/** Navegação desktop do PRD §6, na ordem definida. Itens com `section` ainda não existem. */
-const navItems: NavItem[] = [
-  { key: "home", to: "/app", icon: Home },
-  { key: "documents", to: "/app/documents", icon: Files },
-  { key: "templates", to: "/app/templates", icon: LayoutTemplate, also: ["/app/forms"] },
-  { key: "bulk", to: "/app/bulk", icon: FileStack, also: ["/app/processes"] },
-  { key: "contacts", to: "/app/contacts", icon: Users },
-  { key: "organization", to: "/app/organization", icon: Building2 },
-  { key: "integrations", to: "/app/integrations", icon: Plug },
-  { key: "reports", to: "/app/reports", icon: BarChart3 },
-  { key: "settings", to: "/app/settings", icon: Settings },
+/** Menu por categoria. A ordem dentro da categoria é a ordem de exibição. */
+export const navItems: NavItem[] = [
+  { key: "home", to: "/app", icon: Home, group: "operation" },
+  { key: "documents", to: "/app/documents", icon: Files, group: "operation" },
+  { key: "contacts", to: "/app/contacts", icon: Users, group: "operation", feature: "contacts" },
+  {
+    key: "templates",
+    to: "/app/templates",
+    icon: LayoutTemplate,
+    group: "productivity",
+    also: ["/app/forms"],
+    feature: "templates",
+  },
+  {
+    key: "bulk",
+    to: "/app/bulk",
+    icon: FileStack,
+    group: "productivity",
+    also: ["/app/processes"],
+    feature: "bulk_send",
+    perm: "bulk.send",
+  },
+  { key: "organization", to: "/app/organization", icon: Building2, group: "team" },
+  {
+    key: "reports",
+    to: "/app/reports",
+    icon: BarChart3,
+    group: "team",
+    feature: "reports",
+    perm: "reports.export",
+  },
+  {
+    key: "integrations",
+    to: "/app/integrations",
+    icon: Plug,
+    group: "integrations",
+    feature: "api_webhooks",
+    perm: "integrations.manage",
+  },
+  { key: "plan", to: "/app/plan", icon: Gem, group: "account" },
+  { key: "settings", to: "/app/settings", icon: Settings, group: "account" },
 ];
 
-/** As quatro portas principais (PRD §1 e §6). */
+/** No máximo 2 recursos com cadeado no menu; os demais ficam na comparação de planos. */
+export const MAX_MENU_PREVIEWS = 2;
+
+/**
+ * Regra única do menu (o app e o simulador do Super Admin usam a mesma): permissão do papel +
+ * modo do plano; no máximo MAX_MENU_PREVIEWS itens com cadeado, os demais somem do menu.
+ */
+export function buildNav(mode: (code: FeatureCode) => string, can: (perm: Permission) => boolean) {
+  let previews = 0;
+  return navItems
+    .filter((item) => !item.perm || can(item.perm))
+    .map((item) => {
+      const m = item.feature ? mode(item.feature) : "available";
+      if (m === "available") return { item, locked: false };
+      if (m === "preview" && previews < MAX_MENU_PREVIEWS) {
+        previews++;
+        return { item, locked: true };
+      }
+      return null;
+    })
+    .filter((x): x is { item: NavItem; locked: boolean } => x !== null);
+}
+
+/** Itens visíveis: plano (banco) + permissão do papel; prévias limitadas. */
+export function useNavModel() {
+  const { mode } = useFeatures();
+  const { can } = useOrg();
+  return buildNav(mode, can);
+}
+
+/** As quatro portas principais (PRD §1 e §6), com o recurso de plano de cada uma. */
 export const journeys = [
   { key: "selfSign", icon: FilePen, to: "/app/sign" },
   { key: "send", icon: Send, to: "/app/send" },
-  { key: "template", icon: LayoutTemplate, to: "/app/templates" },
-  { key: "bulk", icon: FileStack, to: "/app/bulk/new" },
+  { key: "template", icon: LayoutTemplate, to: "/app/templates", feature: "templates" },
+  { key: "bulk", icon: FileStack, to: "/app/bulk/new", feature: "bulk_send" },
 ] as const;
 
-function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void) | undefined }) {
+/** Atalhos de ação: só os recursos disponíveis no plano (sem oferta no meio do fluxo). */
+export function useJourneys() {
+  const { mode } = useFeatures();
+  const { can } = useOrg();
+  return journeys.filter(
+    (j) =>
+      (!("feature" in j) || mode(j.feature) === "available") &&
+      (j.key !== "bulk" || can("bulk.send")),
+  );
+}
+
+function NavLink({
+  item,
+  locked,
+  onNavigate,
+}: {
+  item: NavItem;
+  locked: boolean;
+  onNavigate?: (() => void) | undefined;
+}) {
   const { t } = useAppI18n();
+  const preview = useFeaturePreview();
+  const { current } = useOrg();
+  const usage = useOrgUsage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const path = item.section ? `/app/${item.section}` : item.to;
   const active =
-    path === "/app"
+    item.to === "/app"
       ? pathname === "/app" || pathname === "/app/"
-      : [path, ...(item.also ?? [])].some((p) => pathname.startsWith(p));
+      : [item.to, ...(item.also ?? [])].some((p) => pathname.startsWith(p));
   const Icon = item.icon;
   const className = cn(
-    "flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+    "flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition-colors",
     active ? "bg-white/15 text-white" : "text-white/85 hover:bg-white/10 hover:text-white",
   );
-  const content = (
-    <>
-      <Icon className="size-4 shrink-0" aria-hidden />
-      <span className="flex-1 truncate">{t.nav[item.key]}</span>
-      {item.section && (
-        <span className="rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase">
-          {t.common.soon}
-        </span>
-      )}
-    </>
-  );
-  return item.section ? (
-    <Link
-      to="/app/$section"
-      params={{ section: item.section }}
-      onClick={onNavigate}
-      aria-current={active ? "page" : undefined}
-      className={className}
-    >
-      {content}
-    </Link>
-  ) : (
+  if (locked && item.feature)
+    return (
+      <button
+        type="button"
+        className={cn(className, "text-white/70")}
+        aria-haspopup="dialog"
+        onClick={() => {
+          trackPlanEvent(current?.id, "locked_feature_clicked", {
+            feature: item.feature,
+            from_plan: usage?.plan_id,
+            where: "menu",
+          });
+          onNavigate?.();
+          preview.open(item.feature!, "menu");
+        }}
+      >
+        <Icon className="size-4 shrink-0" aria-hidden />
+        <span className="flex-1 truncate">{t.nav[item.key]}</span>
+        <Lock className="size-3.5 shrink-0" aria-label={t.nav.locked} />
+      </button>
+    );
+  return (
     <Link
       to={item.to}
       // "/app" é pai de todas as rotas: sem exact, "Início" ficava como página atual em tudo.
@@ -137,7 +230,8 @@ function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: (() => void
       aria-current={active ? "page" : undefined}
       className={className}
     >
-      {content}
+      <Icon className="size-4 shrink-0" aria-hidden />
+      <span className="flex-1 truncate">{t.nav[item.key]}</span>
     </Link>
   );
 }
@@ -172,6 +266,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: (() => void) | undefined 
   const { t } = useAppI18n();
   const { signOut, user } = useAuth();
   const { isPlatformAdmin } = useOrg();
+  const nav = useNavModel();
   return (
     <div className="flex h-full flex-col gap-4 bg-brand-strong p-3 text-white">
       <Link
@@ -190,10 +285,21 @@ function SidebarContent({ onNavigate }: { onNavigate?: (() => void) | undefined 
         <span className="font-display text-lg font-bold">MDSign</span>
       </Link>
       <OrgSwitcher />
-      <nav aria-label="MDSign" className="flex-1 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavLink key={item.key} item={item} onNavigate={onNavigate} />
-        ))}
+      <nav aria-label="MDSign" className="flex-1 space-y-3 overflow-y-auto">
+        {(["operation", "productivity", "team", "integrations", "account"] as const).map((g) => {
+          const items = nav.filter((x) => x.item.group === g);
+          if (!items.length) return null;
+          return (
+            <div key={g} className="space-y-0.5">
+              <p className="px-3 pb-1 text-[11px] font-semibold tracking-wide text-white/60 uppercase">
+                {t.nav.groups[g]}
+              </p>
+              {items.map(({ item, locked }) => (
+                <NavLink key={item.key} item={item} locked={locked} onNavigate={onNavigate} />
+              ))}
+            </div>
+          );
+        })}
         {isPlatformAdmin && (
           <Link
             to="/admin"
@@ -242,6 +348,7 @@ export function JourneySheet({
   onOpenChange: (v: boolean) => void;
 }) {
   const { t } = useAppI18n();
+  const list = useJourneys();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-2xl">
@@ -249,7 +356,7 @@ export function JourneySheet({
           <SheetTitle>{t.nav.newAction}</SheetTitle>
         </SheetHeader>
         <ul className="grid gap-2 p-4 pt-0 sm:grid-cols-2">
-          {journeys.map(({ key, icon: Icon, to }) => (
+          {list.map(({ key, icon: Icon, to }) => (
             <li key={key}>
               <Link
                 to={to}
@@ -273,6 +380,8 @@ export function JourneySheet({
 /** Barra inferior do celular: Início, Documentos, +, Modelos, Mais (PRD §6). */
 function MobileBar({ onMore, onPlus }: { onMore: () => void; onPlus: () => void }) {
   const { t } = useAppI18n();
+  const { mode } = useFeatures();
+  const templates = mode("templates") === "available";
   const item = "flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium";
   return (
     <nav
@@ -292,10 +401,17 @@ function MobileBar({ onMore, onPlus }: { onMore: () => void; onPlus: () => void 
           <Plus className="size-6" aria-hidden />
         </span>
       </button>
-      <Link to="/app/templates" className={item}>
-        <LayoutTemplate className="size-5" aria-hidden />
-        {t.nav.templates}
-      </Link>
+      {templates ? (
+        <Link to="/app/templates" className={item}>
+          <LayoutTemplate className="size-5" aria-hidden />
+          {t.nav.templates}
+        </Link>
+      ) : (
+        <Link to="/app/plan" className={item}>
+          <Gem className="size-5" aria-hidden />
+          {t.nav.plan}
+        </Link>
+      )}
       <button type="button" onClick={onMore} className={item}>
         <Menu className="size-5" aria-hidden />
         {t.nav.more}
@@ -305,6 +421,15 @@ function MobileBar({ onMore, onPlus }: { onMore: () => void; onPlus: () => void 
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <FeaturePreviewProvider>
+      <Shell>{children}</Shell>
+      <FeaturePreviewDialog />
+    </FeaturePreviewProvider>
+  );
+}
+
+function Shell({ children }: { children: ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   return (

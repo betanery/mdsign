@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Copy, Info, LayoutTemplate, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,7 +29,12 @@ export const Route = createFileRoute("/app/_shell/templates/")({
       : undefined,
     highlight: typeof search["highlight"] === "string" ? search["highlight"] : undefined,
   }),
-  component: TemplatesPage,
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="templates">
+      <TemplatesPage />
+    </FeatureGate>
+  ),
 });
 
 function TemplatesPage() {

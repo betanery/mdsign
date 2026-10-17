@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Copy, KeyRound, Loader2, Plus, RotateCcw, Send, Trash2, Webhook } from "lucide-react";
 import { toast } from "sonner";
@@ -25,7 +26,14 @@ import { supabase, supabaseUrl } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 // Integrações (PRD §31): chaves de API, webhooks de saída, registro de chamadas e guia.
-export const Route = createFileRoute("/app/_shell/integrations")({ component: IntegrationsPage });
+export const Route = createFileRoute("/app/_shell/integrations")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="api_webhooks">
+      <IntegrationsPage />
+    </FeatureGate>
+  ),
+});
 
 const EVENTS = [
   "document.sent",

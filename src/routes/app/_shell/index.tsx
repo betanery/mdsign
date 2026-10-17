@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/app/auth";
-import { journeys, PageHeader } from "@/app/components/app-shell";
+import { PageHeader, useJourneys } from "@/app/components/app-shell";
 import { FreePlanCard, freeUsage } from "@/app/components/free-plan-card";
 import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
 import { GuideCard } from "@/app/components/onboarding-panel";
@@ -36,6 +36,7 @@ function isLate(d: Doc, now: number) {
 }
 
 function Dashboard() {
+  const journeyList = useJourneys();
   const { t, f } = useAppI18n();
   const { user } = useAuth();
   const { current } = useOrg();
@@ -214,7 +215,7 @@ function Dashboard() {
       <section aria-label={t.nav.newAction}>
         {/* No celular: 2 por linha e sem descrição, para "Precisa da sua atenção" aparecer logo. */}
         <ul className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-          {journeys.map(({ key, icon: Icon, to }) => (
+          {journeyList.map(({ key, icon: Icon, to }) => (
             <li key={key}>
               <Link
                 to={to}

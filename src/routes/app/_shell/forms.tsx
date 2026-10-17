@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute } from "@tanstack/react-router";
 import { Copy, ExternalLink, Link2, Plus, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +40,14 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 // Formulários / links públicos (PRD §14).
-export const Route = createFileRoute("/app/_shell/forms")({ component: FormsPage });
+export const Route = createFileRoute("/app/_shell/forms")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="forms">
+      <FormsPage />
+    </FeatureGate>
+  ),
+});
 
 type FormRow = {
   id: string;

@@ -1448,4 +1448,57 @@ begin
 end $$;
 reset role;
 
+-- Etapa 3: Meu plano, eventos de contratação e Growth de planos.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000f1","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (public.org_plan((select v from t_ids where k = 'pJac')) ->> 'plan_id') = 'jacaranda', 'Meu plano mostra o plano contratado';
+  assert (public.org_plan((select v from t_ids where k = 'pJac')) ->> 'price_cents')::int = 3990, 'preço da versão contratada';
+  perform public.growth_app_event((select v from t_ids where k = 'pCedro'), 'upgrade_cta_clicked', '{"feature":"templates","from_plan":"cedro","to_plan":"jacaranda","where":"menu"}');
+end $$;
+do $$ begin
+  perform public.org_plan((select v from t_ids where k = 'orgA'));
+  assert false, 'não vê o plano de outra organização';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+-- Checkout iniciado não é contratação; confirmação conta uma vez por checkout (inclusive o 2º upgrade).
+insert into public.billing_checkouts (organization_id, plan_id, previous_plan_id, environment, value_cents, created_by)
+  values ((select v from t_ids where k = 'pCedro'), 'jacaranda', 'cedro', 'sandbox', 3990, '00000000-0000-0000-0000-0000000000f1');
+do $$ begin
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'pCedro')
+    and event = 'upgrade_checkout_started' and data ->> 'from_plan' = 'cedro' and data ->> 'to_plan' = 'jacaranda'), 'checkout com origem e destino';
+  assert not exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'pCedro') and event = 'plan_upgraded'), 'checkout iniciado não é contratação';
+end $$;
+update public.billing_checkouts set status = 'paid' where organization_id = (select v from t_ids where k = 'pCedro') and plan_id = 'jacaranda';
+update public.billing_checkouts set status = 'paid' where organization_id = (select v from t_ids where k = 'pCedro') and plan_id = 'jacaranda';
+insert into public.billing_checkouts (organization_id, plan_id, previous_plan_id, environment, value_cents, status)
+  values ((select v from t_ids where k = 'pCedro'), 'angico', 'jacaranda', 'sandbox', 9997, 'pending');
+update public.billing_checkouts set status = 'paid' where organization_id = (select v from t_ids where k = 'pCedro') and plan_id = 'angico';
+do $$ begin
+  assert (select count(*) from public.growth_events where organization_id = (select v from t_ids where k = 'pCedro') and event = 'plan_upgraded') = 2, '2 upgrades confirmados, sem duplicar';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ declare r jsonb; begin
+  r := public.admin_growth_plan_funnel('{"from":"2026-01-01T00:00:00Z","to":"2027-01-01T00:00:00Z","internal":true}');
+  assert (r -> 'steps' ->> 'signups')::int >= 1 and (r -> 'steps' ->> 'paid')::int >= 1, 'funil de planos';
+  assert (r -> 'steps' ->> 'checkout_started')::int >= (r -> 'steps' ->> 'paid')::int, 'pagos nunca passam de checkouts';
+  r := public.admin_growth_plan_funnel('{"from":"2026-01-01T00:00:00Z","to":"2027-01-01T00:00:00Z","internal":true,"feature":"templates"}');
+  assert (r -> 'steps' ->> 'signups')::int >= 1, 'segmenta por funcionalidade de interesse';
+  r := public.admin_growth_upgrade_insights('{"from":"2026-01-01T00:00:00Z","to":"2027-01-01T00:00:00Z","internal":true}');
+  assert (r ->> 'cedro_to_jacaranda')::int >= 1, 'conversão Cedro → Jacarandá';
+  assert exists (select 1 from jsonb_array_elements(r -> 'paid_transitions') x where x ->> 'from_plan' = 'jacaranda' and x ->> 'to_plan' = 'angico'), 'conversão entre pagos';
+  assert exists (select 1 from jsonb_array_elements(r -> 'locked_clicks') x where x ->> 'feature' = 'templates'), 'recurso bloqueado mais clicado';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000f1","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.admin_growth_upgrade_insights('{}');
+  assert false, 'usuário comum não vê oportunidades';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

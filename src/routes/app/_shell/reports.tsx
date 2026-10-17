@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 
@@ -16,7 +17,14 @@ import { supabase } from "@/lib/supabase";
 
 // Relatórios (Bloco D): só métricas com dado real. "Visualizado"/"entregue" não existem
 // porque o motor de assinatura não informa esses eventos.
-export const Route = createFileRoute("/app/_shell/reports")({ component: ReportsPage });
+export const Route = createFileRoute("/app/_shell/reports")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="reports">
+      <ReportsPage />
+    </FeatureGate>
+  ),
+});
 
 type Preset = "today" | "7d" | "30d" | "month" | "lastMonth" | "custom";
 type Report = {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, FileUp } from "lucide-react";
 
@@ -24,7 +25,12 @@ export const Route = createFileRoute("/app/_shell/templates/new")({
     from: typeof search["from"] === "string" ? search["from"] : undefined,
     kind: search["kind"] === "pdf" || search["kind"] === "text" ? search["kind"] : undefined,
   }),
-  component: NewTemplate,
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="templates">
+      <NewTemplate />
+    </FeatureGate>
+  ),
 });
 
 function NewTemplate() {

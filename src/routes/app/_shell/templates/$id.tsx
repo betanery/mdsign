@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Download, Eye, FilePen, Loader2, Send } from "lucide-react";
 
@@ -41,7 +42,14 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 // Criar a partir de modelo (PRD §13): preencher → prévia → Só eu assino ou Enviar.
-export const Route = createFileRoute("/app/_shell/templates/$id")({ component: UseTemplate });
+export const Route = createFileRoute("/app/_shell/templates/$id")({
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="templates">
+      <UseTemplate />
+    </FeatureGate>
+  ),
+});
 
 type Phase = "fill" | "participants" | "signing" | "confirming" | "done";
 

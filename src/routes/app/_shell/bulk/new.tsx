@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Download,
@@ -74,7 +75,12 @@ export const Route = createFileRoute("/app/_shell/bulk/new")({
     preset: search["preset"] === "payslips" ? "payslips" : undefined,
     process: typeof search["process"] === "string" ? search["process"] : undefined,
   }),
-  component: NewBulk,
+  // Recurso do plano: fora dele, a prévia de upgrade no lugar da tela (o backend recusa).
+  component: () => (
+    <FeatureGate code="bulk_send">
+      <NewBulk />
+    </FeatureGate>
+  ),
 });
 
 type ProcessConfig = {

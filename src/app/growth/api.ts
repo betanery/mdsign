@@ -6,7 +6,7 @@ import { acquisition, CAMPAIGN_SLUGS, DEFAULT_VARIANT } from "@/content/acquisit
 import { supabase } from "@/lib/supabase";
 
 export type GrowthSection =
-  "overview" | "campaigns" | "links" | "leads" | "funnel" | "opportunities" | "settings";
+  "overview" | "campaigns" | "links" | "leads" | "funnel" | "opportunities" | "plans" | "settings";
 
 export type CampaignStatus = "draft" | "active" | "paused" | "ended";
 
