@@ -63,7 +63,7 @@ const stateTone: Record<string, string> = {
   sending: "bg-orange-100 text-orange-700",
   sent: "bg-sky-100 text-sky-800",
   waiting: "bg-orange-100 text-orange-700",
-  signed: "bg-success/15 text-success",
+  signed: "bg-success/15 text-green-800",
   failed: "bg-destructive/10 text-destructive",
 };
 

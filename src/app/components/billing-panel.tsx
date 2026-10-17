@@ -463,7 +463,7 @@ export function BillingPanel({
                           href={p.invoice_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-brand hover:underline"
+                          className="inline-flex min-h-6 items-center px-1 text-brand hover:underline"
                         >
                           {t.billing.invoice}
                         </a>

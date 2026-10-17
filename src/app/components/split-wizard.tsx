@@ -488,7 +488,7 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
 
   if (!current) return null;
   const tone = {
-    green: "bg-success/15 text-success",
+    green: "bg-success/15 text-green-800",
     yellow: "bg-orange-100 text-orange-800",
     red: "bg-destructive/10 text-destructive",
   };

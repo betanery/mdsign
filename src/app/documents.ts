@@ -54,7 +54,7 @@ export function humanStatus(
 
 export const statusTone: Record<DocStatus, string> = {
   pending: "bg-orange-100 text-orange-700",
-  concluded: "bg-success/15 text-success",
+  concluded: "bg-success/15 text-green-800",
   refused: "bg-destructive/10 text-destructive",
   canceled: "bg-muted text-muted-foreground",
   expired: "bg-muted text-muted-foreground",

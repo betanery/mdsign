@@ -70,7 +70,9 @@ export function PdfDrop({
         ref={input}
         type="file"
         accept="application/pdf,.pdf"
-        className="sr-only"
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
         onChange={(e) => pick(e.target.files?.[0])}
       />
     </div>

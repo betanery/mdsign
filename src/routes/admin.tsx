@@ -541,7 +541,7 @@ function Overview({
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-                  alarms ? "bg-orange-100 text-orange-700" : "bg-success/15 text-success",
+                  alarms ? "bg-orange-100 text-orange-700" : "bg-success/15 text-green-800",
                 )}
               >
                 {alarms ? (

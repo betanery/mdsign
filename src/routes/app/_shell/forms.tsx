@@ -164,7 +164,7 @@ function FormsPage() {
                 <span
                   className={cn(
                     "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                    live ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
+                    live ? "bg-success/15 text-green-800" : "bg-muted text-muted-foreground",
                   )}
                 >
                   {state}

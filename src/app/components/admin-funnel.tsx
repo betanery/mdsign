@@ -43,7 +43,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 1000) / 10}%` : "—");
 
 const stageTone: Record<string, string> = {
-  paid: "bg-success/15 text-success",
+  paid: "bg-success/15 text-green-800",
   opportunity: "bg-brand text-white",
   pql_hot: "bg-orange-100 text-orange-700",
   pql: "bg-brand-soft text-brand",

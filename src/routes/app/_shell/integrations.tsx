@@ -362,7 +362,7 @@ function WebhooksTab({ orgId }: { orgId: string }) {
   }
 
   const tone = {
-    delivered: "bg-success/15 text-success",
+    delivered: "bg-success/15 text-green-800",
     pending: "bg-orange-100 text-orange-700",
     failed: "bg-destructive/10 text-destructive",
   };
@@ -396,7 +396,7 @@ function WebhooksTab({ orgId }: { orgId: string }) {
               <span
                 className={cn(
                   "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                  e.active ? "bg-success/15 text-success" : "bg-muted text-muted-foreground",
+                  e.active ? "bg-success/15 text-green-800" : "bg-muted text-muted-foreground",
                 )}
               >
                 {e.active ? t.forms.active : t.forms.inactive}
