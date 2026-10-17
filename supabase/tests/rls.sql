@@ -59,7 +59,7 @@ insert into t_ids select 'invB', token from public.invitations where email = 'br
 insert into t_ids select 'invC', token from public.invitations where email = 'carla@teste.mdsign';
 
 -- Carla não aceita o convite do Bruno (e-mail diferente)
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   perform public.accept_invitation((select v from t_ids where k = 'invB'));
@@ -108,7 +108,7 @@ do $$ begin
 end $$;
 
 -- Carla (Gestora) gerencia membros, mas não mexe no proprietário
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 select public.update_member((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000b', 'operator');
 do $$ begin
@@ -184,7 +184,7 @@ do $$ begin
 end $$;
 
 -- Bruno vê o consumo da Empresa B (dele) e não o de uma organização onde não é membro
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   assert (select count(*) from public.org_usage((select v from t_ids where k = 'orgB'))) = 0, 'Carla não vê o consumo da Empresa B';
@@ -205,7 +205,7 @@ reset role;
 
 -- Blocos 4 e 5: modelos, formulários e massa
 -- Carla (gestora da Empresa A) cria modelo da organização; Bruno (visualizador) não.
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 insert into public.templates (organization_id, owner_id, scope, name, body)
   values ((select v from t_ids where k = 'orgA'), '00000000-0000-0000-0000-00000000000c', 'organization', 'Modelo A', 'Olá {{nome}}');
@@ -284,7 +284,7 @@ end $$;
 reset role;
 
 -- Super Admin: só quem está em platform_admins
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   perform public.admin_overview();
@@ -353,7 +353,7 @@ exception when check_violation then null;
 end $$;
 
 -- Processos: só quem tem bulk.send na organização; lotes de PDF exigem pasta da própria organização
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 insert into public.processes (organization_id, name, kind, config)
   values ((select v from t_ids where k = 'orgA'), 'Contracheques mensais', 'bulk_pdf', '{"split":{"mode":"content"}}');
@@ -388,7 +388,7 @@ insert into public.documents (organization_id, created_by, kind, name, engine_do
 insert into t_ids values ('docObs', (select id from public.documents where engine_document_id = '00000000-0000-0000-0000-0000000000e1'));
 insert into public.document_participants (document_id, organization_id, role, step, name, email)
   values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'), 'witness', 2, 'Testemunha Um', 'test1@teste.mdsign');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   assert not public.can_view_document((select v from t_ids where k = 'docObs')), 'Carla ainda não vê o documento da Empresa B';
@@ -428,7 +428,7 @@ do $$ begin
 end $$;
 update public.subscriptions set plan_id = 'ipe' where organization_id = (select v from t_ids where k = 'orgA');
 -- Carla (gestora, sem integrations.manage) não vê; a proprietária vê, mas sem o segredo
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   assert (select count(*) from public.api_keys) = 0, 'gestora não vê chaves de API';
@@ -716,7 +716,7 @@ do $$ begin
   assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'checkout_started'), 'checkout iniciado';
   assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'paid_plan_activated'), 'pagamento confirmado ativa o marco pago';
 end $$;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   assert (public.admin_growth_funnel(now() - interval '1 day', now() + interval '1 day') ->> 'signups')::int >= 1, 'Super Admin vê o funil';
@@ -739,7 +739,7 @@ end $$;
 reset role;
 
 -- Encerramento de conta: só o proprietário; 30 dias para exportar/desfazer; 60º dia apaga o operacional.
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   perform public.close_organization((select v from t_ids where k = 'orgA'), 'Empresa A');
@@ -816,7 +816,7 @@ end $$;
 reset role;
 update public.memberships set created_at = public.onboarding_since() - interval '1 day'
   where user_id = '00000000-0000-0000-0000-00000000000c' and organization_id = (select v from t_ids where k = 'orgA');
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   assert (public.onboarding_progress((select v from t_ids where k = 'orgA'))->>'dismissed')::boolean, 'quem já usava começa dispensado';
@@ -838,11 +838,29 @@ do $$ begin
 exception when insufficient_privilege then null;
 end $$;
 reset role;
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated"}', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
 do $$ begin
   assert (select count(*) from public.admin_engine_errors(10)) >= 1, 'Super Admin vê os erros do motor';
   assert (public.admin_health()->>'engine_errors_24h')::int >= 1, 'saúde conta os erros do motor';
+end $$;
+reset role;
+
+-- MFA: Super Admin sem a sessão confirmada pelo código (aal1) não acessa nada de administração.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal1"}', true);
+set local role authenticated;
+do $$ begin
+  assert not public.is_platform_admin(), 'sem o código não é Super Admin';
+  assert public.platform_admin_status() = 'needs_mfa', 'tela explica que falta o código';
+  perform public.admin_overview();
+  assert false, 'sem o código não vê as organizações';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  assert public.is_platform_admin() and public.platform_admin_status() = 'ok', 'com o código é Super Admin';
 end $$;
 reset role;
 

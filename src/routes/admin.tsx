@@ -114,6 +114,8 @@ function AdminPage() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  // Super Admin exige a verificação em duas etapas (trava no banco: is_platform_admin).
+  const [needsMfa, setNeedsMfa] = useState(false);
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [policies, setPolicies] = useState<Policy[]>([]);
@@ -148,9 +150,10 @@ function AdminPage() {
       void navigate({ to: "/app/login", search: { redirect: "/app" } });
       return;
     }
-    supabase.rpc("is_platform_admin").then(({ data }) => {
-      setAllowed(Boolean(data));
-      if (data) void load();
+    supabase.rpc("platform_admin_status").then(({ data }) => {
+      setNeedsMfa(data === "needs_mfa");
+      setAllowed(data === "ok");
+      if (data === "ok") void load();
     });
   }, [loading, session, navigate, load]);
 
@@ -246,7 +249,7 @@ function AdminPage() {
   if (!allowed) {
     return (
       <main className="mx-auto max-w-lg p-8 text-center">
-        <p>{t.common.forbidden}</p>
+        <p>{needsMfa ? t.mfa.adminRequired : t.common.forbidden}</p>
         <Link to="/app" className="mt-4 inline-block font-semibold text-brand">
           {t.nav.home}
         </Link>
