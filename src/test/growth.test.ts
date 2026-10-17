@@ -52,3 +52,27 @@ describe("Growth & Aquisição", () => {
     expect(paths.every((p) => /^\/[a-z0-9/_-]+$/.test(p))).toBe(true);
   });
 });
+
+describe("Cedro: avisos da franquia gratuita", () => {
+  it("3º mostra o Jacarandá, 4º avisa que resta 1, 5º destaca o upgrade", async () => {
+    const { cedroMessage } = await import("@/app/components/free-plan-card");
+    const { appMessages } = await import("@/app/i18n");
+    const t = appMessages.pt;
+    const offer = { price_cents: 3990, documents_month: 50 };
+    expect(cedroMessage(t, 1, 5, offer)).toBeNull();
+    expect(cedroMessage(t, 3, 5, offer)?.text).toContain("50 documentos por mês");
+    expect(cedroMessage(t, 3, 5, offer)?.text).toContain("39,90");
+    expect(cedroMessage(t, 4, 5, offer)?.tone).toBe("warn");
+    expect(cedroMessage(t, 5, 5, offer)?.tone).toBe("danger");
+    // Sem a oferta carregada, o 3º não inventa números.
+    expect(cedroMessage(t, 3, 5, null)?.text).toBe(t.cedro.keepGoing);
+  });
+});
+
+describe("Matriz comercial (Super Admin)", () => {
+  it("textos com as mesmas chaves nos 3 idiomas", async () => {
+    const { commercialTexts } = await import("@/app/components/admin-commercial");
+    expect(shape(commercialTexts.en)).toEqual(shape(commercialTexts.pt));
+    expect(shape(commercialTexts.es)).toEqual(shape(commercialTexts.pt));
+  });
+});

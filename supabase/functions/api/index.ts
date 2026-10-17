@@ -13,7 +13,7 @@
 //   GET  /v1/usage                                 plano e consumo
 
 import { admin } from "../_shared/auth.ts";
-import { createDocument } from "../_shared/create.ts";
+import { createDocument, optionalKey, requestKey } from "../_shared/create.ts";
 import { syncDocument } from "../_shared/documents.ts";
 import { AppError } from "../_shared/http.ts";
 import { cleanExpiration, cleanLocale, cleanMessage, cleanReminders } from "../_shared/options.ts";
@@ -139,7 +139,7 @@ async function documentView(id: string) {
   };
 }
 
-async function createFromApi(key: Key, body: Record<string, unknown>) {
+async function createFromApi(key: Key, body: Record<string, unknown>, idem: string | null) {
   const sequential = body["sequential"] !== false;
   const locale = cleanLocale(body["locale"], "pt");
   const common = {
@@ -155,6 +155,7 @@ async function createFromApi(key: Key, body: Record<string, unknown>) {
     observers: cleanObservers(body["observers"]),
     origin: "api",
     saveContacts: true,
+    ...optionalKey(requestKey("api", key.id, idem)),
   };
 
   // A partir de modelo: { templateId, values, roles | participants }
@@ -299,7 +300,8 @@ async function route(req: Request, key: Key, parts: string[], url: URL) {
   }
 
   if (!id && method === "POST") {
-    const created = await createFromApi(key, body);
+    // Idempotency-Key (opcional): repetir a chamada não cria nem cobra outro documento.
+    const created = await createFromApi(key, body, req.headers.get("idempotency-key"));
     return reply(await documentView(created.documentId), 201);
   }
 

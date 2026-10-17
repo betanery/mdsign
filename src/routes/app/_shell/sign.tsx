@@ -3,7 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, Download, FileUp, Loader2 } from "lucide-react";
 
 import { callFunction, documentAction } from "@/app/api";
-import { errorText as apiErrorText } from "@/app/errors";
+import { errorCode, errorText as apiErrorText } from "@/app/errors";
+import { LimitReachedOffer } from "@/app/components/free-plan-card";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import {
@@ -46,6 +47,8 @@ function SelfSign() {
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
   const [doc, setDoc] = useState<{ documentId: string; embedUrl: string } | null>(null);
+  const requestId = useRef(crypto.randomUUID());
+  const [limitHit, setLimitHit] = useState(false);
   useLeaveGuard(Boolean(file) && !doc);
   const input = useRef<HTMLInputElement>(null);
 
@@ -69,6 +72,8 @@ function SelfSign() {
     setError(null);
     const form = new FormData();
     form.append("organizationId", current.id);
+    // Id desta tentativa: repetir não cria nem cobra outro documento.
+    form.append("requestId", requestId.current);
     form.append("displayName", name.trim());
     form.append("file", file);
     form.append("marks", JSON.stringify(marksPayload(["me"], marks)));
@@ -84,8 +89,10 @@ function SelfSign() {
       );
       setDoc(result);
       setStep("signing");
+      requestId.current = crypto.randomUUID();
     } catch (e) {
       setError(apiErrorText(t, e));
+      setLimitHit(errorCode(e) === "plan_limit_reached");
       setStep("upload");
     }
   }
@@ -211,6 +218,7 @@ function SelfSign() {
             </details>
           )}
           {error && <FormMessage kind="error">{error}</FormMessage>}
+          {limitHit && <LimitReachedOffer />}
           <Button
             size="lg"
             className="w-fit bg-brand hover:bg-brand-strong"
@@ -248,6 +256,7 @@ function SelfSign() {
           </div>
           <CedroAfterDocument usage={usage} />
           {error && <FormMessage kind="error">{error}</FormMessage>}
+          {limitHit && <LimitReachedOffer />}
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => void download()} className="bg-brand hover:bg-brand-strong">
               <Download aria-hidden />

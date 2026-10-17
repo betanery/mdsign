@@ -267,3 +267,23 @@ Deno.test(
     );
   },
 );
+
+Deno.test(
+  "consumo: falha devolve; sem resposta do motor ou já criado fica para conferência",
+  async () => {
+    const { chargeOutcome, requestKey } = await import("../functions/_shared/create.ts");
+    const net = (c: string) => new AppError("engine_unavailable", 502, { code: c });
+    assertEquals(
+      chargeOutcome(new AppError("engine_rejected", 422, { code: "X" }), true, null),
+      "release",
+    );
+    assertEquals(chargeOutcome(net("timeout"), false, null), "release"); // falhou antes de criar (upload)
+    assertEquals(chargeOutcome(net("timeout"), true, null), "unknown");
+    assertEquals(chargeOutcome(net("network"), true, null), "unknown");
+    assertEquals(chargeOutcome(net("ABC123"), true, null), "release"); // 500 com resposta: não criou
+    assertEquals(chargeOutcome(new Error("db"), false, "e1"), "unknown"); // já existe no motor
+    assertEquals(requestKey("send", "u1", "abcdef12-3456"), "send:u1:abcdef12-3456");
+    assertEquals(requestKey("send", "u1", "x"), undefined);
+    assertEquals(requestKey("send", "u1", "../etc"), undefined);
+  },
+);

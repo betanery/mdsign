@@ -320,6 +320,11 @@ const en: AppMessages = {
     reached:
       "You have used your 5 free documents. Choose a plan to keep signing and sending documents.",
     firstDone: "Your first document was created successfully.",
+    third:
+      "You've used 3 of your 5 free documents. Jacarandá gives you {docs} documents a month for {price}.",
+    blocked: "You've used your 5 free documents. To create this document, choose a plan.",
+    offer: "Jacarandá: {docs} documents a month for {price}.",
+    keepAccess: "Your previous documents remain available to view and download.",
     seePlans: "See plans",
     firstTitle: "What do you want to do first?",
     firstText: "You have 5 free documents. Choose where to start:",
@@ -1172,6 +1177,10 @@ const en: AppMessages = {
     organization_closed: "This account has already been closed.",
     export_required:
       "Before closing, download all documents (ZIP) in Organization → Export and close.",
+    email_not_confirmed:
+      "Confirm your email (using the link we sent at signup) to use the free documents.",
+    request_in_progress:
+      "This request is already being processed. Wait a few seconds and check Documents before trying again.",
     plan_limit_reached:
       "You have reached your plan's document limit. Choose a plan in Organization → Plan and billing to continue. Your documents remain available (on Cedro, for 6 months from creation).",
     plan_users_limit:

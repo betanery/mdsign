@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 
@@ -31,7 +31,7 @@ import {
   type SendOptionsValue,
 } from "@/app/components/send-options";
 import { errorCode, errorText, participantProblems } from "@/app/errors";
-import { CedroAfterDocument } from "@/app/components/free-plan-card";
+import { CedroAfterDocument, LimitReachedOffer } from "@/app/components/free-plan-card";
 import { notifyUsageChanged, useOrgUsage } from "@/app/components/plan-usage";
 import { useLeaveGuard } from "@/app/leave-guard";
 import { useAppI18n } from "@/app/i18n";
@@ -84,6 +84,9 @@ function SendPage() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
+  // Id deste envio: repetir (rede caiu, clique duplo) não cria nem cobra outro documento.
+  const requestId = useRef(crypto.randomUUID());
+  const [limitHit, setLimitHit] = useState(false);
   const [panel, setPanel] = useState<"flow" | "marks" | "options" | null>(null);
   const usage = useOrgUsage();
   useLeaveGuard(Boolean(file) && !documentId && !sending);
@@ -122,6 +125,7 @@ function SendPage() {
       "payload",
       JSON.stringify({
         organizationId: current.id,
+        requestId: requestId.current,
         name: name.trim(),
         sequential,
         participants: toPayload(participants),
@@ -136,9 +140,11 @@ function SendPage() {
     try {
       const r = await callFunction<{ documentId: string }>("documents-send", form);
       setDocumentId(r.documentId);
+      requestId.current = crypto.randomUUID();
       notifyUsageChanged();
     } catch (e) {
       setError(errorText(t, e));
+      setLimitHit(errorCode(e) === "plan_limit_reached");
       if (errorCode(e) === "invalid_participants") {
         const p = participantProblems(e);
         setProblems(p);
@@ -161,6 +167,8 @@ function SendPage() {
     setOptions(defaultSendOptions(locale));
     setDocumentId(null);
     setProblems({});
+    setLimitHit(false);
+    requestId.current = crypto.randomUUID();
     setPanel(null);
   }
 
@@ -412,6 +420,7 @@ function SendPage() {
         )}
 
         {error && <FormMessage kind="error">{error}</FormMessage>}
+        {limitHit && <LimitReachedOffer />}
         <div className="flex flex-wrap gap-3">
           {step > 0 && (
             <Button variant="outline" onClick={() => setStep((s) => s - 1)} disabled={sending}>

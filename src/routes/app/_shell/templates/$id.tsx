@@ -30,6 +30,7 @@ import {
   type TemplateRow,
 } from "@/app/components/template-fields";
 import { errorCode, errorText, fieldProblems, participantProblems } from "@/app/errors";
+import { LimitReachedOffer } from "@/app/components/free-plan-card";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { formatCpf } from "@/app/validation";
@@ -58,6 +59,9 @@ function UseTemplate() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Id desta tentativa: repetir não cria nem cobra outro documento.
+  const requestId = useRef(crypto.randomUUID());
+  const [limitHit, setLimitHit] = useState(false);
   const [participants, setParticipants] = useState<ParticipantDraft[]>([newParticipant()]);
   const [sequential, setSequential] = useState(true);
   const [options, setOptions] = useState<SendOptionsValue>(() => defaultSendOptions(locale));
@@ -112,6 +116,7 @@ function UseTemplate() {
 
   const base = () => ({
     organizationId: current.id,
+    requestId: requestId.current,
     templateId: template.id,
     values,
     name: name.trim(),
@@ -139,6 +144,7 @@ function UseTemplate() {
     } catch (e) {
       setBad(fieldProblems(e));
       setError(errorText(t, e));
+      setLimitHit(errorCode(e) === "plan_limit_reached");
     } finally {
       setBusy(null);
     }
@@ -186,10 +192,12 @@ function UseTemplate() {
         },
       );
       setResult(r);
+      requestId.current = crypto.randomUUID();
       setPhase("signing");
     } catch (e) {
       setBad(fieldProblems(e));
       setError(errorText(t, e));
+      setLimitHit(errorCode(e) === "plan_limit_reached");
     } finally {
       setBusy(null);
     }
@@ -224,9 +232,11 @@ function UseTemplate() {
         ...sendOptionsPayload(options),
       });
       setResult(r);
+      requestId.current = crypto.randomUUID();
       setPhase("done");
     } catch (e) {
       setError(errorText(t, e));
+      setLimitHit(errorCode(e) === "plan_limit_reached");
       if (errorCode(e) === "invalid_participants") setProblems(participantProblems(e));
       if (errorCode(e) === "invalid_fields") {
         setBad(fieldProblems(e));
@@ -259,6 +269,7 @@ function UseTemplate() {
       window.open(url, "_blank", "noopener");
     } catch (e) {
       setError(errorText(t, e));
+      setLimitHit(errorCode(e) === "plan_limit_reached");
     }
   }
 
@@ -326,6 +337,7 @@ function UseTemplate() {
                 ))}
             </fieldset>
             {error && <FormMessage kind="error">{error}</FormMessage>}
+            {limitHit && <LimitReachedOffer />}
             <div className="flex flex-wrap gap-3">
               <Button
                 className="bg-brand hover:bg-brand-strong"
@@ -419,6 +431,7 @@ function UseTemplate() {
           )}
           <p className="text-sm text-muted-foreground">{t.send.review.consumption}</p>
           {error && <FormMessage kind="error">{error}</FormMessage>}
+          {limitHit && <LimitReachedOffer />}
           <div className="flex flex-wrap gap-3">
             <Button variant="outline" onClick={() => setPhase("fill")} disabled={busy !== null}>
               {t.send.back}
@@ -443,6 +456,7 @@ function UseTemplate() {
             onError={() => setError(t.errors["widget"]!)}
           />
           {error && <FormMessage kind="error">{error}</FormMessage>}
+          {limitHit && <LimitReachedOffer />}
         </>
       )}
 
@@ -465,6 +479,7 @@ function UseTemplate() {
             </p>
           </div>
           {error && <FormMessage kind="error">{error}</FormMessage>}
+          {limitHit && <LimitReachedOffer />}
           <div className="flex flex-wrap gap-3">
             {how === "self" && (
               <Button onClick={() => void download()} className="bg-brand hover:bg-brand-strong">

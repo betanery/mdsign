@@ -7,6 +7,7 @@ insert into auth.users (id, email, aud, role, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@teste.mdsign', 'authenticated', 'authenticated', '{"full_name":"Ana Teste","locale":"en"}'),
   ('00000000-0000-0000-0000-00000000000b', 'bruno@teste.mdsign', 'authenticated', 'authenticated', '{"full_name":"Bruno Teste"}'),
   ('00000000-0000-0000-0000-00000000000c', 'carla@teste.mdsign', 'authenticated', 'authenticated', '{"locale":"xx"}');
+update auth.users set email_confirmed_at = now() where email like '%@teste.mdsign' and email_confirmed_at is null;
 
 do $$ begin
   assert (select locale from public.profiles where id = '00000000-0000-0000-0000-00000000000a') = 'en', 'perfil criado com o idioma do cadastro';
@@ -642,6 +643,7 @@ reset role;
 insert into auth.users (id, email, aud, role, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000d', 'dani@teste.mdsign', 'authenticated', 'authenticated',
    '{"full_name":"Dani Teste","terms_version":"2026-10","marketing_opt_in":false,"acq":{"utm_source":"google","utm_campaign":"cedro-out","landing_page":"/pt/assinar-gratis","first_seen_at":"2026-10-08T10:00:00Z"}}');
+update auth.users set email_confirmed_at = now() where email like '%@teste.mdsign' and email_confirmed_at is null;
 do $$ begin
   assert (select utm_campaign from public.user_acquisition where user_id = '00000000-0000-0000-0000-00000000000d') = 'cedro-out', 'origem do cadastro gravada';
   assert (select granted from public.user_consents where user_id = '00000000-0000-0000-0000-00000000000d' and kind = 'terms'), 'aceite dos termos gravado';
@@ -674,7 +676,7 @@ do $$ begin
   assert public.org_growth_stage((select v from t_ids where k = 'orgD2')) = 'pql_hot', 'quem esgotou o grátis é PQL quente';
   assert public.org_growth_stage((select v from t_ids where k = 'orgB')) <> 'opportunity', 'cadastro não vira oportunidade sozinho';
   -- Outra pessoa não é afetada pela soma da Dani.
-  update public.usage_counters set value = 0 where organization_id = (select v from t_ids where k = 'orgB');
+  update public.free_allowances set used = 0 where user_id = '00000000-0000-0000-0000-00000000000b';
   assert public.consume_document((select v from t_ids where k = 'orgB'), 'teste'), 'outra pessoa tem o próprio grátis';
 end $$;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
@@ -962,6 +964,7 @@ reset role;
 insert into auth.users (id, email, aud, role, created_at, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000d1', 'gabi@teste.mdsign', 'authenticated', 'authenticated', now(),
    '{"full_name":"Gabi Teste","acq":{"utm_source":"instagram","utm_medium":"paid_social","utm_campaign":"lancamento_outubro","landing_page":"/pt/assinar-gratis","first_seen_at":"2026-10-01T10:00:00Z","session_id":"sessaoteste01","last":{"utm_source":"google","utm_medium":"cpc","utm_campaign":"busca_marca","landing_page":"/pt/lp/assinar-pdf-gratis","seen_at":"2026-10-05T10:00:00Z"}}}');
+update auth.users set email_confirmed_at = now() where email like '%@teste.mdsign' and email_confirmed_at is null;
 do $$ begin
   assert (select utm_campaign from public.user_acquisition where user_id = '00000000-0000-0000-0000-0000000000d1') = 'lancamento_outubro', 'primeira origem preservada';
   assert (select last_utm_campaign from public.user_acquisition where user_id = '00000000-0000-0000-0000-0000000000d1') = 'busca_marca', 'última origem gravada';
@@ -975,6 +978,7 @@ end $$;
 insert into auth.users (id, email, aud, role, created_at, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000d2', 'hugo@teste.mdsign', 'authenticated', 'authenticated', now(),
    '{"full_name":"Hugo Teste","acq":{"utm_source":"google","utm_campaign":"antiga","first_seen_at":"2026-01-01T10:00:00Z","last":{"utm_source":"google","utm_campaign":"antiga","seen_at":"2026-01-02T10:00:00Z"}}}');
+update auth.users set email_confirmed_at = now() where email like '%@teste.mdsign' and email_confirmed_at is null;
 do $$ begin
   assert (select last_source from public.growth_people(false) where user_id = '00000000-0000-0000-0000-0000000000d2') = 'nao_identificada', 'última origem fora da janela não conta';
   assert (select first_campaign from public.growth_people(false) where user_id = '00000000-0000-0000-0000-0000000000d2') = 'antiga', 'primeira origem continua registrada';
@@ -1104,5 +1108,173 @@ do $$ begin
 exception when insufficient_privilege then null;
 end $$;
 reset role;
+
+-- Etapa 1 comercial: franquia por pessoa, consumo seguro e matriz versionada.
+reset role;
+insert into auth.users (id, email, aud, role, created_at, email_confirmed_at, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000e1', 'eva@teste.mdsign', 'authenticated', 'authenticated', now(), now(), '{"full_name":"Eva Teste"}'),
+  ('00000000-0000-0000-0000-0000000000e2', 'fabio@teste.mdsign', 'authenticated', 'authenticated', now(), null, '{"full_name":"Fabio Teste"}');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated"}', true);
+set local role authenticated;
+insert into t_ids values ('orgE1', public.create_organization('Eva A'));
+insert into t_ids values ('orgE2', public.create_organization('Eva B'));
+insert into t_ids values ('orgE3', public.create_organization('Eva paga'));
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e2","role":"authenticated"}', true);
+set local role authenticated;
+insert into t_ids values ('orgF1', public.create_organization('Fabio'));
+reset role;
+do $$
+declare r jsonb; a uuid := (select v from t_ids where k = 'orgE1'); b uuid := (select v from t_ids where k = 'orgE2');
+  paid uuid := (select v from t_ids where k = 'orgE3'); res uuid;
+begin
+  -- 1. Cinco documentos na organização A; 6º bloqueado.
+  for i in 1..5 loop
+    r := public.reserve_document(a, 'teste:eva:' || i, 'teste');
+    assert (r ->> 'ok')::boolean and (r ->> 'used')::int = i, 'Eva usa o ' || i || 'º grátis';
+    perform public.commit_document((r ->> 'reservation')::uuid, null, null);
+  end loop;
+  assert exists (select 1 from public.growth_events where organization_id = a and event = 'cedro_usage_3_of_5'), 'evento do 3º documento';
+  r := public.reserve_document(a, 'teste:eva:6', 'teste');
+  assert not (r ->> 'ok')::boolean and r ->> 'reason' = 'plan_limit_reached', '6º bloqueado';
+  -- 2. A mesma pessoa cria a organização B: sem franquia nova.
+  r := public.reserve_document(b, 'teste:eva:b1', 'teste');
+  assert not (r ->> 'ok')::boolean, 'nova organização não dá nova franquia';
+  assert (select count(*) from public.growth_events where user_id = '00000000-0000-0000-0000-0000000000e1' and event = 'cedro_limit_exceeded_attempt') = 1, 'tentativa de exceder registrada uma vez só';
+  -- 5. Reenvio da mesma requisição: não consome de novo.
+  r := public.reserve_document(a, 'teste:eva:3', 'teste');
+  assert (r ->> 'duplicate')::boolean and (r ->> 'status') = 'committed', 'mesma chave devolve o mesmo consumo';
+  assert (select used from public.free_allowances where user_id = '00000000-0000-0000-0000-0000000000e1') = 5, 'reenvio não conta duas vezes';
+  -- 4. Falha no motor: a reserva devolvida libera o documento.
+  update public.free_allowances set used = 4 where user_id = '00000000-0000-0000-0000-0000000000e1';
+  r := public.reserve_document(a, 'teste:eva:falha', 'teste');
+  assert (r ->> 'ok')::boolean, 'reserva do 5º';
+  perform public.release_document((r ->> 'reservation')::uuid, 'motor recusou');
+  assert (select used from public.free_allowances where user_id = '00000000-0000-0000-0000-0000000000e1') = 4, 'falha no motor devolve o documento';
+  r := public.reserve_document(a, 'teste:eva:falha', 'teste');
+  assert (r ->> 'ok')::boolean and not (r ->> 'duplicate')::boolean, 'nova tentativa com a mesma chave após devolução';
+  -- Resultado desconhecido: continua contado e fica para conferência.
+  perform public.mark_document_unknown((r ->> 'reservation')::uuid, 'tempo esgotado');
+  assert (select status from public.document_charges where id = (r ->> 'reservation')::uuid) = 'unknown', 'resultado desconhecido marcado';
+  assert (select used from public.free_allowances where user_id = '00000000-0000-0000-0000-0000000000e1') = 5, 'desconhecido continua contado';
+  insert into t_ids values ('chargeUnknown', (r ->> 'reservation')::uuid);
+  -- 8 e 9. Organização paga da mesma pessoa não usa a franquia; voltar ao Cedro não reinicia.
+  update public.subscriptions set plan_id = 'ipe', billing_status = 'exempt' where organization_id = paid;
+  for i in 1..3 loop
+    r := public.reserve_document(paid, 'teste:eva:paga:' || i, 'teste');
+    assert (r ->> 'ok')::boolean, 'plano pago cria documentos';
+  end loop;
+  assert (select used from public.free_allowances where user_id = '00000000-0000-0000-0000-0000000000e1') = 5, 'plano pago não mexe na franquia';
+  update public.subscriptions set plan_id = 'cedro', billing_status = 'free' where organization_id = paid;
+  r := public.reserve_document(paid, 'teste:eva:volta', 'teste');
+  assert not (r ->> 'ok')::boolean, 'voltar ao Cedro não reinicia a franquia pessoal';
+  -- E-mail não confirmado: sem franquia.
+  r := public.reserve_document((select v from t_ids where k = 'orgF1'), 'teste:fabio:1', 'teste');
+  assert r ->> 'reason' = 'email_not_confirmed', 'franquia exige e-mail confirmado';
+end $$;
+
+-- 6 e 7. Jacarandá: contrato antigo (20/mês) preservado; novo contrato depois da publicação (50/mês).
+do $$
+declare r jsonb; old_org uuid := (select v from t_ids where k = 'orgE2'); new_org uuid := (select v from t_ids where k = 'orgF1');
+begin
+  assert public.current_plan_version() = 'matriz_2026_10', 'nova matriz ainda em rascunho';
+  update public.subscriptions set plan_id = 'jacaranda', billing_status = 'paid' where organization_id = old_org;
+  assert (select plan_version_id from public.subscriptions where organization_id = old_org) = 'matriz_2026_10', 'contrato liga à versão vigente';
+  assert public.entitlement_int(old_org, 'documents_month') = 20, 'Jacarandá antigo: 20 por mês';
+  -- Publicação (Super Admin) só afeta contratações novas.
+  update public.plan_versions set status = 'retired' where status = 'published';
+  update public.plan_versions set status = 'published', published_at = now() where id = 'matriz_2026_11';
+  update public.subscriptions set updated_at = now(), billing_status = 'paid' where organization_id = old_org;
+  assert public.entitlement_int(old_org, 'documents_month') = 20, 'renovação não muda o contrato antigo';
+  for i in 1..20 loop
+    r := public.reserve_document(old_org, 'teste:jac:old:' || i, 'teste');
+    assert (r ->> 'ok')::boolean, 'antigo usa os 20';
+  end loop;
+  assert not (public.reserve_document(old_org, 'teste:jac:old:21', 'teste') ->> 'ok')::boolean, 'antigo para no 21º';
+  update public.subscriptions set plan_id = 'jacaranda', billing_status = 'paid' where organization_id = new_org;
+  assert (select plan_version_id from public.subscriptions where organization_id = new_org) = 'matriz_2026_11', 'contrato novo liga à nova matriz';
+  for i in 1..50 loop
+    r := public.reserve_document(new_org, 'teste:jac:new:' || i, 'teste');
+    assert (r ->> 'ok')::boolean, 'novo usa os 50';
+  end loop;
+  assert not (public.reserve_document(new_org, 'teste:jac:new:51', 'teste') ->> 'ok')::boolean, 'novo para no 51º';
+  assert (public.plan_offer() ->> 'version') = 'matriz_2026_11', 'oferta mostra a versão publicada';
+  -- Volta ao estado de rascunho para o resto da bateria.
+  update public.plan_versions set status = 'draft', published_at = null where id = 'matriz_2026_11';
+  update public.plan_versions set status = 'published' where id = 'matriz_2026_10';
+end $$;
+
+-- 10. Navegador não manipula consumo, franquia nem matriz.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.reserve_document((select v from t_ids where k = 'orgE1'), 'teste:hack:1', 'teste');
+  assert false, 'navegador não reserva consumo';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.release_document((select v from t_ids where k = 'chargeUnknown'), 'hack');
+  assert false, 'navegador não devolve consumo';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  update public.free_allowances set used = 0;
+  assert false, 'navegador não zera a franquia';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform 1 from public.document_charges;
+  assert false, 'navegador não lê consumos';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  update public.plan_version_entitlements set value_int = 999;
+  assert false, 'navegador não altera a matriz';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  update public.subscriptions set plan_id = 'ipe' where organization_id = (select v from t_ids where k = 'orgE1');
+  assert not found, 'navegador não troca o próprio plano';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.admin_publish_plan_version('matriz_2026_11');
+  assert false, 'só Super Admin publica a matriz';
+exception when insufficient_privilege then null;
+end $$;
+-- 11. Quem esgotou o grátis continua vendo os documentos e o consumo.
+do $$ begin
+  assert (select documents_total_used from public.org_usage((select v from t_ids where k = 'orgE1'))) = 5, 'tela mostra 5 de 5 (franquia da pessoa)';
+  assert (select documents_total_used from public.org_usage((select v from t_ids where k = 'orgE2'))) is not null, 'consumo visível em todas as organizações';
+  assert (public.plan_offer() ->> 'version') = 'matriz_2026_10', 'oferta pública = versão publicada';
+end $$;
+reset role;
+insert into public.documents (organization_id, created_by, kind, name, status)
+  values ((select v from t_ids where k = 'orgE1'), '00000000-0000-0000-0000-0000000000e1', 'send', 'Doc antigo', 'concluded');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000e1","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.documents where organization_id = (select v from t_ids where k = 'orgE1')) = 1, 'documento existente continua acessível após esgotar';
+end $$;
+reset role;
+
+-- Super Admin: conferência de resultado desconhecido e alerta.
+do $$ begin
+  assert public.refresh_platform_alerts() >= 1, 'alerta abre com consumo a conferir';
+  assert exists (select 1 from public.platform_alerts where kind = 'document_charges_unknown' and resolved_at is null), 'alerta de consumo a conferir';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  assert jsonb_array_length(public.admin_document_charges('unknown')) >= 1, 'Super Admin vê o consumo a conferir';
+  perform public.admin_resolve_charge((select v from t_ids where k = 'chargeUnknown'), false);
+  assert jsonb_array_length(public.admin_plan_versions()) = 2, 'Super Admin vê as duas versões';
+end $$;
+reset role;
+do $$ begin
+  assert (select status from public.document_charges where id = (select v from t_ids where k = 'chargeUnknown')) = 'released', 'conferido como não criado: devolvido';
+  assert (select used from public.free_allowances where user_id = '00000000-0000-0000-0000-0000000000e1') = 4, 'franquia devolvida após conferência';
+  assert exists (select 1 from public.audit_log where action = 'document_charge.resolved'), 'conferência auditada';
+end $$;
 
 select 'todos os testes de RLS e permissões passaram' as resultado;

@@ -2,7 +2,7 @@
 // Configurações → Revisão → Envio. O motor envia os e-mails aos participantes.
 
 import { requirePermission, requireUser } from "../_shared/auth.ts";
-import { createDocument, readPdf } from "../_shared/create.ts";
+import { createDocument, optionalKey, readPdf, requestKey } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import { cleanExpiration, cleanLocale, cleanMessage, cleanReminders } from "../_shared/options.ts";
 import {
@@ -14,6 +14,8 @@ import { cleanParticipantMarks } from "../_shared/pdf.ts";
 
 type Payload = {
   organizationId: string;
+  /** Id gerado pela tela a cada envio: repetir a mesma requisição não cobra de novo. */
+  requestId?: string;
   name: string;
   message?: string;
   expiresAt?: string | null;
@@ -53,6 +55,8 @@ Deno.serve(async (req) => {
       organizationId: payload.organizationId,
       createdBy: caller.user.id,
       actorName: caller.profile.full_name ?? caller.user.email ?? "",
+      // Mesmo envio de novo (rede caiu, clique duplo): não cria nem cobra outro documento.
+      ...optionalKey(requestKey("send", caller.user.id, payload.requestId)),
       kind: "send",
       name,
       pdf: bytes,

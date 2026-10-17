@@ -102,14 +102,10 @@ export function BillingPanel({
 
   const load = useCallback(async () => {
     if (!current) return;
-    const [b, p, e, pay] = await Promise.all([
+    const [b, offer, pay] = await Promise.all([
       supabase.rpc("org_billing", { org: current.id }),
-      supabase
-        .from("plans")
-        .select("id, name, price_cents, sort")
-        .eq("is_public", true)
-        .order("sort"),
-      supabase.from("plan_entitlements").select("plan_id, key, value_int, value_bool"),
+      // Planos e direitos oferecidos para contratar: a matriz publicada (versão vigente).
+      supabase.rpc("plan_offer"),
       supabase
         .from("billing_payments")
         .select(
@@ -120,8 +116,24 @@ export function BillingPanel({
         .limit(24),
     ]);
     setBilling(((b.data as Billing[] | null) ?? [])[0] ?? null);
-    setPlans((p.data as Plan[] | null) ?? []);
-    setEnts((e.data as Ent[] | null) ?? []);
+    const o = (offer.data as {
+      plans: (Plan & { is_public: boolean; entitlements: Record<string, number | boolean> })[];
+    } | null) ?? { plans: [] };
+    setPlans(
+      o.plans
+        .filter((x) => x.is_public)
+        .map(({ id, name, price_cents, sort }) => ({ id, name, price_cents, sort })),
+    );
+    setEnts(
+      o.plans.flatMap((x) =>
+        Object.entries(x.entitlements).map(([key, v]) => ({
+          plan_id: x.id,
+          key,
+          value_int: typeof v === "number" ? v : null,
+          value_bool: typeof v === "boolean" ? v : null,
+        })),
+      ),
+    );
     setPayments((pay.data as Payment[] | null) ?? []);
   }, [current]);
 

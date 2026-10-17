@@ -129,6 +129,8 @@ Deno.serve(async (req) => {
   // Alertas da plataforma (abre e fecha conforme as condições).
   let alerts = null;
   try {
+    // Reservas de consumo presas há mais de 30 min viram "a conferir" antes de abrir alertas.
+    await admin.rpc("sweep_document_charges");
     const { data } = await admin.rpc("refresh_platform_alerts");
     alerts = data;
   } catch (e) {

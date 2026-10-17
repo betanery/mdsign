@@ -331,6 +331,11 @@ const es: AppMessages = {
     reached:
       "Usó sus 5 documentos gratuitos. Elija un plan para seguir firmando y enviando documentos.",
     firstDone: "Su primer documento se creó con éxito.",
+    third:
+      "Ya usaste 3 de los 5 documentos gratuitos. Con Jacarandá tienes {docs} documentos al mes por {price}.",
+    blocked: "Ya usaste los 5 documentos gratuitos. Para crear este documento, elige un plan.",
+    offer: "Jacarandá: {docs} documentos al mes por {price}.",
+    keepAccess: "Tus documentos anteriores siguen disponibles para consulta y descarga.",
     seePlans: "Ver planes",
     firstTitle: "¿Qué quiere hacer primero?",
     firstText: "Tiene 5 documentos gratuitos. Elija por dónde empezar:",
@@ -1188,6 +1193,10 @@ const es: AppMessages = {
     organization_closed: "Esta cuenta ya fue cerrada.",
     export_required:
       "Antes de cerrar, descargue todos los documentos (ZIP) en Organización → Exportar y cerrar.",
+    email_not_confirmed:
+      "Confirma tu correo (con el enlace que enviamos en el registro) para usar los documentos gratuitos.",
+    request_in_progress:
+      "Este envío ya se está procesando. Espera unos segundos y revisa Documentos antes de intentar de nuevo.",
     plan_limit_reached:
       "Alcanzó el límite de documentos de su plan. Elija un plan en Organización → Plan y cobro para continuar. Sus documentos siguen disponibles (en Cedro, por 6 meses desde su creación).",
     plan_users_limit:

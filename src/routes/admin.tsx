@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { callFunction } from "@/app/api";
 import { AuthProvider, useAuth } from "@/app/auth";
 import { AdminDataRequests } from "@/app/components/admin-data-requests";
+import { CommercialAdmin } from "@/app/components/admin-commercial";
 import { GrowthModule } from "@/app/growth/module";
 import { useGrowthTexts } from "@/app/growth/texts";
 import { useConfirm } from "@/app/components/confirm-dialog";
@@ -330,6 +331,7 @@ function AdminPage() {
 
         <TabsContent value="billing" className="mt-4">
           <BillingAdmin />
+          <CommercialAdmin />
         </TabsContent>
 
         <TabsContent value="dsr" className="mt-4">

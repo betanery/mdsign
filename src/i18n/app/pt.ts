@@ -342,6 +342,11 @@ const pt = {
     reached:
       "Você utilizou seus 5 documentos gratuitos. Escolha um plano para continuar assinando e enviando documentos.",
     firstDone: "Seu primeiro documento foi criado com sucesso.",
+    third:
+      "Você já usou 3 dos 5 documentos gratuitos. No Jacarandá são {docs} documentos por mês por {price}.",
+    blocked: "Você já usou os 5 documentos gratuitos. Para criar este documento, escolha um plano.",
+    offer: "Jacarandá: {docs} documentos por mês por {price}.",
+    keepAccess: "Seus documentos anteriores continuam disponíveis para consulta e download.",
     seePlans: "Ver planos",
     firstTitle: "O que você quer fazer primeiro?",
     firstText: "Você tem 5 documentos gratuitos. Escolha por onde começar:",
@@ -1199,6 +1204,10 @@ const pt = {
     organization_closed: "Esta conta já foi encerrada.",
     export_required:
       "Antes de encerrar, baixe todos os documentos (ZIP) em Organização → Exportar e encerrar.",
+    email_not_confirmed:
+      "Confirme o seu e-mail (pelo link que enviamos no cadastro) para usar os documentos gratuitos.",
+    request_in_progress:
+      "Este envio já está sendo processado. Aguarde alguns segundos e confira em Documentos antes de tentar de novo.",
     plan_limit_reached:
       "Você atingiu o limite de documentos do seu plano. Escolha um plano em Organização → Plano e cobrança para continuar. Seus documentos continuam disponíveis (no Cedro, por 6 meses a partir da criação).",
     plan_users_limit:

@@ -189,11 +189,16 @@ Deno.serve(async (req) => {
       const env = asaasEnv();
       const planId = String(body["planId"] ?? "");
       const method = body["method"] === "PIX" ? "PIX" : "CREDIT_CARD";
-      const { data: plan } = await admin
-        .from("plans")
-        .select("id, name, price_cents, is_public")
-        .eq("id", planId)
-        .maybeSingle();
+      // Preço da matriz publicada (versão vigente para novas contratações).
+      const { data: offer } = await admin.rpc("plan_offer");
+      const plan =
+        (
+          (
+            offer as {
+              plans: { id: string; name: string; price_cents: number | null; is_public: boolean }[];
+            } | null
+          )?.plans ?? []
+        ).find((x) => x.id === planId) ?? null;
       // Cedro é interno (sem Asaas) e Mogno é contratação comercial: sem checkout automático.
       if (!plan || !plan.is_public || !plan.price_cents || plan.id === "mogno")
         throw new AppError("billing_plan_unavailable", 422);

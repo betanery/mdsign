@@ -38,6 +38,11 @@ export type CreateInput = {
   saveContacts?: boolean;
   /** Assinatura/rubrica posicionadas, por participante (mesmo índice de `participants`). */
   marks?: (RelMark[] | undefined)[];
+  /**
+   * Chave da requisição: a mesma chave de novo não consome outro documento nem cria outro no
+   * motor (ex.: "send:<usuário>:<id do envio>", "bulk:<item>", "api:<chave>:<Idempotency-Key>").
+   */
+  idempotencyKey?: string;
   /** Observadores: acompanham e recebem as notificações, sem assinar. */
   observers?: ObserverInput[] | undefined;
 };
@@ -166,18 +171,62 @@ export async function engineDescription(
   return (message ? `${line}\n\n${message}` : line).slice(0, 600);
 }
 
+/**
+ * Depois de uma falha, o consumo reservado é devolvido ou fica para conferência:
+ * - "unknown": o motor já criou o documento (temos o id) ou a chamada de criação ficou sem
+ *   resposta (tempo esgotado/rede) → continua contado e vai para conferência;
+ * - "release": falhou antes de chamar o motor ou o motor recusou explicitamente → devolve.
+ */
+export function chargeOutcome(error: unknown, creating: boolean, engineId: string | null) {
+  const code = ((error as AppError)?.details as { code?: string } | undefined)?.code ?? "";
+  return engineId !== null || (creating && (code === "timeout" || code === "network"))
+    ? "unknown"
+    : "release";
+}
+
+/** Chave de idempotência a partir do id gerado pelo cliente (só formatos seguros). */
+export function requestKey(scope: string, owner: string, raw: unknown): string | undefined {
+  const id = String(raw ?? "");
+  return /^[A-Za-z0-9_-]{8,64}$/.test(id) ? `${scope}:${owner}:${id}` : undefined;
+}
+
+export const optionalKey = (key: string | undefined) => (key ? { idempotencyKey: key } : {});
+
 export async function createDocument(input: CreateInput): Promise<Created> {
   // PDF com conteúdo ativo (scripts, anexos, ações) é recusado antes de consumir o plano.
   await assertSafePdf(input.pdf);
   // Quórum só com a política ligada (ou para o Super Admin, durante a homologação).
   if (input.participants.some((p) => p.rule)) await assertQuorumAllowed(input.createdBy);
-  // Limite do plano (Bloco 6): bloqueia antes de criar no motor.
-  const { data: allowed, error: limitError } = await admin.rpc("consume_document", {
+  // Consumo (franquia da pessoa no Cedro; mês no plano pago): reserva antes de criar no motor.
+  // O que consome 1 documento: a criação de 1 documento no motor, com qualquer número de
+  // participantes. Mesma chave = mesma reserva (reenvio não cobra duas vezes).
+  const idem = input.idempotencyKey ?? `auto:${crypto.randomUUID()}`;
+  const { data: reserved, error: limitError } = await admin.rpc("reserve_document", {
     org: input.organizationId,
+    idem,
     origin: input.origin,
   });
   if (limitError) throw new AppError("internal_error", 500);
-  if (allowed === false) throw new AppError("plan_limit_reached", 402);
+  const r = reserved as {
+    ok: boolean;
+    duplicate?: boolean;
+    reservation?: string;
+    status?: string;
+    document_id?: string | null;
+    reason?: string;
+  };
+  if (r.duplicate) {
+    // Já criado nesta mesma requisição: devolve o documento existente, sem criar outro.
+    if (r.status === "committed" && r.document_id) return await existingDocument(r.document_id);
+    throw new AppError("request_in_progress", 409);
+  }
+  if (!r.ok)
+    throw r.reason === "email_not_confirmed"
+      ? new AppError("email_not_confirmed", 403)
+      : new AppError("plan_limit_reached", 402);
+  const reservation = r.reservation!;
+  let creating = false;
+  let engineId: string | null = null;
   const delegated = await applyDelegations(input.organizationId, input.participants);
   input = { ...input, participants: delegated.list };
   // E-mail próprio: o MDSign manda convite e lembretes; o motor não manda os de ação pendente.
@@ -189,6 +238,7 @@ export async function createDocument(input: CreateInput): Promise<Created> {
   try {
     const sizes = input.marks?.some((m) => m?.length) ? pageSizes(await loadPdf(input.pdf)) : [];
     const upload = await signdoc.uploadBytes(toBase64(input.pdf));
+    creating = true;
     const [created] = await signdoc.createDocuments({
       files: [
         {
@@ -211,7 +261,9 @@ export async function createDocument(input: CreateInput): Promise<Created> {
         ? { observers: input.observers.map((o) => toObserver(o, input.locale)) }
         : {}),
     });
+    creating = false;
     if (!created) throw new AppError("engine_rejected", 422);
+    engineId = created.documentId;
     const engine = await signdoc.getDocument(created.documentId);
 
     const { data: doc, error } = await admin
@@ -236,6 +288,12 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       .select("id")
       .single();
     if (error || !doc) throw error ?? new AppError("internal_error", 500);
+    // Documento existe no motor e no MDSign: consumo definitivo.
+    await admin.rpc("commit_document", {
+      reservation,
+      doc: doc.id,
+      engine: created.documentId,
+    });
 
     // Liga cada participante à ação do motor (mesma ordem de envio) e à conta MDSign, se houver.
     const actions = [...(engine.flowActions ?? [])];
@@ -352,10 +410,45 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       participantIds: (inserted ?? []).map((r) => r.id as string),
     };
   } catch (error) {
-    // Não cobra documento que não foi criado.
-    await admin.rpc("refund_document", { org: input.organizationId });
+    const uncertain = chargeOutcome(error, creating, engineId) === "unknown";
+    if (uncertain)
+      await admin
+        .rpc("mark_document_unknown", {
+          reservation,
+          reason: String((error as Error)?.message ?? error).slice(0, 200),
+          engine: engineId,
+        })
+        .then(
+          () => undefined,
+          () => undefined,
+        );
+    else
+      await admin
+        .rpc("release_document", {
+          reservation,
+          reason: String((error as Error)?.message ?? error).slice(0, 200),
+        })
+        .then(
+          () => undefined,
+          () => undefined,
+        );
     throw error;
   }
+}
+
+/** Reenvio de uma requisição já concluída: devolve o mesmo documento. */
+async function existingDocument(documentId: string): Promise<Created> {
+  const { data: doc } = await admin
+    .from("documents")
+    .select("id, engine_document_id, document_participants (id)")
+    .eq("id", documentId)
+    .maybeSingle();
+  if (!doc) throw new AppError("request_in_progress", 409);
+  return {
+    documentId: doc.id as string,
+    engineDocumentId: doc.engine_document_id as string,
+    participantIds: ((doc.document_participants as { id: string }[] | null) ?? []).map((p) => p.id),
+  };
 }
 
 /** Valida PDF enviado pelo navegador (PRD §43: upload seguro). */

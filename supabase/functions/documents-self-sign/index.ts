@@ -2,7 +2,7 @@
 // signatário e devolve o embedUrl para assinar dentro do MDSign. Sem notificações por e-mail.
 
 import { requirePermission, requireUser } from "../_shared/auth.ts";
-import { createDocument, readPdf } from "../_shared/create.ts";
+import { createDocument, optionalKey, readPdf, requestKey } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import { cleanObservers, identifierOptional } from "../_shared/participants.ts";
 import { cleanParticipantMarks } from "../_shared/pdf.ts";
@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
       organizationId,
       createdBy: user.id,
       actorName: profile.full_name,
+      ...optionalKey(requestKey("self", user.id, form.get("requestId"))),
       kind: "self",
       name,
       pdf: bytes,

@@ -204,6 +204,8 @@ export async function processBulk(jobId: string, n = 5) {
           organizationId: job.organization_id,
           createdBy: job.created_by,
           actorName: creator?.full_name ?? "",
+          // Cada linha do lote é um documento: reprocessar a linha não cobra de novo.
+          idempotencyKey: `bulk:${job.id}:${item.id}`,
           kind: "send",
           name: doc.name,
           pdf: doc.pdf,

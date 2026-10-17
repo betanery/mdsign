@@ -3,7 +3,7 @@
 // variáveis do papel e as marcas de assinatura/rubrica seguem quem ocupa o papel.
 
 import { requirePermission, requireUser } from "../_shared/auth.ts";
-import { createDocument } from "../_shared/create.ts";
+import { createDocument, optionalKey, requestKey } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import { cleanExpiration, cleanLocale, cleanMessage, cleanReminders } from "../_shared/options.ts";
 import {
@@ -29,6 +29,8 @@ import {
 
 type Payload = {
   organizationId: string;
+  /** Id gerado pela tela a cada envio: repetir a mesma requisição não cobra de novo. */
+  requestId?: string;
   templateId?: string;
   /** Modelo ainda não salvo ("Testar modelo"): só gera a prévia. */
   draft?: Record<string, unknown>;
@@ -135,6 +137,7 @@ Deno.serve(async (req) => {
       filename: pdfFilename(name),
       origin: "template",
       templateId: template.id,
+      ...optionalKey(requestKey("template", user.id, p.requestId)),
     };
 
     if (p.mode === "self") {
