@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
     const doc = await loadEditable(caller, String(body["documentId"] ?? ""));
     const { data: parts } = await admin
       .from("document_participants")
-      .select("id, name, email, step, status, role, engine_flow_action_id")
+      .select("id, name, email, step, status, role, engine_flow_action_id, rule_key")
       .eq("document_id", doc.id);
     const byId = new Map((parts ?? []).map((p) => [p.id as string, p]));
     const editable = (id: string) => {
@@ -150,6 +150,9 @@ Deno.serve(async (req) => {
       // Quem já assinou, aprovou ou recusou não pode ser alterado.
       if (!p || !p.engine_flow_action_id || p.status === "completed" || p.status === "refused")
         throw new AppError("participant_locked", 409);
+      // Membros de um grupo com quórum: a regra é editada no motor como um todo (ainda não
+      // suportado aqui); trocar ou remover uma pessoa isolada quebraria a contagem.
+      if (p.rule_key) throw new AppError("quorum_edit_unsupported", 409);
       return p;
     };
     const { data: locale } = await admin
@@ -191,7 +194,10 @@ Deno.serve(async (req) => {
     const addedRaw = (Array.isArray(body["added"]) ? body["added"] : []) as (ParticipantInput & {
       step?: number;
     })[];
-    const added = addedRaw.length ? cleanParticipants(addedRaw, false) : [];
+    const added = (addedRaw.length ? cleanParticipants(addedRaw, false) : []).map((p) => ({
+      ...p,
+      rule: null, // grupo com quórum só no envio, não na edição
+    }));
     added.forEach((p, i) => {
       const wanted = Math.trunc(Number(addedRaw[i]?.step)) || lastStep + 1;
       p.step = Math.max(wanted, pendingStep === Number.MAX_SAFE_INTEGER ? 1 : pendingStep);

@@ -21,6 +21,8 @@ export type AppConfig = {
   billingEnvironment: "sandbox" | "production" | null;
   /** Provedor de WhatsApp configurado no servidor. */
   whatsappConfigured: boolean;
+  /** Grupos com quórum ("qualquer N do grupo"): política ligada ou Super Admin. */
+  quorumGroups?: boolean;
 };
 
 const fallback: AppConfig = {

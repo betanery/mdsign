@@ -991,6 +991,7 @@ const pt = {
     } as Record<string, string>,
   },
   documents: {
+    quorumOf: "basta {n} de {total}",
     cedroAvailable:
       "Plano Cedro: disponível para consulta e download até {date} (6 meses a partir da criação).",
     cedroExpired:
@@ -1074,6 +1075,7 @@ const pt = {
     tabTimeline: "Timeline",
     observers: "Observadores",
     participantStatus: {
+      skipped: "Não precisou assinar",
       created: "Aguardando etapa anterior",
       pending: "Pendente",
       completed: "Assinou",
@@ -1148,6 +1150,9 @@ const pt = {
     part_missing: "O arquivo deste documento não foi encontrado. Refaça o envio do lote.",
     pdf_active_content:
       "Este PDF tem conteúdo ativo (scripts, anexos ou ações automáticas) e não pode ser usado para assinatura. Abra o arquivo e use Imprimir → Salvar como PDF, depois envie de novo.",
+    quorum_disabled: "Grupos com quórum ainda não estão liberados nesta conta.",
+    quorum_edit_unsupported:
+      "Pessoas de um grupo com quórum não podem ser trocadas ou removidas depois do envio. Cancele e envie de novo, se precisar.",
     pdf_unreadable:
       "Não conseguimos abrir este PDF. Ele pode estar protegido por senha, corrompido ou ter páginas demais.",
     template_in_use:
@@ -1198,6 +1203,9 @@ const pt = {
     add: "Adicionar participante",
     addMe: "Incluir eu",
     addWitness: "Adicionar testemunha",
+    quorumLabel: "Quem do grupo assina",
+    quorumAll: "Todos do grupo assinam",
+    quorumAny: "Basta {n} do grupo",
     addGroup: "Adicionar grupo…",
     name: "Nome completo",
     email: "E-mail",
@@ -1225,6 +1233,7 @@ const pt = {
     moveUp: "Subir",
     moveDown: "Descer",
     fieldErrors: {
+      rule: "Grupo com quórum inválido: os membros precisam ficar juntos, ter o mesmo papel e a mesma autenticação, e o número exigido não pode passar do total do grupo.",
       name: "Informe o nome completo.",
       email: "E-mail inválido.",
       email_domain:

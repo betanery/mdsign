@@ -40,48 +40,75 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
 
   const nowPending: string[] = [];
   for (const action of current.flowActions ?? []) {
-    const row = (participants as ParticipantRow[] | null)?.find(
+    const rows = ((participants as ParticipantRow[] | null) ?? []).filter(
       (p) => p.engine_flow_action_id === action.id,
     );
-    if (!row) continue;
-    // O SignDoc identifica a pessoa pelo CPF e pode usar o e-mail do cadastro que já existe
-    // nele: o MDSign mostra sempre o endereço que o motor está usando de fato.
-    const engineEmail = (action.user?.email ?? "").toLowerCase();
-    if (engineEmail && engineEmail !== row.email) {
-      const { data: userId } = await admin.rpc("user_id_by_email", { target: engineEmail });
-      await admin
+    if (!rows.length) continue;
+    const isRule = action.type === "SignRule" || action.type === "ApproverRule";
+    const approve = action.type === "Approver" || action.type === "ApproverRule";
+    const members = action.ruleUsers ?? action.signRuleUsers ?? [];
+
+    for (const row of rows) {
+      let next: string;
+      let when: string | undefined;
+      let reason: string | null = null;
+      if (isRule) {
+        // Quórum: a situação de cada pessoa vem da lista da regra; quem não precisou agir
+        // quando a regra se cumpriu fica "não precisou assinar".
+        const m = members.find((u) => (u.email ?? "").toLowerCase() === row.email);
+        const done = m?.completeActionDate ?? m?.signatureDate ?? null;
+        if (done) {
+          next = "completed";
+          when = done;
+        } else if (m?.hasRefused) {
+          next = "refused";
+          when = m.refusalDate ?? undefined;
+          reason = m.refusalReason ?? null;
+        } else if (action.status === "Completed") next = "skipped";
+        else next = participantStatus(action.status === "Refused" ? "Pending" : action.status);
+      } else {
+        // O SignDoc identifica a pessoa pelo CPF e pode usar o e-mail do cadastro que já existe
+        // nele: o MDSign mostra sempre o endereço que o motor está usando de fato.
+        const engineEmail = (action.user?.email ?? "").toLowerCase();
+        if (engineEmail && engineEmail !== row.email) {
+          const { data: userId } = await admin.rpc("user_id_by_email", { target: engineEmail });
+          await admin
+            .from("document_participants")
+            .update({ email: engineEmail, user_id: (userId as string | null) ?? null })
+            .eq("id", row.id);
+        }
+        next = participantStatus(action.status);
+        when = action.updateDate ?? undefined;
+        reason = action.refusalReason ?? null;
+      }
+      if (next === row.status) continue;
+      // Atualiza só se ainda não estiver nesse status: com o aviso do SignDoc e uma ação do
+      // MDSign chegando juntos, o evento (e o webhook do cliente) é registrado uma única vez.
+      const { data: changed } = await admin
         .from("document_participants")
-        .update({ email: engineEmail, user_id: (userId as string | null) ?? null })
-        .eq("id", row.id);
+        .update({
+          status: next,
+          completed_at: next === "completed" ? (when ?? new Date().toISOString()) : null,
+        })
+        .eq("id", row.id)
+        .neq("status", next)
+        .select("id");
+      if (!changed?.length) continue;
+      if (next === "pending") nowPending.push(row.id);
+      if (next === "completed")
+        events.push({
+          type: approve ? "participant.approved" : "participant.signed",
+          actor_name: row.name,
+          occurred_at: when,
+        });
+      if (next === "refused")
+        events.push({
+          type: "participant.refused",
+          actor_name: row.name,
+          data: { reason },
+          occurred_at: when,
+        });
     }
-    const next = participantStatus(action.status);
-    if (next === row.status) continue;
-    // Atualiza só se ainda não estiver nesse status: com o aviso do SignDoc e uma ação do
-    // MDSign chegando juntos, o evento (e o webhook do cliente) é registrado uma única vez.
-    const { data: changed } = await admin
-      .from("document_participants")
-      .update({
-        status: next,
-        completed_at: next === "completed" ? (action.updateDate ?? new Date().toISOString()) : null,
-      })
-      .eq("id", row.id)
-      .neq("status", next)
-      .select("id");
-    if (!changed?.length) continue;
-    if (next === "pending") nowPending.push(row.id);
-    if (next === "completed")
-      events.push({
-        type: action.type === "Approver" ? "participant.approved" : "participant.signed",
-        actor_name: row.name,
-        occurred_at: action.updateDate ?? undefined,
-      });
-    if (next === "refused")
-      events.push({
-        type: "participant.refused",
-        actor_name: row.name,
-        data: { reason: action.refusalReason ?? null },
-        occurred_at: action.updateDate ?? undefined,
-      });
   }
 
   const status = mapDocumentStatus(current.status);

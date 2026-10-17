@@ -5,13 +5,13 @@ import { admin } from "./auth.ts";
 import { AppError } from "./http.ts";
 import { enqueueWhatsApp } from "./notifications.ts";
 import {
-  toFlowAction,
+  toFlowActions,
   toObserver,
   type CleanParticipant,
   type ObserverInput,
 } from "./participants.ts";
 import { assertSafePdf, loadPdf, pageSizes, toEngineMarks, type RelMark } from "./pdf.ts";
-import { signdoc } from "./signdoc.ts";
+import { signdoc, type EngineFlowAction } from "./signdoc.ts";
 import { deliverDue } from "./webhooks.ts";
 
 export type CreateInput = {
@@ -109,9 +109,34 @@ async function applyDelegations(organizationId: string, list: CleanParticipant[]
   return { list: out, info };
 }
 
+async function assertQuorumAllowed(userId: string | null) {
+  const { data: policy } = await admin
+    .from("policies")
+    .select("active")
+    .eq("id", "quorum_groups")
+    .maybeSingle();
+  if (policy?.active) return;
+  if (userId) {
+    const { data: adminRow } = await admin
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (adminRow) return;
+  }
+  throw new AppError("quorum_disabled", 403);
+}
+
+/** Pessoas de uma regra no motor (o campo antigo signRuleUsers ainda pode vir preenchido). */
+export function ruleMembers(a: EngineFlowAction) {
+  return a.ruleUsers ?? a.signRuleUsers ?? [];
+}
+
 export async function createDocument(input: CreateInput): Promise<Created> {
   // PDF com conteúdo ativo (scripts, anexos, ações) é recusado antes de consumir o plano.
   await assertSafePdf(input.pdf);
+  // Quórum só com a política ligada (ou para o Super Admin, durante a homologação).
+  if (input.participants.some((p) => p.rule)) await assertQuorumAllowed(input.createdBy);
   // Limite do plano (Bloco 6): bloqueia antes de criar no motor.
   const { data: allowed, error: limitError } = await admin.rpc("consume_document", {
     org: input.organizationId,
@@ -134,13 +159,11 @@ export async function createDocument(input: CreateInput): Promise<Created> {
           contentType: "application/pdf",
         },
       ],
-      flowActions: input.participants.map((p, i) => {
+      // Membros de um grupo com quórum viram uma única regra no motor (toFlowActions).
+      flowActions: toFlowActions(input.participants, input.locale, (p, i) => {
         const marks = p.role !== "approver" ? (input.marks?.[i] ?? []) : [];
-        return {
-          ...toFlowAction(p, input.locale),
-          ...(marks.length ? { prePositionedMarks: toEngineMarks(marks, sizes) } : {}),
-        };
-      }),
+        return marks.length ? { prePositionedMarks: toEngineMarks(marks, sizes) } : {};
+      }).actions,
       ...(input.message ? { description: input.message } : {}),
       ...(input.expiresAt ? { expirationDate: input.expiresAt } : {}),
       disablePendingActionNotifications: !input.notify,
@@ -177,10 +200,20 @@ export async function createDocument(input: CreateInput): Promise<Created> {
     const rows = [];
     for (const [i, p] of input.participants.entries()) {
       const d = delegated.info[i];
-      const idx = actions.findIndex(
-        (a) => a.step === p.step && (a.user?.email ?? "").toLowerCase() === p.email,
-      );
-      const action = idx >= 0 ? actions.splice(idx, 1)[0] : undefined;
+      // Regra (quórum): todos os membros apontam para a mesma ação do motor.
+      const action = p.rule
+        ? actions.find(
+            (a) =>
+              (a.type === "SignRule" || a.type === "ApproverRule") &&
+              a.step === p.step &&
+              ruleMembers(a).some((u) => (u.email ?? "").toLowerCase() === p.email),
+          )
+        : (() => {
+            const idx = actions.findIndex(
+              (a) => a.step === p.step && (a.user?.email ?? "").toLowerCase() === p.email,
+            );
+            return idx >= 0 ? actions.splice(idx, 1)[0] : undefined;
+          })();
       const { data: userId } = await admin.rpc("user_id_by_email", { target: p.email });
       rows.push({
         document_id: doc.id,
@@ -196,6 +229,9 @@ export async function createDocument(input: CreateInput): Promise<Created> {
         auth_level: p.authLevel,
         status: action?.status === "Created" ? "created" : "pending",
         engine_flow_action_id: action?.id ?? null,
+        ...(p.rule
+          ? { rule_key: p.rule.key, rule_name: p.rule.name, rule_required: p.rule.required }
+          : {}),
         ...(d
           ? {
               delegated_from_user: d.fromUser,

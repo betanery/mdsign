@@ -19,6 +19,23 @@ export type EngineFlowAction = {
   pendingDate?: string | null;
   updateDate?: string | null;
   refusalReason?: string | null;
+  /** Regras (quórum): pessoas da regra e quantas precisam agir. */
+  ruleName?: string | null;
+  numberRequiredActions?: number | null;
+  ruleUsers?: EngineRuleUser[] | null;
+  signRuleUsers?: EngineRuleUser[] | null;
+};
+
+export type EngineRuleUser = {
+  id?: string;
+  name?: string;
+  email?: string;
+  identifier?: string | null;
+  completeActionDate?: string | null;
+  signatureDate?: string | null;
+  hasRefused?: boolean;
+  refusalDate?: string | null;
+  refusalReason?: string | null;
 };
 
 export type EngineDocument = {

@@ -326,6 +326,18 @@ function DocumentDetail() {
                         {t.participants.roles[p.role]}
                       </span>
                     )}
+                    {p.rule_name && p.rule_required && (
+                      <span className="ml-2 rounded bg-brand-soft px-1.5 py-0.5 align-middle text-[11px] font-semibold text-brand">
+                        {p.rule_name} ·{" "}
+                        {f(t.documents.quorumOf, {
+                          n: String(p.rule_required),
+                          total: String(
+                            parts.filter((x) => x.rule_name === p.rule_name && x.step === p.step)
+                              .length,
+                          ),
+                        })}
+                      </span>
+                    )}
                   </p>
                   {p.delegated_from_name && (
                     <p className="text-xs text-brand">

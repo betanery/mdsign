@@ -967,6 +967,7 @@ const en: AppMessages = {
     } as Record<string, string>,
   },
   documents: {
+    quorumOf: "any {n} of {total}",
     cedroAvailable:
       "Cedro plan: available to view and download until {date} (6 months from creation).",
     cedroExpired:
@@ -1050,6 +1051,7 @@ const en: AppMessages = {
     tabTimeline: "Timeline",
     observers: "Observers",
     participantStatus: {
+      skipped: "Not needed",
       created: "Waiting for previous step",
       pending: "Pending",
       completed: "Signed",
@@ -1123,6 +1125,9 @@ const en: AppMessages = {
     part_missing: "This document's file was not found. Upload the batch again.",
     pdf_active_content:
       "This PDF has active content (scripts, attachments or automatic actions) and cannot be used for signing. Open the file, use Print → Save as PDF, then upload it again.",
+    quorum_disabled: "Quorum groups are not enabled for this account yet.",
+    quorum_edit_unsupported:
+      "People in a quorum group cannot be replaced or removed after sending. Cancel and send again if needed.",
     pdf_unreadable:
       "We couldn't open this PDF. It may be password-protected, corrupted or have too many pages.",
     template_in_use: "This template is used by a form. Deactivate or delete the form first.",
@@ -1172,6 +1177,9 @@ const en: AppMessages = {
     add: "Add participant",
     addMe: "Include me",
     addWitness: "Add witness",
+    quorumLabel: "Who in the group signs",
+    quorumAll: "Everyone in the group signs",
+    quorumAny: "Any {n} of the group",
     addGroup: "Add a group…",
     name: "Full name",
     email: "Email",
@@ -1199,6 +1207,7 @@ const en: AppMessages = {
     moveUp: "Move up",
     moveDown: "Move down",
     fieldErrors: {
+      rule: "Invalid quorum group: members must be together, have the same role and authentication, and the required number cannot exceed the group size.",
       name: "Enter the full name.",
       email: "Invalid email.",
       email_domain:

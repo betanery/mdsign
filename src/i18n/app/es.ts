@@ -981,6 +981,7 @@ const es: AppMessages = {
     } as Record<string, string>,
   },
   documents: {
+    quorumOf: "basta {n} de {total}",
     cedroAvailable:
       "Plan Cedro: disponible para consulta y descarga hasta el {date} (6 meses desde la creación).",
     cedroExpired:
@@ -1064,6 +1065,7 @@ const es: AppMessages = {
     tabTimeline: "Línea de tiempo",
     observers: "Observadores",
     participantStatus: {
+      skipped: "No necesitó firmar",
       created: "Esperando la etapa anterior",
       pending: "Pendiente",
       completed: "Firmó",
@@ -1138,6 +1140,9 @@ const es: AppMessages = {
     part_missing: "No se encontró el archivo de este documento. Vuelve a subir el lote.",
     pdf_active_content:
       "Este PDF tiene contenido activo (scripts, adjuntos o acciones automáticas) y no se puede usar para firmar. Abra el archivo, use Imprimir → Guardar como PDF y súbalo de nuevo.",
+    quorum_disabled: "Los grupos con quórum aún no están habilitados en esta cuenta.",
+    quorum_edit_unsupported:
+      "Las personas de un grupo con quórum no se pueden cambiar ni quitar después del envío. Cancele y envíe de nuevo si es necesario.",
     pdf_unreadable:
       "No pudimos abrir este PDF. Puede estar protegido con contraseña, dañado o tener demasiadas páginas.",
     template_in_use:
@@ -1188,6 +1193,9 @@ const es: AppMessages = {
     add: "Agregar participante",
     addMe: "Incluirme",
     addWitness: "Agregar testigo",
+    quorumLabel: "Quién del grupo firma",
+    quorumAll: "Todos del grupo firman",
+    quorumAny: "Basta {n} del grupo",
     addGroup: "Agregar grupo…",
     name: "Nombre completo",
     email: "Correo electrónico",
@@ -1215,6 +1223,7 @@ const es: AppMessages = {
     moveUp: "Subir",
     moveDown: "Bajar",
     fieldErrors: {
+      rule: "Grupo con quórum inválido: los miembros deben estar juntos, tener el mismo rol y la misma autenticación, y el número exigido no puede superar el total del grupo.",
       name: "Informa el nombre completo.",
       email: "Correo inválido.",
       email_domain:

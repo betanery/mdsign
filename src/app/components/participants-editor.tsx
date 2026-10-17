@@ -30,7 +30,21 @@ export type ParticipantDraft = {
   phone: string;
   role: "signer" | "approver" | "witness";
   authLevel: AuthLevel;
+  /** Quórum: membros de um grupo em que basta N assinarem. */
+  rule?: { key: string; name: string; required: number } | null;
 };
+
+/** Mantém as regras de quórum coerentes depois de remover ou mover pessoas. */
+export function normalizeRules(list: ParticipantDraft[]): ParticipantDraft[] {
+  const count = new Map<string, number>();
+  for (const p of list) if (p.rule) count.set(p.rule.key, (count.get(p.rule.key) ?? 0) + 1);
+  return list.map((p) => {
+    if (!p.rule) return p;
+    const n = count.get(p.rule.key) ?? 0;
+    if (n < 2) return { ...p, rule: null };
+    return p.rule.required > n ? { ...p, rule: { ...p.rule, required: n } } : p;
+  });
+}
 
 type Contact = {
   name: string;
@@ -100,6 +114,7 @@ export const toPayload = (list: ParticipantDraft[]) =>
     phone: p.phone.trim() || null,
     role: p.role,
     authLevel: p.authLevel,
+    ...(p.rule ? { rule: p.rule } : {}),
   }));
 
 function useContacts() {
@@ -124,6 +139,12 @@ function FieldError({ fields, field }: { fields: string[] | undefined; field: st
   return <p className="text-xs text-destructive">{t.participants.fieldErrors[field]}</p>;
 }
 
+/** "Diretoria · 2 de 3": nome do grupo e quantas pessoas precisam assinar. */
+function ruleLabel(rule: NonNullable<ParticipantDraft["rule"]>, list: ParticipantDraft[]) {
+  const total = list.filter((p) => p.rule?.key === rule.key).length;
+  return `${rule.name} · ${rule.required}/${total}`;
+}
+
 /** Passo "Participantes": quem assina (nome, e-mail, CPF ou estrangeiro, celular). */
 export function ParticipantsEditor({
   value,
@@ -146,6 +167,8 @@ export function ParticipantsEditor({
   const listId = useId();
   const { current } = useOrg();
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  // 0 = todos do grupo assinam; N = basta N (quórum).
+  const [quorum, setQuorum] = useState(0);
   const orgId = current?.id;
   useEffect(() => {
     if (!orgId || fixed) return;
@@ -160,6 +183,7 @@ export function ParticipantsEditor({
   // Grupo inteiro de uma vez ("todos do grupo"): cada membro vira um participante.
   async function addGroup(groupId: string) {
     if (!orgId) return;
+    const groupName = groups.find((g) => g.id === groupId)?.name ?? "";
     // CPF e celular vêm do cadastro do usuário; se faltar, dos Contatos.
     const { data: members } = await supabase.rpc("group_member_identities", { grp: groupId });
     const taken = new Set(value.map((p) => p.email.trim().toLowerCase()).filter(Boolean));
@@ -187,8 +211,13 @@ export function ParticipantsEditor({
           phone: m.phone ?? c?.phone ?? "",
         };
       });
+    // Quórum: "qualquer N do grupo" — os membros formam uma regra (precisa de 2 ou mais).
+    const rule =
+      quorum > 0 && add.length >= 2
+        ? { key: crypto.randomUUID(), name: groupName, required: Math.min(quorum, add.length) }
+        : null;
     const keep = value.filter((p) => p.name || p.email);
-    onChange([...keep, ...add].slice(0, 30));
+    onChange([...keep, ...add.map((p) => ({ ...p, rule }))].slice(0, 30));
   }
 
   const update = (i: number, patch: Partial<ParticipantDraft>) =>
@@ -266,13 +295,18 @@ export function ParticipantsEditor({
                     {t.participants.roles.witness}
                   </span>
                 )}
+                {p.rule && (
+                  <span className="rounded bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+                    {ruleLabel(p.rule, value)}
+                  </span>
+                )}
               </span>
               {!fixed && value.length > 1 && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => onChange(value.filter((_, idx) => idx !== i))}
+                  onClick={() => onChange(normalizeRules(value.filter((_, idx) => idx !== i)))}
                   aria-label={`${t.common.remove} ${p.name}`}
                 >
                   <Trash2 aria-hidden />
@@ -393,6 +427,21 @@ export function ParticipantsEditor({
             ))}
           </select>
         )}
+        {groups.length > 0 && config.quorumGroups && (
+          <select
+            aria-label={t.participants.quorumLabel}
+            value={quorum}
+            onChange={(e) => setQuorum(Number(e.target.value))}
+            className={cn(selectClass, "h-10 w-auto")}
+          >
+            <option value={0}>{t.participants.quorumAll}</option>
+            {[1, 2, 3].map((n) => (
+              <option key={n} value={n}>
+                {t.participants.quorumAny.replace("{n}", String(n))}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   );
@@ -418,15 +467,28 @@ export function FlowEditor({
   fixedOrder?: boolean | undefined;
 }) {
   const { t } = useAppI18n();
-  const update = (i: number, patch: Partial<ParticipantDraft>) =>
-    onChange(value.map((p, idx) => (idx === i ? { ...p, ...patch } : p)));
-  const move = (i: number, dir: -1 | 1) => {
-    const next = [...value];
-    const [item] = next.splice(i, 1);
-    next.splice(i + dir, 0, item!);
-    onChange(next);
+  // Papel e autenticação valem para o grupo inteiro (quórum).
+  const update = (i: number, patch: Partial<ParticipantDraft>) => {
+    const key = value[i]?.rule?.key;
+    onChange(
+      value.map((p, idx) => (idx === i || (key && p.rule?.key === key) ? { ...p, ...patch } : p)),
+    );
   };
-
+  const move = (i: number, dir: -1 | 1) => moveBlock(i, dir);
+  // Membros de um grupo com quórum andam juntos (são uma etapa só).
+  const moveBlock = (i: number, dir: -1 | 1) => {
+    const blocks: ParticipantDraft[][] = [];
+    for (const p of value) {
+      const last = blocks[blocks.length - 1];
+      if (last && p.rule && last[0]!.rule?.key === p.rule.key) last.push(p);
+      else blocks.push([p]);
+    }
+    const b = blocks.findIndex((blk) => blk.includes(value[i]!));
+    const to = b + dir;
+    if (b < 0 || to < 0 || to >= blocks.length) return;
+    [blocks[b], blocks[to]] = [blocks[to]!, blocks[b]!];
+    onChange(blocks.flat());
+  };
   return (
     <div className="grid gap-4">
       <label className="flex items-start gap-3 rounded-xl border bg-white p-4">

@@ -10,9 +10,12 @@ export type ParticipantRow = {
   role: "signer" | "approver" | "witness";
   step: number;
   phone?: string | null;
-  status: "created" | "pending" | "completed" | "refused";
+  status: "created" | "pending" | "completed" | "refused" | "skipped";
   /** Age em delegação de outra pessoa (só aprovações). */
   delegated_from_name?: string | null;
+  /** Quórum: grupo e quantas pessoas do grupo precisam agir. */
+  rule_name?: string | null;
+  rule_required?: number | null;
 };
 
 export type DocumentRow = {
@@ -28,7 +31,7 @@ export type DocumentRow = {
 };
 
 export const documentSelect =
-  "id, name, kind, status, created_at, updated_at, concluded_at, created_by, document_participants (id, user_id, name, email, phone, role, step, status, delegated_from_name)";
+  "id, name, kind, status, created_at, updated_at, concluded_at, created_by, document_participants (id, user_id, name, email, phone, role, step, status, delegated_from_name, rule_name, rule_required)";
 
 /** Status em linguagem humana (PRD §26): "Aguardando assinatura de João Silva". */
 export function humanStatus(

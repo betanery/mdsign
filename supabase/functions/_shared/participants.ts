@@ -103,7 +103,11 @@ export type ParticipantInput = {
   phone?: string | null;
   role?: "signer" | "approver" | "witness";
   authLevel?: AuthLevel;
+  /** Quórum: membros com a mesma chave formam uma regra ("qualquer N do grupo"). */
+  rule?: { key?: string; name?: string; required?: number } | null;
 };
+
+export type ParticipantRule = { key: string; name: string; required: number };
 
 export type CleanParticipant = {
   name: string;
@@ -114,6 +118,7 @@ export type CleanParticipant = {
   role: "signer" | "approver" | "witness";
   authLevel: AuthLevel;
   step: number;
+  rule?: ParticipantRule | null;
 };
 
 /** Valida e normaliza. Devolve a lista com o problema de cada linha, se houver. */
@@ -154,9 +159,57 @@ export function cleanParticipants(
       phone,
       role: p.role === "approver" ? "approver" : p.role === "witness" ? "witness" : "signer",
       authLevel,
-      step: sequential ? index + 1 : 1,
+      step: 1,
+      rule:
+        p.rule && String(p.rule.key ?? "").trim()
+          ? {
+              key: String(p.rule.key).trim().slice(0, 64),
+              name:
+                String(p.rule.name ?? "")
+                  .trim()
+                  .slice(0, 160) || "Grupo",
+              required: Math.floor(Number(p.rule.required) || 0),
+            }
+          : null,
     } as CleanParticipant;
   });
+
+  // Quórum: membros da mesma regra ficam juntos, na mesma etapa, com o mesmo papel e a mesma
+  // autenticação; o número exigido vai de 1 ao total do grupo.
+  const groups = new Map<string, number[]>();
+  clean.forEach((p, i) => {
+    if (!p.rule) return;
+    const list = groups.get(p.rule.key) ?? [];
+    if (list.length && list[list.length - 1] !== i - 1) problems.push({ index: i, field: "rule" });
+    list.push(i);
+    groups.set(p.rule.key, list);
+  });
+  for (const idx of groups.values()) {
+    const first = clean[idx[0]!]!;
+    const bad =
+      idx.length < 2 ||
+      first.role === "witness" ||
+      first.rule!.required < 1 ||
+      first.rule!.required > idx.length ||
+      idx.some((i) => {
+        const p = clean[i]!;
+        return (
+          p.role !== first.role ||
+          p.authLevel !== first.authLevel ||
+          p.rule!.required !== first.rule!.required
+        );
+      });
+    if (bad) idx.forEach((index) => problems.push({ index, field: "rule" }));
+  }
+
+  // Etapas: em ordem, cada pessoa (ou cada grupo com quórum) é uma etapa; em paralelo, todos na 1.
+  let step = 0;
+  clean.forEach((p, i) => {
+    const sameRule = p.rule && i > 0 && clean[i - 1]!.rule?.key === p.rule.key;
+    if (!sameRule) step++;
+    p.step = sequential ? step : 1;
+  });
+
   if (problems.length) throw new AppError("invalid_participants", 422, problems);
   return clean;
 }
@@ -200,6 +253,55 @@ export function cleanObservers(list: unknown): ObserverInput[] {
 export const toObserver = (o: ObserverInput, locale: string) => ({
   user: { name: o.name, email: o.email, ...(o.cpf ? { identifier: o.cpf } : {}) },
   notificationLanguage: notificationLanguage[locale] ?? "Pt",
+});
+
+/**
+ * Monta os flowActions do motor. Cada participante vira uma ação, exceto os membros de uma
+ * regra de quórum, que viram uma única ação SignRule/ApproverRule (na posição do primeiro).
+ * Devolve também, para cada participante, o índice da ação correspondente.
+ */
+export function toFlowActions(
+  list: CleanParticipant[],
+  locale: string,
+  extra: (p: CleanParticipant, i: number) => Record<string, unknown> = () => ({}),
+) {
+  const actions: Record<string, unknown>[] = [];
+  const actionOf: number[] = [];
+  const ruleAction = new Map<string, number>();
+  list.forEach((p, i) => {
+    if (!p.rule) {
+      actionOf.push(actions.length);
+      actions.push({ ...toFlowAction(p, locale), ...extra(p, i) });
+      return;
+    }
+    const existing = ruleAction.get(p.rule.key);
+    if (existing !== undefined) {
+      actionOf.push(existing);
+      (actions[existing]!["ruleUsers"] as unknown[]).push(ruleUser(p));
+      return;
+    }
+    ruleAction.set(p.rule.key, actions.length);
+    actionOf.push(actions.length);
+    actions.push({
+      type: p.role === "approver" ? "ApproverRule" : "SignRule",
+      step: p.step,
+      ruleName: p.rule.name,
+      numberRequiredActions: p.rule.required,
+      allowRuleFlowToContinueIfRefused: true,
+      ruleUsers: [ruleUser(p)],
+      ...(p.role !== "approver" ? authFlags(p.authLevel) : {}),
+      notificationLanguage: notificationLanguage[locale] ?? "Pt",
+      ...extra(p, i),
+    });
+  });
+  return { actions, actionOf };
+}
+
+const ruleUser = (p: CleanParticipant) => ({
+  name: p.name,
+  email: p.email,
+  ...(p.cpf ? { identifier: p.cpf } : {}),
+  ...(p.phone ? { phone: p.phone } : {}),
 });
 
 /** Monta o flowAction do motor para um participante. */
