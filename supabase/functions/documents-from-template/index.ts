@@ -2,6 +2,7 @@
 // envio. Modelos com papéis (ex.: Colaborador, Gestor, RH) recebem uma pessoa por papel; as
 // variáveis do papel e as marcas de assinatura/rubrica seguem quem ocupa o papel.
 
+import { assertFeature } from "../_shared/features.ts";
 import { requirePermission, requireUser } from "../_shared/auth.ts";
 import { createDocument, optionalKey, requestKey } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
@@ -91,6 +92,7 @@ Deno.serve(async (req) => {
     }
     if (!p.organizationId) throw new AppError("organization_required");
     await requirePermission(caller, p.organizationId, "documents.create");
+    await assertFeature(p.organizationId, "templates");
     const values = cleanValues(p.values);
 
     // Teste de rascunho: nada é criado, enviado ou consumido do plano.

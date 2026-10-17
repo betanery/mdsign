@@ -2,6 +2,7 @@
 // do modelo e assina dentro da página. Sem login. Proteções: token aleatório, validade e máximo
 // de respostas (reserva atômica), limite por IP, honeypot e validação de todos os campos.
 
+import { assertFeature } from "../_shared/features.ts";
 import { admin } from "../_shared/auth.ts";
 import { createDocument } from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
@@ -156,6 +157,8 @@ Deno.serve(async (req) => {
       (x) => x.email === signerInput.email.trim().toLowerCase(),
     )!;
 
+    // Link público só funciona se o plano da organização inclui formulários.
+    await assertFeature(form.organization_id, "forms");
     const { data: claimed } = await admin.rpc("claim_form_slot", { target: form.id });
     if (!claimed) throw new AppError("form_closed", 410);
     try {

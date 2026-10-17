@@ -1,6 +1,7 @@
 // Envio em massa (PRD §17–§19): criar lote validado, enviar teste para mim, iniciar,
 // continuar o processamento e cancelar. A planilha é lida e mapeada no navegador.
 
+import { assertFeature } from "../_shared/features.ts";
 import { requirePermission, requireUser } from "../_shared/auth.ts";
 import {
   checkRow,
@@ -66,6 +67,7 @@ Deno.serve(async (req) => {
       const organizationId = String(body["organizationId"] ?? "");
       if (!organizationId) throw new AppError("organization_required");
       await requirePermission(caller, organizationId, "bulk.send");
+      await assertFeature(organizationId, "bulk_send");
       const template = await loadTemplate(
         caller.asUser,
         String(body["templateId"] ?? ""),
@@ -156,6 +158,7 @@ Deno.serve(async (req) => {
       const organizationId = String(body["organizationId"] ?? "");
       if (!organizationId) throw new AppError("organization_required");
       await requirePermission(caller, organizationId, "bulk.send");
+      await assertFeature(organizationId, "bulk_send");
       const count = Math.trunc(Number(body["count"]));
       if (!(count >= 1 && count <= 100)) throw new AppError("invalid_request");
       const folder =
@@ -179,6 +182,7 @@ Deno.serve(async (req) => {
       const organizationId = String(body["organizationId"] ?? "");
       if (!organizationId) throw new AppError("organization_required");
       await requirePermission(caller, organizationId, "bulk.send");
+      await assertFeature(organizationId, "bulk_send");
       const folder = String(body["folder"] ?? "");
       if (FOLDER.exec(folder)?.[1] !== organizationId) throw new AppError("invalid_request");
       const source = (body["source"] ?? {}) as Record<string, unknown>;
@@ -348,6 +352,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!job) throw new AppError("bulk_not_found", 404);
     await requirePermission(caller, job.organization_id, "bulk.send");
+    await assertFeature(job.organization_id, "bulk_send");
 
     if (action === "test") {
       // Envia a 1ª linha para quem está montando o lote, para conferir o resultado.

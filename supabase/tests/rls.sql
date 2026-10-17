@@ -670,8 +670,8 @@ do $$ begin
   assert public.consume_document((select v from t_ids where k = 'orgD2'), 'teste'), '5º grátis na 2ª organização';
   assert not public.consume_document((select v from t_ids where k = 'orgD2'), 'teste'), 'Cedro soma por pessoa: 6º bloqueado';
   assert not public.consume_document((select v from t_ids where k = 'orgD1'), 'teste'), 'também bloqueado na 1ª organização';
-  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'cedro_usage_4_of_5'), 'evento 4 de 5';
-  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'cedro_limit_reached'), 'evento limite';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'free_document_4_used'), 'evento 4 de 5';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'free_document_5_used'), 'evento limite';
   assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD2') and event = 'paid_feature_attempted'), 'tentativa além do grátis registrada';
   assert public.org_growth_stage((select v from t_ids where k = 'orgD2')) = 'pql_hot', 'quem esgotou o grátis é PQL quente';
   assert public.org_growth_stage((select v from t_ids where k = 'orgB')) <> 'opportunity', 'cadastro não vira oportunidade sozinho';
@@ -715,8 +715,8 @@ insert into public.billing_checkouts (organization_id, plan_id, environment, val
   values ((select v from t_ids where k = 'orgD1'), 'jacaranda', 'sandbox', 3990);
 update public.billing_checkouts set status = 'paid' where organization_id = (select v from t_ids where k = 'orgD1');
 do $$ begin
-  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'checkout_started'), 'checkout iniciado';
-  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'paid_plan_activated'), 'pagamento confirmado ativa o marco pago';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'upgrade_checkout_started'), 'checkout iniciado';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'orgD1') and event = 'plan_upgraded'), 'pagamento confirmado ativa o marco pago';
 end $$;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
 set local role authenticated;
@@ -1134,13 +1134,13 @@ begin
     assert (r ->> 'ok')::boolean and (r ->> 'used')::int = i, 'Eva usa o ' || i || 'º grátis';
     perform public.commit_document((r ->> 'reservation')::uuid, null, null);
   end loop;
-  assert exists (select 1 from public.growth_events where organization_id = a and event = 'cedro_usage_3_of_5'), 'evento do 3º documento';
+  assert exists (select 1 from public.growth_events where organization_id = a and event = 'free_document_3_used'), 'evento do 3º documento';
   r := public.reserve_document(a, 'teste:eva:6', 'teste');
   assert not (r ->> 'ok')::boolean and r ->> 'reason' = 'plan_limit_reached', '6º bloqueado';
   -- 2. A mesma pessoa cria a organização B: sem franquia nova.
   r := public.reserve_document(b, 'teste:eva:b1', 'teste');
   assert not (r ->> 'ok')::boolean, 'nova organização não dá nova franquia';
-  assert (select count(*) from public.growth_events where user_id = '00000000-0000-0000-0000-0000000000e1' and event = 'cedro_limit_exceeded_attempt') = 1, 'tentativa de exceder registrada uma vez só';
+  assert (select count(*) from public.growth_events where user_id = '00000000-0000-0000-0000-0000000000e1' and event = 'free_document_limit_reached') = 1, 'tentativa de exceder registrada uma vez só';
   -- 5. Reenvio da mesma requisição: não consome de novo.
   r := public.reserve_document(a, 'teste:eva:3', 'teste');
   assert (r ->> 'duplicate')::boolean and (r ->> 'status') = 'committed', 'mesma chave devolve o mesmo consumo';
@@ -1276,5 +1276,176 @@ do $$ begin
   assert (select used from public.free_allowances where user_id = '00000000-0000-0000-0000-0000000000e1') = 4, 'franquia devolvida após conferência';
   assert exists (select 1 from public.audit_log where action = 'document_charge.resolved'), 'conferência auditada';
 end $$;
+
+-- Planos & Funcionalidades: matriz oficial, navegação progressiva no banco e governança.
+reset role;
+insert into auth.users (id, email, aud, role, created_at, email_confirmed_at, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000f1', 'gil@teste.mdsign', 'authenticated', 'authenticated', now(), now(), '{"full_name":"Gil Teste"}');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000f1","role":"authenticated"}', true);
+set local role authenticated;
+insert into t_ids values ('pCedro', public.create_organization('Gil Cedro'));
+insert into t_ids values ('pJac', public.create_organization('Gil Jacaranda'));
+insert into t_ids values ('pAngico', public.create_organization('Gil Angico'));
+insert into t_ids values ('pAroeira', public.create_organization('Gil Aroeira'));
+insert into t_ids values ('pIpe', public.create_organization('Gil Ipe'));
+insert into t_ids values ('pMogno', public.create_organization('Gil Mogno'));
+reset role;
+
+-- Publicação validada pelo Super Admin (Carla, com MFA).
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  -- Rascunho incompleto não publica.
+  perform public.admin_plan_version_clone('matriz_2026_10', 'teste_incompleta', 'Teste incompleto');
+  assert false, 'só um rascunho por vez';
+exception when others then assert sqlerrm = 'invalid_request', 'clone com rascunho aberto: ' || sqlerrm;
+end $$;
+do $$ begin
+  perform public.admin_plan_version_save_plan('matriz_2026_10', 'jacaranda', '{"price_cents":3990,"documents":{"mode":"month","value":50},"users_max":1}');
+  assert false, 'versão publicada não é editada';
+exception when others then assert sqlerrm = 'version_not_draft', 'edição fora do rascunho: ' || sqlerrm;
+end $$;
+do $$ begin
+  perform public.admin_plan_version_save_plan('matriz_2026_11', 'jacaranda', '{"price_cents":39.9,"documents":{"mode":"month","value":50},"users_max":1}');
+  assert false, 'preço tem de ser em centavos inteiros';
+exception when others then assert sqlerrm = 'invalid_plan', 'preço inválido: ' || sqlerrm;
+end $$;
+do $$ begin
+  perform public.admin_plan_version_save_plan('matriz_2026_11', 'cedro', '{"price_cents":0,"documents":{"mode":"month","value":5},"users_max":1}');
+  assert false, 'Cedro só tem franquia total';
+exception when others then assert sqlerrm = 'invalid_plan', 'Cedro mensal: ' || sqlerrm;
+end $$;
+do $$ begin
+  perform public.admin_plan_version_set_feature('matriz_2026_11', 'ipe', 'api_webhooks', 'available');
+  assert false, 'API não pode ser liberada fora do Mogno';
+exception when others then assert sqlerrm = 'feature_exclusive', 'exclusividade: ' || sqlerrm;
+end $$;
+do $$ begin
+  perform public.admin_plan_version_set_feature('matriz_2026_11', 'cedro', 'documents', 'hidden');
+  assert false, 'recurso essencial não sai do plano';
+exception when others then assert sqlerrm = 'feature_core', 'essencial: ' || sqlerrm;
+end $$;
+do $$ begin
+  perform public.admin_plan_version_save_plan('matriz_2026_11', 'jacaranda', '{"price_cents":3990,"documents":{"mode":"month","value":50},"users_max":1,"description":"Produtividade individual.","benefits":["50 documentos por mês"],"sort":2,"highlight":false,"is_public":true,"cta":"Assinar"}');
+  perform public.admin_plan_version_set_feature('matriz_2026_11', 'angico', 'forms', 'available');
+  perform public.admin_publish_plan_version('matriz_2026_11');
+  assert public.admin_plans_catalog() ->> 'current' = 'matriz_2026_11', 'matriz oficial publicada';
+end $$;
+reset role;
+do $$ begin
+  assert exists (select 1 from public.audit_log where action = 'plan_version.plan_changed'), 'edição de plano auditada';
+  assert exists (select 1 from public.audit_log where action = 'plan_version.feature_changed'), 'edição de funcionalidade auditada';
+  assert exists (select 1 from public.audit_log where action = 'plan_version.published'), 'publicação auditada';
+  -- Exclusividade vale até contra edição direta no banco.
+  begin
+    update public.plan_version_features set mode = 'available' where version_id = 'matriz_2026_11' and plan_id = 'ipe' and feature_code = 'api_webhooks';
+    assert false, 'banco recusa API fora do Mogno';
+  exception when others then assert sqlerrm = 'feature_exclusive', 'guarda no banco: ' || sqlerrm;
+  end;
+end $$;
+
+-- Contratações na matriz oficial (cada uma registra as condições aceitas).
+update public.subscriptions set plan_id = 'jacaranda', billing_status = 'paid' where organization_id = (select v from t_ids where k = 'pJac');
+update public.subscriptions set plan_id = 'angico', billing_status = 'paid' where organization_id = (select v from t_ids where k = 'pAngico');
+update public.subscriptions set plan_id = 'aroeira', billing_status = 'paid' where organization_id = (select v from t_ids where k = 'pAroeira');
+update public.subscriptions set plan_id = 'ipe', billing_status = 'paid' where organization_id = (select v from t_ids where k = 'pIpe');
+update public.subscriptions set plan_id = 'mogno', billing_status = 'exempt' where organization_id = (select v from t_ids where k = 'pMogno');
+update public.subscriptions set plan_version_id = 'matriz_2026_11' where organization_id = (select v from t_ids where k = 'pCedro');
+do $$
+declare r jsonb; c uuid := (select v from t_ids where k = 'pCedro'); j uuid := (select v from t_ids where k = 'pJac');
+  an uuid := (select v from t_ids where k = 'pAngico'); ar uuid := (select v from t_ids where k = 'pAroeira');
+  ip uuid := (select v from t_ids where k = 'pIpe'); mo uuid := (select v from t_ids where k = 'pMogno');
+begin
+  assert (select count(*) from public.subscription_terms where organization_id = j and plan_id = 'jacaranda'
+    and version_id = 'matriz_2026_11' and price_cents = 3990 and (entitlements ->> 'documents_month')::int = 50) = 1,
+    'condições aceitas registradas na contratação';
+  -- Franquias e usuários.
+  assert public.entitlement_int(j, 'documents_month') = 50 and public.entitlement_int(j, 'users_max') = 1, 'Jacarandá: 50/mês e 1 usuário';
+  assert not public.entitlement_exists(an, 'documents_month') and public.entitlement_int(an, 'users_max') = 4, 'Angico: ilimitado e 4 usuários';
+  assert not public.entitlement_exists(ar, 'documents_month') and public.entitlement_int(ar, 'users_max') = 6, 'Aroeira: ilimitado e 6';
+  assert not public.entitlement_exists(ip, 'documents_month') and public.entitlement_int(ip, 'users_max') = 10, 'Ipê: ilimitado e 10';
+  assert public.entitlement_int(c, 'documents_total') = 5 and public.entitlement_int(c, 'users_max') = 1, 'Cedro: 5 e 1 usuário';
+  for i in 1..120 loop
+    r := public.reserve_document(an, 'teste:angico:' || i, 'teste');
+    assert (r ->> 'ok')::boolean, 'Angico sem bloqueio quantitativo';
+  end loop;
+  -- Funcionalidades por plano (matriz oficial).
+  assert public.feature_mode(c, 'templates') = 'preview' and public.feature_mode(c, 'forms') = 'hidden', 'Cedro: modelos em prévia, formulários ocultos';
+  assert public.feature_mode(j, 'templates') = 'available' and public.feature_mode(j, 'bulk_send') = 'preview', 'Jacarandá: modelos sim, massa em prévia';
+  assert public.feature_mode(an, 'team') = 'available' and public.feature_mode(an, 'forms') = 'available' and public.feature_mode(an, 'reports') = 'preview', 'Angico';
+  assert public.feature_mode(ar, 'bulk_send') = 'available' and public.feature_mode(ar, 'advanced_management') = 'preview', 'Aroeira';
+  assert public.feature_mode(ip, 'advanced_management') = 'available' and public.feature_mode(ip, 'api_webhooks') = 'preview', 'Ipê: gestão sim, API em prévia';
+  assert public.feature_mode(mo, 'api_webhooks') = 'available' and public.feature_mode(mo, 'templates') = 'available', 'Mogno: API e contrato';
+  assert public.feature_mode(ip, 'certificate_signature') = 'hidden', 'em desenvolvimento nunca aparece como disponível';
+  assert public.entitlement_bool(mo, 'integrations_access') and not public.entitlement_bool(ip, 'integrations_access'), 'integrações seguem a matriz';
+  assert public.feature_mode(j, 'dashboard') = 'available', 'essencial sempre disponível';
+end $$;
+
+-- Acesso direto pelo navegador a recurso fora do plano: recusado no banco.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000f1","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+declare c uuid := (select v from t_ids where k = 'pCedro'); j uuid := (select v from t_ids where k = 'pJac');
+begin
+  assert (public.org_features(c) ->> 'templates') = 'preview', 'tela recebe o modo do plano';
+  begin
+    insert into public.templates (organization_id, owner_id, scope, name, body)
+      values (c, auth.uid(), 'organization', 'Burlando', 'Texto');
+    assert false, 'Cedro não cria modelo direto';
+  exception when insufficient_privilege or check_violation or not_null_violation then null;
+  end;
+  begin
+    insert into public.org_groups (organization_id, name) values (j, 'Grupo');
+    assert false, 'Jacarandá não cria grupo (gestão avançada)';
+  exception when insufficient_privilege or not_null_violation then null;
+  end;
+  begin
+    insert into public.organization_units (organization_id, name) values (j, 'Unidade');
+    assert false, 'Jacarandá não cria unidade';
+  exception when insufficient_privilege or not_null_violation then null;
+  end;
+  begin
+    perform public.org_report(j, now() - interval '30 days', now());
+    assert false, 'Jacarandá não abre relatórios avançados';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.admin_plans_catalog();
+    assert false, 'usuário comum não lê a matriz administrativa';
+  exception when insufficient_privilege then null;
+  end;
+  perform public.growth_app_event(c, 'feature_preview_viewed', '{"feature":"templates"}');
+  perform public.growth_app_event(c, 'feature_preview_viewed', '{"feature":"templates"}');
+  perform public.growth_app_event(c, 'locked_feature_clicked', '{"feature":"templates"}');
+end $$;
+reset role;
+do $$ begin
+  assert (select count(*) from public.growth_events where organization_id = (select v from t_ids where k = 'pCedro') and event = 'feature_preview_viewed') = 1, 'prévia vista sem duplicar no dia';
+  assert exists (select 1 from public.growth_events where organization_id = (select v from t_ids where k = 'pCedro') and event = 'locked_feature_clicked'), 'clique em recurso bloqueado registrado';
+end $$;
+
+-- Contrato Mogno: condições individuais só no Mogno; custo e indicadores.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$
+declare r jsonb; mo uuid := (select v from t_ids where k = 'pMogno'); ip uuid := (select v from t_ids where k = 'pIpe');
+begin
+  begin
+    perform public.admin_mogno_contract_save(ip, '{"api_webhooks":"available"}', '{}');
+    assert false, 'contrato individual só no Mogno';
+  exception when others then assert sqlerrm = 'not_mogno', 'contrato fora do Mogno: ' || sqlerrm;
+  end;
+  perform public.admin_mogno_contract_save(mo, '{"bulk_send":"hidden"}', '{"documents_month":1000,"users_max":50}');
+  assert (public.org_features(mo) ->> 'bulk_send') = 'hidden', 'contrato Mogno restringe funcionalidade';
+  assert public.entitlement_int(mo, 'documents_month') = 1000 and public.entitlement_int(mo, 'users_max') = 50, 'contrato Mogno define limites';
+  r := public.admin_consumption(null);
+  assert (r ->> 'cost_cents_per_document')::int = 3, 'custo padrão de R$ 0,03';
+  assert exists (select 1 from jsonb_array_elements(r -> 'rows') x
+    where x ->> 'name' = 'Gil Angico' and (x ->> 'docs')::int = 120 and (x ->> 'cost_cents')::int = 360), 'custo estimado = documentos × custo';
+  r := public.admin_plans_overview();
+  assert jsonb_array_length(r -> 'by_plan') = 6, 'visão geral por plano';
+  assert jsonb_array_length(public.admin_commercial_audit()) >= 3, 'auditoria comercial';
+end $$;
+reset role;
 
 select 'todos os testes de RLS e permissões passaram' as resultado;
