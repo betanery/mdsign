@@ -21,6 +21,7 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as TitularRouteImport } from './routes/titular'
 import { Route as LangIndexRouteImport } from './routes/$lang/index'
 import { Route as LangAssinarGratisRouteImport } from './routes/$lang/assinar-gratis'
 import { Route as LangCondicoesCedroRouteImport } from './routes/$lang/condicoes-cedro'
@@ -28,6 +29,7 @@ import { Route as LangDesenvolvedoresRouteImport } from './routes/$lang/desenvol
 import { Route as LangEntrarRouteImport } from './routes/$lang/entrar'
 import { Route as LangPrivacidadeRouteImport } from './routes/$lang/privacidade'
 import { Route as LangTermosRouteImport } from './routes/$lang/termos'
+import { Route as LangTitularRouteImport } from './routes/$lang/titular'
 import { Route as AppShellRouteImport } from './routes/app/_shell'
 import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-password'
 import { Route as AppLoginRouteImport } from './routes/app/login'
@@ -118,6 +120,11 @@ const TermosRoute = TermosRouteImport.update({
   path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TitularRoute = TitularRouteImport.update({
+  id: '/titular',
+  path: '/titular',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LangIndexRoute = LangIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -151,6 +158,11 @@ const LangPrivacidadeRoute = LangPrivacidadeRouteImport.update({
 const LangTermosRoute = LangTermosRouteImport.update({
   id: '/termos',
   path: '/termos',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangTitularRoute = LangTitularRouteImport.update({
+  id: '/titular',
+  path: '/titular',
   getParentRoute: () => LangRouteRoute,
 } as any)
 const AppShellRoute = AppShellRouteImport.update({
@@ -311,12 +323,14 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
+  '/titular': typeof TitularRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/$lang/privacidade': typeof LangPrivacidadeRoute
   '/$lang/termos': typeof LangTermosRoute
+  '/$lang/titular': typeof LangTitularRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
@@ -359,12 +373,14 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
+  '/titular': typeof TitularRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/$lang/privacidade': typeof LangPrivacidadeRoute
   '/$lang/termos': typeof LangTermosRoute
+  '/$lang/titular': typeof LangTitularRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
@@ -408,12 +424,14 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
+  '/titular': typeof TitularRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
   '/$lang/entrar': typeof LangEntrarRoute
   '/$lang/privacidade': typeof LangPrivacidadeRoute
   '/$lang/termos': typeof LangTermosRoute
+  '/$lang/titular': typeof LangTitularRoute
   '/app/_shell': typeof AppShellRouteWithChildren
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
@@ -460,12 +478,14 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/termos'
+    | '/titular'
     | '/$lang/assinar-gratis'
     | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/$lang/privacidade'
     | '/$lang/termos'
+    | '/$lang/titular'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/reset-password'
@@ -508,12 +528,14 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/termos'
+    | '/titular'
     | '/$lang/assinar-gratis'
     | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/$lang/privacidade'
     | '/$lang/termos'
+    | '/$lang/titular'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/reset-password'
@@ -556,12 +578,14 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/sitemap.xml'
     | '/termos'
+    | '/titular'
     | '/$lang/assinar-gratis'
     | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
     | '/$lang/entrar'
     | '/$lang/privacidade'
     | '/$lang/termos'
+    | '/$lang/titular'
     | '/app/_shell'
     | '/app/forgot-password'
     | '/app/login'
@@ -607,6 +631,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermosRoute: typeof TermosRoute
+  TitularRoute: typeof TitularRoute
   FTokenRoute: typeof FTokenRoute
   STokenRoute: typeof STokenRoute
 }
@@ -697,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/titular': {
+      id: '/titular'
+      path: '/titular'
+      fullPath: '/titular'
+      preLoaderRoute: typeof TitularRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$lang/': {
       id: '/$lang/'
       path: '/'
@@ -744,6 +776,13 @@ declare module '@tanstack/react-router' {
       path: '/termos'
       fullPath: '/$lang/termos'
       preLoaderRoute: typeof LangTermosRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/titular': {
+      id: '/$lang/titular'
+      path: '/titular'
+      fullPath: '/$lang/titular'
+      preLoaderRoute: typeof LangTitularRouteImport
       parentRoute: typeof LangRouteRoute
     }
     '/app/_shell': {
@@ -959,6 +998,7 @@ interface LangRouteRouteChildren {
   LangEntrarRoute: typeof LangEntrarRoute
   LangPrivacidadeRoute: typeof LangPrivacidadeRoute
   LangTermosRoute: typeof LangTermosRoute
+  LangTitularRoute: typeof LangTitularRoute
   LangIndexRoute: typeof LangIndexRoute
   LangLpSlugRoute: typeof LangLpSlugRoute
 }
@@ -970,6 +1010,7 @@ const LangRouteRouteChildren: LangRouteRouteChildren = {
   LangEntrarRoute: LangEntrarRoute,
   LangPrivacidadeRoute: LangPrivacidadeRoute,
   LangTermosRoute: LangTermosRoute,
+  LangTitularRoute: LangTitularRoute,
   LangIndexRoute: LangIndexRoute,
   LangLpSlugRoute: LangLpSlugRoute,
 }
@@ -1063,6 +1104,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermosRoute: TermosRoute,
+  TitularRoute: TitularRoute,
   FTokenRoute: FTokenRoute,
   STokenRoute: STokenRoute,
 }

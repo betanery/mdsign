@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 import { callFunction } from "@/app/api";
 import { AuthProvider, useAuth } from "@/app/auth";
+import { AdminDataRequests } from "@/app/components/admin-data-requests";
 import { AdminFunnel } from "@/app/components/admin-funnel";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { errorText } from "@/app/errors";
@@ -96,6 +97,8 @@ const healthKeys = [
   "billing_events_pending",
   "bulk_stuck",
   "engine_errors_24h",
+  "data_requests_open",
+  "data_requests_overdue",
 ] as const;
 // Filas com algo pendente são normais; falhas e travamentos pedem atenção.
 const alarmKeys = new Set([
@@ -103,6 +106,7 @@ const alarmKeys = new Set([
   "webhooks_failed_24h",
   "bulk_stuck",
   "engine_errors_24h",
+  "data_requests_overdue",
 ]);
 const needsAttention = (o: Org) =>
   o.subscription_status === "past_due" ||
@@ -290,13 +294,13 @@ function AdminPage() {
       <Tabs defaultValue="overview" className="mt-6">
         <div className="overflow-x-auto">
           <TabsList>
-            {(["overview", "funnel", "orgs", "billing", "policies", "activity"] as const).map(
-              (k) => (
-                <TabsTrigger key={k} value={k}>
-                  {t.admin.tabs[k]}
-                </TabsTrigger>
-              ),
-            )}
+            {(
+              ["overview", "funnel", "orgs", "billing", "dsr", "policies", "activity"] as const
+            ).map((k) => (
+              <TabsTrigger key={k} value={k}>
+                {t.admin.tabs[k]}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
 
@@ -322,6 +326,10 @@ function AdminPage() {
 
         <TabsContent value="billing" className="mt-4">
           <BillingAdmin />
+        </TabsContent>
+
+        <TabsContent value="dsr" className="mt-4">
+          <AdminDataRequests fmtDate={fmtDate} />
         </TabsContent>
 
         <TabsContent value="policies" className="mt-4">

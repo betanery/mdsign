@@ -17,7 +17,7 @@ import { supabase } from "@/lib/supabase";
 export const Route = createFileRoute("/app/_shell/settings")({ component: SettingsPage });
 
 function SettingsPage() {
-  const { t } = useAppI18n();
+  const { t, locale } = useAppI18n();
   const { user, signOut } = useAuth();
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
@@ -136,6 +136,18 @@ function SettingsPage() {
             </Button>
           </section>
           <MfaSettings />
+          <section className="grid gap-2 rounded-2xl border bg-white p-5 shadow-sm">
+            <h2 className="font-display text-lg font-semibold">{t.mfa.dataTitle}</h2>
+            <p className="text-sm text-muted-foreground">{t.mfa.dataText}</p>
+            <a
+              href={`/${locale}/titular`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-fit text-sm font-semibold text-brand underline-offset-2 hover:underline"
+            >
+              {t.mfa.dataLink}
+            </a>
+          </section>
         </div>
       </div>
     </>

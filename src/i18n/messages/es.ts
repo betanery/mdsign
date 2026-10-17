@@ -303,6 +303,7 @@ const es: Messages = {
     terms: "Términos de uso",
     privacy: "Política de privacidad",
     cookies: "Preferencias de cookies",
+    dataRights: "Sus datos (LGPD)",
     rights: "Todos los derechos reservados.",
   },
   lead: {

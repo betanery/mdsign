@@ -278,6 +278,7 @@ const en: Messages = {
     terms: "Terms of use",
     privacy: "Privacy policy",
     cookies: "Cookie preferences",
+    dataRights: "Your data (LGPD)",
     rights: "All rights reserved.",
   },
   lead: {

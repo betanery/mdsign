@@ -296,6 +296,7 @@ const pt = {
     terms: "Termos de uso",
     privacy: "Política de privacidade",
     cookies: "Preferências de cookies",
+    dataRights: "Seus dados (LGPD)",
     rights: "Todos os direitos reservados.",
   },
   lead: {

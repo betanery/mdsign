@@ -864,4 +864,40 @@ do $$ begin
 end $$;
 reset role;
 
+-- Canal do titular: protocolo, pedido próprio visível, resto só Super Admin (com o código).
+select public.create_data_request('00000000-0000-0000-0000-00000000000b', 'Bruno Teste', 'bruno@teste.mdsign', 'user', 'access', null, 'Quero saber quais dados meus vocês tratam.', null);
+select public.create_data_request(null, 'Pessoa Externa', 'externa@teste.mdsign', 'signer', 'deletion', 'Empresa A', 'Peço a exclusão dos meus dados.', 'h1');
+do $$ begin
+  assert (select protocol ~ '^LGPD-\d{4}-\d{6}$' from public.data_requests limit 1), 'protocolo no formato LGPD-AAAA-000000';
+  assert (select identity_verified from public.data_requests where email = 'bruno@teste.mdsign'), 'logado com o e-mail da conta: identidade confirmada';
+  assert not (select identity_verified from public.data_requests where email = 'externa@teste.mdsign'), 'sem login: identidade a verificar';
+  assert (select due_at::date from public.data_requests where email = 'externa@teste.mdsign') = (now() + interval '15 days')::date, 'prazo de 15 dias';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.data_requests) = 1, 'a pessoa vê só o próprio pedido';
+end $$;
+do $$ begin
+  perform public.admin_data_requests();
+  assert false, 'só o Super Admin lista os pedidos';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.create_data_request(null, 'X', 'x@teste.mdsign', 'user', 'access', null, 'tentativa direta', null);
+  assert false, 'navegador não cria pedido direto no banco';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ declare r uuid; begin
+  r := (select id from public.admin_data_requests() where email = 'externa@teste.mdsign');
+  perform public.admin_update_data_request(r, 'answered', true, 'Identidade conferida por e-mail.', 'Dados excluídos, exceto evidências de assinatura guardadas por obrigação legal.');
+  assert (select status = 'answered' and answered_at is not null and identity_verified from public.admin_data_requests() where id = r), 'resposta registrada';
+  assert (select count(*) from public.admin_data_request_events(r)) = 5, 'histórico: criação, situação, verificação, nota e resposta';
+  assert (public.admin_health()->>'data_requests_open')::int = 1, 'saúde conta os pedidos em aberto';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

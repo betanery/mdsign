@@ -86,6 +86,9 @@ export function Footer() {
             <a href={path("/privacidade")} className="hover:text-white">
               {t.footer.privacy}
             </a>
+            <a href={path("/titular")} className="hover:text-white">
+              {t.footer.dataRights}
+            </a>
             <button type="button" onClick={openCookiePreferences} className="hover:text-white">
               {t.footer.cookies}
             </button>

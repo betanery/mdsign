@@ -486,3 +486,6 @@ verify_jwt = false
 
 [functions.account]
 verify_jwt = false
+
+[functions.data-request]
+verify_jwt = false

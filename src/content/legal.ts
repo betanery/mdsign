@@ -281,7 +281,7 @@ const privacy: LegalDoc = {
     {
       title: "14. Contato e atualizações",
       paragraphs: [
-        "Para exercer direitos relacionados a dados pessoais, entre em contato pelo e-mail contato@mundodigitaltech.com.br. Esta Política poderá ser atualizada, com indicação de versão e data e comunicação quando necessária.",
+        "Para exercer direitos relacionados a dados pessoais, use o formulário “Seus dados (LGPD)”, no rodapé do site (endereço /pt/titular), que gera um protocolo com prazo de resposta, ou escreva para contato@mundodigitaltech.com.br. Esta Política poderá ser atualizada, com indicação de versão e data e comunicação quando necessária.",
       ],
     },
   ],
