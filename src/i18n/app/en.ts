@@ -1120,6 +1120,8 @@ const en: AppMessages = {
     identity_mismatch:
       "The matched identifier was not found in this document. It was not sent: check and fix the recipient.",
     part_missing: "This document's file was not found. Upload the batch again.",
+    pdf_active_content:
+      "This PDF has active content (scripts, attachments or automatic actions) and cannot be used for signing. Open the file, use Print → Save as PDF, then upload it again.",
     pdf_unreadable:
       "We couldn't open this PDF. It may be password-protected, corrupted or have too many pages.",
     template_in_use: "This template is used by a form. Deactivate or delete the form first.",

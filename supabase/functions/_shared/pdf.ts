@@ -2,8 +2,11 @@
 // posições relativas (0–1, origem no canto superior esquerdo) para pontos do PDF e separação.
 
 import {
+  PDFArray,
   PDFCheckBox,
+  PDFDict,
   PDFDocument,
+  PDFName,
   PDFDropdown,
   PDFRadioGroup,
   PDFTextField,
@@ -47,6 +50,61 @@ export async function loadPdf(
   if (pages < 1 || pages > maxPages)
     throw new AppError("pdf_unreadable", 422, { pages, max: maxPages });
   return doc;
+}
+
+// Conteúdo ativo que um PDF para assinatura não deve ter (auditoria 16/10/2026, Fase 5):
+// scripts, ações que abrem programas ou endereços, arquivos anexados e formulários XFA.
+const ACTIVE_ACTIONS = new Set(["JavaScript", "Launch", "ImportData", "Rendition", "GoToE"]);
+
+/**
+ * Procura conteúdo ativo em todos os objetos do PDF (inclusive dentro de fluxos de objetos).
+ * Devolve os tipos encontrados; lista vazia = PDF limpo. A análise é local: o arquivo não sai
+ * do servidor.
+ */
+export function findActiveContent(doc: PDFDocument): string[] {
+  const found = new Set<string>();
+  const name = (v: unknown) => (v instanceof PDFName ? v.decodeText() : null);
+  for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+    if (!(obj instanceof PDFDict)) continue;
+    const s = name(obj.get(PDFName.of("S")));
+    if (s && ACTIVE_ACTIONS.has(s)) found.add(s === "JavaScript" ? "javascript" : "action");
+    if (obj.has(PDFName.of("JS"))) found.add("javascript");
+    const type = name(obj.get(PDFName.of("Type")));
+    const subtype = name(obj.get(PDFName.of("Subtype")));
+    if (
+      type === "EmbeddedFile" ||
+      obj.has(PDFName.of("EF")) ||
+      obj.has(PDFName.of("EmbeddedFiles"))
+    )
+      found.add("attachment");
+    if (subtype === "FileAttachment") found.add("attachment");
+    if (subtype === "RichMedia" || subtype === "Movie" || subtype === "Sound") found.add("media");
+    if (obj.has(PDFName.of("XFA"))) found.add("xfa");
+  }
+  // Dicionários diretos no catálogo (sem objeto indireto próprio).
+  const names = doc.catalog.lookupMaybe(PDFName.of("Names"), PDFDict);
+  if (names?.has(PDFName.of("JavaScript"))) found.add("javascript");
+  if (names?.has(PDFName.of("EmbeddedFiles"))) found.add("attachment");
+  const open = doc.catalog.get(PDFName.of("OpenAction"));
+  if (open instanceof PDFDict) {
+    const s = name(open.get(PDFName.of("S")));
+    if (s && ACTIVE_ACTIONS.has(s)) found.add(s === "JavaScript" ? "javascript" : "action");
+  } else if (open instanceof PDFArray) {
+    // Destino de abertura (página/zoom): permitido.
+  }
+  return [...found].sort();
+}
+
+/** Bloqueia PDF com conteúdo ativo, com orientação para salvar de novo. */
+export async function assertSafePdf(bytes: Uint8Array) {
+  let doc: PDFDocument;
+  try {
+    doc = await PDFDocument.load(bytes, { updateMetadata: false, ignoreEncryption: false });
+  } catch {
+    throw new AppError("pdf_unreadable", 422);
+  }
+  const kinds = findActiveContent(doc);
+  if (kinds.length) throw new AppError("pdf_active_content", 422, { kinds });
 }
 
 /** Área visível da página (CropBox), a mesma que o navegador desenha. */

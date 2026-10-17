@@ -1135,6 +1135,8 @@ const es: AppMessages = {
     identity_mismatch:
       "El identificador asociado no se encontró en este documento. No se envió: revisa y corrige el destinatario.",
     part_missing: "No se encontró el archivo de este documento. Vuelve a subir el lote.",
+    pdf_active_content:
+      "Este PDF tiene contenido activo (scripts, adjuntos o acciones automáticas) y no se puede usar para firmar. Abra el archivo, use Imprimir → Guardar como PDF y súbalo de nuevo.",
     pdf_unreadable:
       "No pudimos abrir este PDF. Puede estar protegido con contraseña, dañado o tener demasiadas páginas.",
     template_in_use:

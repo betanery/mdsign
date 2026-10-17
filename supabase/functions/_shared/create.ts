@@ -10,7 +10,7 @@ import {
   type CleanParticipant,
   type ObserverInput,
 } from "./participants.ts";
-import { loadPdf, pageSizes, toEngineMarks, type RelMark } from "./pdf.ts";
+import { assertSafePdf, loadPdf, pageSizes, toEngineMarks, type RelMark } from "./pdf.ts";
 import { signdoc } from "./signdoc.ts";
 import { deliverDue } from "./webhooks.ts";
 
@@ -110,6 +110,8 @@ async function applyDelegations(organizationId: string, list: CleanParticipant[]
 }
 
 export async function createDocument(input: CreateInput): Promise<Created> {
+  // PDF com conteúdo ativo (scripts, anexos, ações) é recusado antes de consumir o plano.
+  await assertSafePdf(input.pdf);
   // Limite do plano (Bloco 6): bloqueia antes de criar no motor.
   const { data: allowed, error: limitError } = await admin.rpc("consume_document", {
     org: input.organizationId,

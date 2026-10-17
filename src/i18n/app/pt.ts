@@ -1145,6 +1145,8 @@ const pt = {
     identity_mismatch:
       "O identificador associado não foi encontrado neste documento. Ele não foi enviado: confira e corrija o destinatário.",
     part_missing: "O arquivo deste documento não foi encontrado. Refaça o envio do lote.",
+    pdf_active_content:
+      "Este PDF tem conteúdo ativo (scripts, anexos ou ações automáticas) e não pode ser usado para assinatura. Abra o arquivo e use Imprimir → Salvar como PDF, depois envie de novo.",
     pdf_unreadable:
       "Não conseguimos abrir este PDF. Ele pode estar protegido por senha, corrompido ou ter páginas demais.",
     template_in_use:

@@ -16,6 +16,7 @@ import {
   witnessTitle,
 } from "../_shared/participants.ts";
 import {
+  assertSafePdf,
   cleanBox,
   loadPdf,
   pageSizes,
@@ -80,6 +81,7 @@ Deno.serve(async (req) => {
       const form = await req.formData();
       const doc = await loadEditable(caller, String(form.get("documentId") ?? ""));
       const { bytes, name } = await readPdf(form.get("file"));
+      await assertSafePdf(bytes);
       const sizes = pageSizes(await loadPdf(bytes));
       // Posições por participante (id do MDSign) na nova versão.
       let rawMarks: Record<string, Partial<RelMark>[]> = {};
