@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/config/site";
 import type { PlanId } from "@/content/landing";
-import { track, type AnalyticsEvent } from "@/lib/analytics";
+import { track, trackGrowth, type AnalyticsEvent } from "@/lib/analytics";
 import { useI18n } from "@/i18n";
 import { useLeadDialog } from "./lead-dialog";
 
@@ -96,6 +96,9 @@ export const Cta = forwardRef<HTMLAnchorElement & HTMLButtonElement, CtaProps>(f
 
   const onClick = () => {
     track(events[kind], { source, plan, lang: locale });
+    // Nas landings de aquisição, o "Comece grátis" do cabeçalho também conta no funil.
+    if (kind === "free" && /\/(assinar-gratis|lp\/)/.test(window.location.pathname))
+      trackGrowth("acquisition_cta_clicked", { cta: source, lang: locale });
     if (!href) openLead({ plan: plan ?? (kind === "free" ? "cedro" : undefined), source });
   };
 

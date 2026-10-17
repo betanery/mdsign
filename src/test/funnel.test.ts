@@ -72,3 +72,55 @@ describe("Cedro: disponibilidade de 6 meses", () => {
     expect([end.getMonth(), end.getDate()]).toEqual([1, 28]); // 28/02
   });
 });
+
+describe("origem da campanha: primeira e última, com consentimento", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+  const visit = (url: string, referrer = "") => {
+    Object.defineProperty(document, "referrer", { value: referrer, configurable: true });
+    window.history.replaceState(null, "", url);
+    captureUtm();
+  };
+
+  it("primeira origem fica; última muda só com UTM ou referência externa", async () => {
+    const { getLastTouch, getAcquisitionPayload } = await import("@/lib/analytics");
+    visit("/pt/assinar-gratis?utm_source=instagram&utm_medium=paid_social&utm_campaign=outubro");
+    visit("/pt/precos");
+    expect(getLastTouch()?.utm_campaign).toBe("outubro");
+    visit("/pt/lp/assinar-pdf-gratis?utm_source=google&utm_medium=cpc&utm_campaign=busca");
+    expect(getAttribution().utm_campaign).toBe("outubro");
+    expect(getLastTouch()?.utm_campaign).toBe("busca");
+    const acq = getAcquisitionPayload();
+    expect(acq.utm_source).toBe("instagram");
+    expect(acq.last?.utm_source).toBe("google");
+    expect(acq.session_id).toMatch(/^[0-9a-f]{24}$/);
+  });
+
+  it("sem consentimento nada vai para o navegador; com consentimento guarda; retirar apaga", async () => {
+    const { saveConsent } = await import("@/lib/consent");
+    const { SAVED_KEY } = await import("@/lib/attribution-store");
+    visit("/pt/assinar-gratis?utm_source=linkedin&utm_campaign=b2b");
+    expect(localStorage.getItem(SAVED_KEY)).toBeNull();
+    saveConsent({ analytics: true, marketing: false });
+    expect(JSON.parse(localStorage.getItem(SAVED_KEY)!).first.utm_campaign).toBe("b2b");
+    // Nova aba (sessão vazia): a origem guardada volta.
+    sessionStorage.clear();
+    visit("/pt");
+    expect(getAttribution().utm_campaign).toBe("b2b");
+    saveConsent({ analytics: false, marketing: false });
+    expect(localStorage.getItem(SAVED_KEY)).toBeNull();
+  });
+
+  it("ambiente de teste e ?interno=1 marcam tráfego interno", async () => {
+    const { isInternalTraffic, getAcquisitionPayload } = await import("@/lib/analytics");
+    // jsdom roda em localhost: ambiente de teste.
+    expect(isInternalTraffic()).toBe(true);
+    expect(getAcquisitionPayload().internal).toBe("1");
+    visit("/pt?interno=1");
+    expect(localStorage.getItem("mdsign_internal")).toBe("1");
+    visit("/pt?interno=0");
+    expect(localStorage.getItem("mdsign_internal")).toBeNull();
+  });
+});

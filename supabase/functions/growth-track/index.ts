@@ -16,6 +16,8 @@ const KEYS = [
   "page",
   "cta",
   "lang",
+  // "1" = equipe/homologação (ambiente de teste ou navegador marcado); fica fora das métricas.
+  "internal",
 ] as const;
 const PER_IP_PER_MINUTE = 30;
 const hits = new Map<string, { n: number; at: number }>();

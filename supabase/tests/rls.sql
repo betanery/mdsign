@@ -957,4 +957,152 @@ do $$ begin
 end $$;
 reset role;
 
+-- Growth & Aquisição: primeira e última origem no cadastro; módulo só para Super Admin com MFA.
+reset role;
+insert into auth.users (id, email, aud, role, created_at, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000d1', 'gabi@teste.mdsign', 'authenticated', 'authenticated', now(),
+   '{"full_name":"Gabi Teste","acq":{"utm_source":"instagram","utm_medium":"paid_social","utm_campaign":"lancamento_outubro","landing_page":"/pt/assinar-gratis","first_seen_at":"2026-10-01T10:00:00Z","session_id":"sessaoteste01","last":{"utm_source":"google","utm_medium":"cpc","utm_campaign":"busca_marca","landing_page":"/pt/lp/assinar-pdf-gratis","seen_at":"2026-10-05T10:00:00Z"}}}');
+do $$ begin
+  assert (select utm_campaign from public.user_acquisition where user_id = '00000000-0000-0000-0000-0000000000d1') = 'lancamento_outubro', 'primeira origem preservada';
+  assert (select last_utm_campaign from public.user_acquisition where user_id = '00000000-0000-0000-0000-0000000000d1') = 'busca_marca', 'última origem gravada';
+  assert (select session_id from public.user_acquisition where user_id = '00000000-0000-0000-0000-0000000000d1') = 'sessaoteste01', 'sessão do cadastro gravada';
+  assert not public.growth_internal_user('00000000-0000-0000-0000-0000000000d1'), 'cadastro comum não é interno';
+  assert public.growth_internal_user('00000000-0000-0000-0000-00000000000c'), 'Super Admin é tráfego interno';
+  assert not exists (select 1 from public.growth_people(false) where user_id = '00000000-0000-0000-0000-00000000000c'), 'interno fica fora por padrão';
+  assert (select first_campaign from public.growth_people(false) where user_id = '00000000-0000-0000-0000-0000000000d1') = 'lancamento_outubro', 'first-touch na base comercial';
+  assert (select last_campaign from public.growth_people(false) where user_id = '00000000-0000-0000-0000-0000000000d1') = 'busca_marca', 'last-touch na base comercial';
+end $$;
+insert into auth.users (id, email, aud, role, created_at, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000d2', 'hugo@teste.mdsign', 'authenticated', 'authenticated', now(),
+   '{"full_name":"Hugo Teste","acq":{"utm_source":"google","utm_campaign":"antiga","first_seen_at":"2026-01-01T10:00:00Z","last":{"utm_source":"google","utm_campaign":"antiga","seen_at":"2026-01-02T10:00:00Z"}}}');
+do $$ begin
+  assert (select last_source from public.growth_people(false) where user_id = '00000000-0000-0000-0000-0000000000d2') = 'nao_identificada', 'última origem fora da janela não conta';
+  assert (select first_campaign from public.growth_people(false) where user_id = '00000000-0000-0000-0000-0000000000d2') = 'antiga', 'primeira origem continua registrada';
+  assert public.growth_clean_path('/app/invite/79c340ca-4c01-413b-b0eb-06577e31769d') = '/app/invite/:codigo', 'código de convite mascarado';
+  assert public.growth_clean_path('/pt/assinar-gratis') = '/pt/assinar-gratis', 'landing normal intacta';
+end $$;
+
+-- Usuário comum (Bruno) não acessa nada do módulo.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.admin_growth_overview('{}');
+  assert false, 'usuário comum não vê a visão geral de Growth';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform public.admin_growth_leads('{}');
+  assert false, 'usuário comum não vê leads';
+exception when insufficient_privilege then null;
+end $$;
+do $$ begin
+  perform 1 from public.growth_campaigns;
+  assert false, 'campanhas não são lidas direto';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+-- Super Admin sem MFA (aal1) também não.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal1"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.admin_growth_campaigns(null, null);
+  assert false, 'Super Admin sem MFA não acessa Growth';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+-- Super Admin com MFA: campanha, identificador travado, links validados, relatórios.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$
+declare cid uuid; lid uuid; r jsonb;
+begin
+  cid := public.admin_growth_campaign_save('{"slug":"lancamento_outubro","name":"Lançamento outubro","channel":"instagram","medium":"paid_social","landing_path":"/pt/assinar-gratis","status":"active","budget_cents":"150000"}');
+  insert into t_ids values ('campanha', cid);
+  begin
+    perform public.admin_growth_campaign_save('{"slug":"lancamento_outubro","name":"Outra"}');
+    assert false, 'identificador repetido é recusado';
+  exception when others then assert sqlerrm = 'campaign_slug_taken', 'erro de identificador repetido: ' || sqlerrm;
+  end;
+  begin
+    perform public.admin_growth_campaign_save('{"slug":"Com Espaço","name":"Inválida"}');
+    assert false, 'identificador inválido é recusado';
+  exception when others then assert sqlerrm = 'invalid_request', 'erro de identificador inválido: ' || sqlerrm;
+  end;
+  perform public.admin_growth_campaign_save(jsonb_build_object('id', cid, 'name', 'Lançamento MDSign Outubro', 'status', 'paused', 'slug', 'tentou_trocar'));
+  r := public.admin_growth_campaigns('Lançamento MDSign', null);
+  assert r -> 0 ->> 'slug' = 'lancamento_outubro', 'editar não troca o identificador';
+  assert r -> 0 ->> 'name' = 'Lançamento MDSign Outubro', 'nome editado';
+  begin
+    update public.growth_campaigns set slug = 'outro' where id = cid;
+    assert false, 'update direto bloqueado';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.admin_growth_link_save(jsonb_build_object('campaign_id', cid, 'landing_path', '/pt/assinar-gratis', 'utm_source', 'Instagram Ads', 'utm_medium', 'paid_social', 'utm_campaign', 'lancamento_outubro'));
+    assert false, 'UTM com espaço é recusada';
+  exception when others then assert sqlerrm = 'invalid_request', 'erro de UTM inválida: ' || sqlerrm;
+  end;
+  begin
+    perform public.admin_growth_link_save(jsonb_build_object('campaign_id', cid, 'landing_path', 'https://outro.site/', 'utm_source', 'instagram', 'utm_medium', 'paid_social', 'utm_campaign', 'lancamento_outubro'));
+    assert false, 'destino fora do site é recusado';
+  exception when others then assert sqlerrm = 'invalid_request', 'erro de destino: ' || sqlerrm;
+  end;
+  lid := public.admin_growth_link_save(jsonb_build_object('campaign_id', cid, 'label', 'Stories', 'landing_path', '/pt/assinar-gratis', 'utm_source', 'instagram', 'utm_medium', 'paid_social', 'utm_campaign', 'lancamento_outubro', 'utm_content', 'stories_v1'));
+  assert jsonb_array_length(public.admin_growth_links(cid)) = 1, 'link listado na campanha';
+  perform public.admin_growth_campaign_status(cid, 'ended');
+  assert exists (select 1 from jsonb_array_elements(public.admin_growth_campaigns(null, 'ended')) e
+    where e ->> 'slug' = 'lancamento_outubro'), 'campanha encerrada continua listada';
+  r := public.admin_growth_campaigns('lancamento_outubro', null);
+  assert (r -> 0 ->> 'signups_first')::int = 1 and (r -> 0 ->> 'signups_last')::int = 0, 'campanha conta o cadastro pela primeira origem';
+  r := public.admin_growth_overview('{"from":"2026-01-01T00:00:00Z","to":"2026-12-31T00:00:00Z"}');
+  assert (r -> 'kpis') ? 'visits' and jsonb_typeof(r -> 'daily') = 'array', 'visão geral responde';
+  r := public.admin_growth_overview('{"from":"2026-01-01T00:00:00Z","to":"2027-01-01T00:00:00Z","campaign":"lancamento_outubro"}');
+  assert (r -> 'kpis' ->> 'signups')::int >= 0, 'filtro por campanha';
+  begin
+    perform public.admin_growth_overview('{"from":"2026-10-10T00:00:00Z","to":"2026-10-01T00:00:00Z"}');
+    assert false, 'período invertido é recusado';
+  exception when others then assert sqlerrm = 'invalid_request', 'erro de período: ' || sqlerrm;
+  end;
+  r := public.admin_growth_leads('{"from":"2026-01-01T00:00:00Z","to":"2027-01-01T00:00:00Z","q":"gabi","size":500}');
+  assert (r ->> 'total')::int = 1 and (r ->> 'size')::int = 100, 'leads paginados com limite de 100';
+  assert r -> 'rows' -> 0 ->> 'campaign' = 'lancamento_outubro', 'lead com a campanha de origem';
+  r := public.admin_growth_funnel_v2('{"from":"2026-01-01T00:00:00Z","to":"2027-01-01T00:00:00Z"}');
+  assert (r -> 'people' ->> 'signup_completed')::int >= 1, 'funil por pessoas';
+  r := public.admin_growth_opportunities('{}');
+  assert r ? 'rows', 'oportunidades respondem';
+  r := public.admin_growth_timeline('00000000-0000-0000-0000-0000000000d1', null);
+  assert r -> 'acquisition' ->> 'last_utm_campaign' = 'busca_marca', 'histórico mostra a origem';
+  begin
+    perform public.admin_growth_save_settings('{"channels":["Instagram!"],"mediums":[],"internal_email_domains":[],"exclude_org_ids":[],"attribution_days":30,"goals":{}}');
+    assert false, 'canal inválido é recusado';
+  exception when others then assert sqlerrm = 'invalid_settings', 'erro de configuração: ' || sqlerrm;
+  end;
+  perform public.admin_growth_save_settings('{"channels":["instagram","google"],"mediums":["cpc"],"internal_email_domains":["mundodigitaltech.com.br"],"exclude_org_ids":[],"attribution_days":20,"goals":{"visit_to_signup":7},"naming_hint":"x","preco":999}');
+  assert (public.admin_growth_settings() -> 'settings' ->> 'attribution_days')::int = 20, 'configuração salva';
+  assert not (public.admin_growth_settings() -> 'settings') ? 'preco', 'chave fora da lista é descartada';
+  perform public.admin_growth_log_export('leads', 10);
+end $$;
+reset role;
+do $$ begin
+  assert (select slug from public.growth_campaigns where id = (select v from t_ids where k = 'campanha')) = 'lancamento_outubro', 'identificador intacto no banco';
+  begin
+    update public.growth_campaigns set slug = 'outro' where id = (select v from t_ids where k = 'campanha');
+    assert false, 'identificador não muda nem pelo servidor';
+  exception when others then assert sqlerrm = 'campaign_slug_locked', 'trava do identificador: ' || sqlerrm;
+  end;
+  assert exists (select 1 from public.audit_log where action = 'growth.campaign.created'), 'criação de campanha auditada';
+  assert exists (select 1 from public.audit_log where action = 'growth.campaign.updated'), 'edição de campanha auditada';
+  assert exists (select 1 from public.audit_log where action = 'growth.settings.changed'), 'configuração auditada';
+  assert exists (select 1 from public.audit_log where action = 'growth.export'), 'exportação auditada';
+end $$;
+set local role anon;
+do $$ begin
+  perform public.admin_growth_overview('{}');
+  assert false, 'anônimo não executa funções de Growth';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

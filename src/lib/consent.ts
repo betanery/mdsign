@@ -3,6 +3,7 @@
 // do Google começa negado (script no <head>, em src/routes/__root.tsx).
 
 import { siteConfig } from "@/config/site";
+import { syncSavedAttribution } from "@/lib/attribution-store";
 
 export const CONSENT_KEY = "mdsign_consent";
 export const CONSENT_VERSION = 1;
@@ -54,6 +55,8 @@ export function saveConsent(choice: { analytics: boolean; marketing: boolean }) 
     ad_personalization: g(c.marketing),
   });
   if (c.analytics || c.marketing) window.__mdsignLoadGtm?.();
+  // Origem da campanha: guardada por 30 dias só com consentimento de análise; sem ele, apagada.
+  syncSavedAttribution(c.analytics);
   // Comprovante no servidor (anônimo). Falha de rede não impede a escolha valer no navegador.
   const endpoint = siteConfig.leadEndpoint.replace(/lead-submit$/, "growth-track");
   void fetch(endpoint, {

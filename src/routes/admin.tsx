@@ -19,7 +19,8 @@ import { toast } from "sonner";
 import { callFunction } from "@/app/api";
 import { AuthProvider, useAuth } from "@/app/auth";
 import { AdminDataRequests } from "@/app/components/admin-data-requests";
-import { AdminFunnel } from "@/app/components/admin-funnel";
+import { GrowthModule } from "@/app/growth/module";
+import { useGrowthTexts } from "@/app/growth/texts";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { errorText } from "@/app/errors";
 import { AppI18nProvider, useAppI18n } from "@/app/i18n";
@@ -128,6 +129,7 @@ function AdminPage() {
   const [activity, setActivity] = useState<Activity[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [confirm, confirmDialog] = useConfirm();
+  const growthTexts = useGrowthTexts();
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -140,7 +142,8 @@ function AdminPage() {
     ]);
     setOrgs((o.data as Org[] | null) ?? []);
     setPlans((p.data as Plan[] | null) ?? []);
-    const list = (pol.data as Policy[] | null) ?? [];
+    // growth_settings tem listas e é editada em Growth & Aquisição → Configurações.
+    const list = ((pol.data as Policy[] | null) ?? []).filter((x) => x.id !== "growth_settings");
     setPolicies(list);
     setSaved(Object.fromEntries(list.map((x) => [x.id, JSON.stringify([x.active, x.config])])));
     setHealth((h.data as Health | null) ?? null);
@@ -295,10 +298,10 @@ function AdminPage() {
         <div className="overflow-x-auto">
           <TabsList>
             {(
-              ["overview", "funnel", "orgs", "billing", "dsr", "policies", "activity"] as const
+              ["overview", "growth", "orgs", "billing", "dsr", "policies", "activity"] as const
             ).map((k) => (
               <TabsTrigger key={k} value={k}>
-                {t.admin.tabs[k]}
+                {k === "growth" ? growthTexts.tab : t.admin.tabs[k]}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -310,8 +313,8 @@ function AdminPage() {
           <EngineErrors fmtDate={fmtDate} />
         </TabsContent>
 
-        <TabsContent value="funnel" className="mt-4">
-          <AdminFunnel fmtDate={fmtDate} />
+        <TabsContent value="growth" className="mt-4">
+          <GrowthModule />
         </TabsContent>
 
         <TabsContent value="orgs" className="mt-4">

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
-import { getAttribution, track, trackGrowth } from "@/lib/analytics";
+import { getAcquisitionPayload, track, trackGrowth } from "@/lib/analytics";
 
 // Versão do texto dos termos aceita no cadastro (fica gravada com o aceite).
 const TERMS_VERSION = "2026-10";
@@ -63,7 +63,7 @@ function Signup() {
           locale,
           terms_version: TERMS_VERSION,
           marketing_opt_in: form.get("marketing") === "on",
-          acq: getAttribution(),
+          acq: getAcquisitionPayload(),
         },
         emailRedirectTo: `${window.location.origin}${redirect ?? "/app"}`,
       },
