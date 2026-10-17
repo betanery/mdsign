@@ -2,7 +2,7 @@
 // responder rápido, deduplicar, e tratar o payload como aviso — o estado vem da API (syncDocument).
 
 import { admin } from "../_shared/auth.ts";
-import { syncDocument } from "../_shared/documents.ts";
+import { processEngineEvent } from "../_shared/engine-events.ts";
 
 const TOKEN = Deno.env.get("SIGNDOC_WEBHOOK_TOKEN") ?? "";
 
@@ -48,28 +48,11 @@ Deno.serve(async (req) => {
   if (error?.code === "23505") return new Response(null, { status: 200 });
   if (error || !row) return new Response(null, { status: 500 });
 
-  try {
-    if (type !== "DocumentsDeleted" && type !== "DocumentDeleted") {
-      for (const engineId of ids) {
-        const { data: doc } = await admin
-          .from("documents")
-          .select("id, organization_id, status, engine_document_id")
-          .eq("engine_document_id", engineId)
-          .maybeSingle();
-        // Documento de fora do MDSign (ex.: criado no painel): só registra.
-        if (doc) await syncDocument(doc);
-      }
-    }
-    await admin
-      .from("engine_webhook_events")
-      .update({ processed_at: new Date().toISOString() })
-      .eq("id", row.id);
-  } catch (e) {
-    console.error("webhook", type, e);
-    await admin
-      .from("engine_webhook_events")
-      .update({ error: String(e).slice(0, 500) })
-      .eq("id", row.id);
-  }
+  await processEngineEvent({
+    id: row.id,
+    type,
+    payload: payload as Record<string, unknown>,
+    attempts: 0,
+  });
   return new Response(null, { status: 200 });
 });

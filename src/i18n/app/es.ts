@@ -507,6 +507,22 @@ const es: AppMessages = {
     account: "Cuenta",
   },
   admin: {
+    alerts: {
+      title: "Alertas de la plataforma",
+      open: "{n} alerta(s) abierta(s)",
+      noneOpen: "Ninguna alerta abierta (resueltas en la última semana abajo)",
+      since: "desde {date}",
+      resolved: "resuelta el {date}",
+      menu: "alertas",
+      kinds: {
+        cron_failed: "Rutina programada con falla en la última hora",
+        engine_errors: "Muchos errores del motor de firma en la última hora",
+        notifications_stuck: "Cola de notificaciones detenida",
+        engine_events_failed: "Webhooks del motor sin procesar tras 5 intentos",
+        data_requests_overdue: "Pedidos de titulares vencidos",
+        bulk_stuck: "Envío masivo detenido hace más de 1 hora",
+      } as Record<string, string>,
+    },
     dsr: {
       title: "Pedidos de titulares (LGPD)",
       hint: "Pedidos hechos en /titular. El plazo estándar es de 15 días. Los pedidos sobre documentos de una empresa cliente pueden remitirse a ella.",
@@ -678,6 +694,7 @@ const es: AppMessages = {
       billing_grace: "Tolerancia de pago",
       whatsapp_rate: "Ritmo de WhatsApp",
       growth_stages: "Clasificación del embudo",
+      platform_alerts: "Alertas de la plataforma",
     } as Record<string, string>,
     configLabels: {
       percent: "Porcentaje (%)",
@@ -687,6 +704,8 @@ const es: AppMessages = {
       pql_docs: "Docs concluidos para PQL",
       hot_docs: "Gratis usados para PQL caliente",
       opportunity_volume: "Volumen mensual p/ oportunidad",
+      engine_errors_per_hour: "Errores del motor por hora (alerta)",
+      queue_stuck_minutes: "Minutos de cola detenida (alerta)",
     } as Record<string, string>,
     policyUnsaved: "Cambios sin guardar",
     activityEmpty: "Ninguna acción administrativa registrada todavía.",

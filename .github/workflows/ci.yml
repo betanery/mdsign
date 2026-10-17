@@ -1,0 +1,33 @@
+# Verificação automática a cada envio (auditoria 16/10/2026, Fase 3 item 12).
+# Não publica nada: a publicação continua sendo pelo Lovable.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+      - name: Instalar dependências (lockfile congelado)
+        run: bun install --frozen-lockfile
+      - name: Tipos
+        run: bunx tsc --noEmit
+      - name: Lint
+        run: bunx eslint src --quiet
+      - name: Testes
+        run: bunx vitest run
+      - name: Build
+        run: bunx vite build
+      - name: Dependências vulneráveis (falha em alta ou crítica)
+        run: bun audit --audit-level=high

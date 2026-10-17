@@ -305,6 +305,7 @@ function AdminPage() {
         </div>
 
         <TabsContent value="overview" className="mt-4">
+          <PlatformAlerts fmtDate={fmtDate} />
           <Overview orgs={orgs} health={health} planName={planName} fmtDate={fmtDate} />
           <EngineErrors fmtDate={fmtDate} />
         </TabsContent>
@@ -1018,6 +1019,60 @@ function EngineErrors({ fmtDate }: { fmtDate: (v: string | null, withTime?: bool
           </table>
         </div>
       )}
+    </section>
+  );
+}
+
+type PlatformAlert = {
+  id: number;
+  kind: string;
+  detail: { count?: number };
+  first_seen: string;
+  last_seen: string;
+  resolved_at: string | null;
+};
+
+/** Alertas da plataforma (abertos e resolvidos na última semana), calculados de hora em hora. */
+function PlatformAlerts({
+  fmtDate,
+}: {
+  fmtDate: (v: string | null, withTime?: boolean) => string;
+}) {
+  const { t, f } = useAppI18n();
+  const [rows, setRows] = useState<PlatformAlert[]>([]);
+  useEffect(() => {
+    void supabase
+      .rpc("admin_alerts")
+      .then(({ data }) => setRows((data as PlatformAlert[] | null) ?? []));
+  }, []);
+  const open = rows.filter((r) => !r.resolved_at);
+  if (!rows.length) return null;
+  return (
+    <section
+      aria-label={t.admin.alerts.title}
+      className={cn(
+        "mb-6 grid gap-2 rounded-2xl border p-4",
+        open.length ? "border-destructive/40 bg-destructive/5" : "bg-white",
+      )}
+    >
+      <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+        <AlertTriangle
+          className={cn("size-5", open.length ? "text-destructive" : "text-muted-foreground")}
+          aria-hidden
+        />
+        {open.length ? f(t.admin.alerts.open, { n: String(open.length) }) : t.admin.alerts.noneOpen}
+      </h2>
+      <ul className="grid gap-1 text-sm">
+        {rows.map((r) => (
+          <li key={r.id} className={cn(r.resolved_at && "text-muted-foreground")}>
+            <b>{t.admin.alerts.kinds[r.kind] ?? r.kind}</b>
+            {r.detail.count ? ` (${r.detail.count})` : ""} ·{" "}
+            {r.resolved_at
+              ? f(t.admin.alerts.resolved, { date: fmtDate(r.resolved_at, true) })
+              : f(t.admin.alerts.since, { date: fmtDate(r.first_seen, true) })}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

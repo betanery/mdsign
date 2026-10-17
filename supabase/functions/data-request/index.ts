@@ -40,7 +40,10 @@ Deno.serve(async (req) => {
     // Campo isca: robô preenche; responde como sucesso sem gravar.
     if (String(body["website"] ?? "")) return json({ protocol: "LGPD-0000-000000" }, 200, origin);
 
-    const text = (k: string, max: number) => String(body[k] ?? "").trim().slice(0, max);
+    const text = (k: string, max: number) =>
+      String(body[k] ?? "")
+        .trim()
+        .slice(0, max);
     const name = text("name", 160);
     const email = text("email", 200).toLowerCase();
     const relation = text("relation", 20);

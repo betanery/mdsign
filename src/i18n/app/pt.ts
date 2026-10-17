@@ -518,6 +518,22 @@ const pt = {
     account: "Conta",
   },
   admin: {
+    alerts: {
+      title: "Alertas da plataforma",
+      open: "{n} alerta(s) aberto(s)",
+      noneOpen: "Nenhum alerta aberto (resolvidos na última semana abaixo)",
+      since: "desde {date}",
+      resolved: "resolvido em {date}",
+      menu: "alertas",
+      kinds: {
+        cron_failed: "Rotina agendada com falha na última hora",
+        engine_errors: "Muitos erros do motor de assinatura na última hora",
+        notifications_stuck: "Fila de notificações parada",
+        engine_events_failed: "Webhooks do motor sem processar após 5 tentativas",
+        data_requests_overdue: "Pedidos de titulares vencidos",
+        bulk_stuck: "Envio em massa parado há mais de 1 hora",
+      } as Record<string, string>,
+    },
     dsr: {
       title: "Pedidos de titulares (LGPD)",
       hint: "Pedidos feitos em /titular. O prazo padrão é de 15 dias. Pedidos sobre documentos de uma empresa cliente podem ser encaminhados a ela.",
@@ -688,6 +704,7 @@ const pt = {
       billing_grace: "Tolerância de pagamento",
       whatsapp_rate: "Ritmo do WhatsApp",
       growth_stages: "Classificação do funil",
+      platform_alerts: "Alertas da plataforma",
     } as Record<string, string>,
     configLabels: {
       percent: "Percentual (%)",
@@ -697,6 +714,8 @@ const pt = {
       pql_docs: "Docs concluídos para PQL",
       hot_docs: "Grátis usados para PQL quente",
       opportunity_volume: "Volume mensal p/ oportunidade",
+      engine_errors_per_hour: "Erros do motor por hora (alerta)",
+      queue_stuck_minutes: "Minutos de fila parada (alerta)",
     } as Record<string, string>,
     policyUnsaved: "Alterações não salvas",
     activityEmpty: "Nenhuma ação administrativa registrada ainda.",

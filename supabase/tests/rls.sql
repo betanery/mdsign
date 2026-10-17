@@ -900,4 +900,30 @@ do $$ declare r uuid; begin
 end $$;
 reset role;
 
+-- Alertas da plataforma: abrem com a condição, fecham quando ela some; só o Super Admin vê.
+insert into public.engine_webhook_events (dedupe_key, type, payload, attempts) values ('teste-falha', 'DocumentSigned', '{}', 5);
+do $$ begin
+  perform public.refresh_platform_alerts();
+  assert exists (select 1 from public.platform_alerts where kind = 'engine_events_failed' and resolved_at is null), 'alerta aberto para webhook do motor que esgotou as tentativas';
+  perform public.refresh_platform_alerts();
+  assert (select count(*) from public.platform_alerts where kind = 'engine_events_failed' and resolved_at is null) = 1, 'um alerta por tipo, sem duplicar';
+  update public.engine_webhook_events set processed_at = now() where dedupe_key = 'teste-falha';
+  perform public.refresh_platform_alerts();
+  assert not exists (select 1 from public.platform_alerts where kind = 'engine_events_failed' and resolved_at is null), 'alerta fecha sozinho';
+end $$;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  perform public.admin_alerts();
+  assert false, 'só o Super Admin vê os alertas';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.admin_alerts()) >= 1, 'Super Admin vê os alertas (inclusive os resolvidos na semana)';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

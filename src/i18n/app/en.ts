@@ -495,6 +495,22 @@ const en: AppMessages = {
     account: "Account",
   },
   admin: {
+    alerts: {
+      title: "Platform alerts",
+      open: "{n} open alert(s)",
+      noneOpen: "No open alerts (resolved in the last week below)",
+      since: "since {date}",
+      resolved: "resolved on {date}",
+      menu: "alerts",
+      kinds: {
+        cron_failed: "Scheduled routine failed in the last hour",
+        engine_errors: "Many signature engine errors in the last hour",
+        notifications_stuck: "Notification queue stuck",
+        engine_events_failed: "Engine webhooks not processed after 5 attempts",
+        data_requests_overdue: "Overdue data subject requests",
+        bulk_stuck: "Bulk send stalled for over 1 hour",
+      } as Record<string, string>,
+    },
     dsr: {
       title: "Data subject requests (LGPD)",
       hint: "Requests made at /titular. The default deadline is 15 days. Requests about a client company's documents may be forwarded to it.",
@@ -665,6 +681,7 @@ const en: AppMessages = {
       billing_grace: "Payment grace period",
       whatsapp_rate: "WhatsApp pacing",
       growth_stages: "Funnel classification",
+      platform_alerts: "Platform alerts",
     } as Record<string, string>,
     configLabels: {
       percent: "Percent (%)",
@@ -674,6 +691,8 @@ const en: AppMessages = {
       pql_docs: "Completed docs for PQL",
       hot_docs: "Free docs used for hot PQL",
       opportunity_volume: "Monthly volume for opportunity",
+      engine_errors_per_hour: "Engine errors per hour (alert)",
+      queue_stuck_minutes: "Minutes of stuck queue (alert)",
     } as Record<string, string>,
     policyUnsaved: "Unsaved changes",
     activityEmpty: "No administrative actions recorded yet.",

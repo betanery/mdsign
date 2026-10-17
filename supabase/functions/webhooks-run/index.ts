@@ -1,5 +1,6 @@
 // Entrega dos webhooks de saída (a cada minuto, pelo pg_cron, só quando há entregas vencidas).
 
+import { processPendingEngineEvents } from "../_shared/engine-events.ts";
 import { safeEqual } from "../_shared/net.ts";
 import { processNotifications } from "../_shared/notifications.ts";
 import { deliverDue } from "../_shared/webhooks.ts";
@@ -19,7 +20,12 @@ Deno.serve(async (req) => {
     console.error("notifications", e);
     return null;
   });
-  return new Response(JSON.stringify({ ...result, notifications }), {
+  // Webhooks do motor que falharam: novas tentativas com espera crescente.
+  const engine = await processPendingEngineEvents(20).catch((e) => {
+    console.error("engine events", e);
+    return null;
+  });
+  return new Response(JSON.stringify({ ...result, notifications, engine }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });

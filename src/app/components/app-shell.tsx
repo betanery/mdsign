@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Compass,
@@ -26,6 +26,7 @@ import {
 import { logoIcon } from "@/components/landing/logo";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "../auth";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
@@ -191,6 +192,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: (() => void) | undefined 
           >
             <ShieldCheck className="size-4" aria-hidden />
             {t.nav.admin}
+            <AdminAlertsBadge />
           </Link>
         )}
       </nav>
@@ -346,4 +348,29 @@ export function PageHeader({
 function ShellCedroBanner() {
   const usage = useOrgUsage();
   return <CedroBanner usage={usage} />;
+}
+
+/** Super Admin: quantos alertas da plataforma estão abertos (só aparece se houver). */
+function AdminAlertsBadge() {
+  const { t } = useAppI18n();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    void supabase
+      .rpc("admin_alerts")
+      .then(({ data }) =>
+        setN(
+          ((data as { resolved_at: string | null }[] | null) ?? []).filter((a) => !a.resolved_at)
+            .length,
+        ),
+      );
+  }, []);
+  if (!n) return null;
+  return (
+    <span
+      className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white"
+      aria-label={`${n} ${t.admin.alerts.menu}`}
+    >
+      {n}
+    </span>
+  );
 }

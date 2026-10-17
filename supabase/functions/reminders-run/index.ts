@@ -106,6 +106,34 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("billing", e);
   }
+  // Reconciliação diária (6h UTC): confere no motor os pendentes sem lembrete, que não passam
+  // pelo laço acima. Divergências de status são corrigidas pelo próprio syncDocument.
+  let reconciled = 0;
+  if (new Date().getUTCHours() === 6) {
+    const { data: rest } = await admin
+      .from("documents")
+      .select("id, organization_id, status, engine_document_id")
+      .eq("status", "pending")
+      .eq("reminders_enabled", false)
+      .is("deleted_at", null)
+      .limit(300);
+    for (const d of rest ?? []) {
+      try {
+        await syncDocument(d);
+        reconciled++;
+      } catch {
+        // o erro do motor já fica em engine_errors
+      }
+    }
+  }
+  // Alertas da plataforma (abre e fecha conforme as condições).
+  let alerts = null;
+  try {
+    const { data } = await admin.rpc("refresh_platform_alerts");
+    alerts = data;
+  } catch (e) {
+    console.error("alerts", e);
+  }
   // Funil: registra gatilhos (inativo, checkout abandonado) para automações futuras. Não envia nada.
   let growth = null;
   try {
@@ -114,8 +142,11 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("growth", e);
   }
-  return new Response(JSON.stringify({ sent, bulk, retention, billing, growth }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ sent, bulk, retention, billing, growth, reconciled, alerts }),
+    {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    },
+  );
 });
