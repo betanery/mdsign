@@ -76,3 +76,18 @@ export function formatDate(iso: string, locale: string) {
     timeStyle: "short",
   }).format(new Date(iso));
 }
+
+/**
+ * Fila "Assinar todos": documentos com ação minha pendente, assinaturas (e testemunhos)
+ * primeiro e aprovações depois, mantendo a ordem da lista.
+ */
+export function pendingQueue<T>(
+  docs: T[],
+  myAction: (d: T) => { role: ParticipantRow["role"] } | undefined,
+): T[] {
+  const mine = docs.filter((d) => myAction(d));
+  return [
+    ...mine.filter((d) => myAction(d)!.role !== "approver"),
+    ...mine.filter((d) => myAction(d)!.role === "approver"),
+  ];
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCheck, FileText, Loader2, PenLine, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { RefuseDialog, SigningQueue } from "@/app/components/document-batch";
 import {
   documentSelect,
   formatDate,
+  pendingQueue,
   formatDay,
   humanStatus,
   statusTone,
@@ -29,8 +30,12 @@ type Tab = "all" | "waiting" | "forMe" | "concluded";
 const tabs: Tab[] = ["all", "waiting", "forMe", "concluded"];
 
 export const Route = createFileRoute("/app/_shell/documents/")({
-  validateSearch: (search: Record<string, unknown>): { tab?: Tab | undefined } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: Tab | undefined; fila?: 1 | undefined } => ({
     tab: tabs.includes(search["tab"] as Tab) ? (search["tab"] as Tab) : undefined,
+    // Atalho do Início: abre direto a fila "Assinar todos".
+    fila: String(search["fila"] ?? "") === "1" ? 1 : undefined,
   }),
   component: DocumentsPage,
 });
@@ -90,6 +95,16 @@ function DocumentsPage() {
     if (tab === "forMe") return Boolean(myAction(d));
     return true;
   });
+
+  // Tudo o que espera por mim, na ordem da fila (assinaturas antes de aprovações).
+  const mine = pendingQueue(docs ?? [], myAction);
+  const autoQueue = useRef(search.fila === 1);
+  useEffect(() => {
+    if (!autoQueue.current || docs === null) return;
+    autoQueue.current = false;
+    if (mine.length) setQueue(mine);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docs]);
 
   // Seleção: só as ações válidas para os selecionados aparecem, com quantos se aplicam.
   const chosen = visible.filter((d) => selected.has(d.id));
@@ -212,6 +227,26 @@ function DocumentsPage() {
         </div>
       ) : (
         <>
+          {tab === "forMe" && mine.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/30 bg-brand-soft/60 p-3 text-sm">
+              <p>
+                <span className="font-semibold text-brand-strong">
+                  {f(mine.length === 1 ? t.documents.signAllOne : t.documents.signAllCount, {
+                    n: String(mine.length),
+                  })}
+                </span>{" "}
+                <span className="text-muted-foreground">{t.documents.signAllHint}</span>
+              </p>
+              <Button
+                size="sm"
+                className="bg-brand hover:bg-brand-strong"
+                onClick={() => setQueue(mine)}
+              >
+                <PenLine aria-hidden />
+                {f(t.documents.signAll, { n: String(mine.length) })}
+              </Button>
+            </div>
+          )}
           <div className="mb-2 flex flex-wrap items-center gap-3 text-sm">
             <label className="flex items-center gap-2">
               <input

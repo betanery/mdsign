@@ -277,9 +277,20 @@ function Dashboard() {
             <h2 id="attention-title" className="font-display text-lg font-semibold">
               {t.dashboard.attention}
             </h2>
-            <Link to="/app/documents" className="text-sm font-semibold text-brand">
-              {t.dashboard.seeAll}
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              {stats.forMe.length > 1 && (
+                <Link
+                  to="/app/documents"
+                  search={{ tab: "forMe", fila: 1 }}
+                  className="text-sm font-semibold text-brand"
+                >
+                  {f(t.documents.signAll, { n: String(stats.forMe.length) })}
+                </Link>
+              )}
+              <Link to="/app/documents" className="text-sm font-semibold text-brand">
+                {t.dashboard.seeAll}
+              </Link>
+            </div>
           </div>
           {attention.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">{t.dashboard.attentionEmpty}</p>
