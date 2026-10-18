@@ -130,8 +130,8 @@ function IntegrationsPage() {
               </a>
             </Button>
             <Button asChild variant="outline">
-              <Link to="/app/organization" search={{ tab: "plan" }}>
-                {t.organization.tabPlan}
+              <Link to="/app/plan" hash="mudar-plano">
+                {t.billing.changePlanTitle}
               </Link>
             </Button>
           </div>

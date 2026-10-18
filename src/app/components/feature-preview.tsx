@@ -172,8 +172,9 @@ function PreviewActions({
       {target && target.id !== "mogno" && can("billing.manage") && (
         <Button asChild className="bg-brand hover:bg-brand-strong">
           <Link
-            to="/app/organization"
-            search={{ tab: "plan" }}
+            to="/app/plan"
+            search={{ plano: target.id }}
+            hash="mudar-plano"
             onClick={() => track(target.id, "subscribe")}
           >
             {fillText(x.subscribe, { plan: target.name })}

@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
         origin && origin.startsWith("https://") && allowedOrigins.includes(origin)
           ? origin
           : (allowedOrigins.find((o) => o.startsWith("https://")) ?? "");
-      const ret = (state: string) => `${back}/app/organization?tab=plan&checkout=${state}`;
+      const ret = (state: string) => `${back}/app/plan?checkout=${state}`;
       try {
         if (method === "PIX") {
           // Pix recorrente: assinatura pela API; a pessoa paga a 1ª fatura (QR Code).

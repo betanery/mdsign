@@ -62,7 +62,7 @@ export function useOfferViewed(show: boolean, where: string) {
 const brl = (cents: number) =>
   (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-/** Clique em "Ver planos": vai para o funil (intenção de upgrade) e abre Plano e cobrança. */
+/** Clique em "Ver planos": registra a intenção de upgrade e abre Meu plano → Mudar de plano. */
 export function UpgradeButton({
   where,
   className,
@@ -81,8 +81,9 @@ export function UpgradeButton({
       className={cn(variant === "default" && "bg-brand hover:bg-brand-strong", className)}
     >
       <Link
-        to="/app/organization"
-        search={{ tab: "plan" }}
+        to="/app/plan"
+        search={{ plano: "jacaranda" }}
+        hash="mudar-plano"
         onClick={() => {
           if (current)
             void supabase.rpc("growth_app_event", {

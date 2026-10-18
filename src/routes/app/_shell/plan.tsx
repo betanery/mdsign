@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Gem, Lock, Minus } from "lucide-react";
+import { ArrowRight, Check, Gem, Loader2, Lock, Minus } from "lucide-react";
 
 import { PageHeader } from "@/app/components/app-shell";
+import { PlanChooser } from "@/app/components/plan-chooser";
 import { useOrgUsage } from "@/app/components/plan-usage";
 import {
   fillText,
@@ -23,8 +24,17 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 // Meu plano: o que está contratado (versão da organização), consumo, usuários, recursos,
-// o próximo plano e a comparação. A cobrança continua em Organização → Plano e cobrança.
-export const Route = createFileRoute("/app/_shell/plan")({ component: PlanPage });
+// o próximo plano, a troca de plano (#mudar-plano) e a comparação. Faturas e cancelamento
+// continuam em Organização → Plano e cobrança.
+type Search = { plano?: string | undefined; checkout?: string | undefined };
+
+export const Route = createFileRoute("/app/_shell/plan")({
+  validateSearch: (search: Record<string, unknown>): Search => ({
+    plano: typeof search["plano"] === "string" ? search["plano"] : undefined,
+    checkout: typeof search["checkout"] === "string" ? search["checkout"] : undefined,
+  }),
+  component: PlanPage,
+});
 
 type OrgPlan = {
   plan_id: string;
@@ -62,7 +72,7 @@ const T = {
     nextMogno: "Precisa de integrações ou condições sob medida?",
     compare: "Comparar planos",
     yourPlan: "Seu plano",
-    upgrade: "Ver contratação",
+    upgrade: "Ver planos",
     billing: "Plano e cobrança",
     talk: "Falar com especialista",
     price: "Mensalidade",
@@ -95,7 +105,7 @@ const T = {
     nextMogno: "Need integrations or custom terms?",
     compare: "Compare plans",
     yourPlan: "Your plan",
-    upgrade: "See subscription",
+    upgrade: "See plans",
     billing: "Plan and billing",
     talk: "Talk to a specialist",
     price: "Monthly price",
@@ -128,7 +138,7 @@ const T = {
     nextMogno: "¿Necesitas integraciones o condiciones a medida?",
     compare: "Comparar planes",
     yourPlan: "Tu plan",
-    upgrade: "Ver contratación",
+    upgrade: "Ver planes",
     billing: "Plan y cobro",
     talk: "Hablar con un especialista",
     price: "Mensualidad",
@@ -142,7 +152,7 @@ const T = {
 export const planPageTexts = T;
 
 function PlanPage() {
-  const { locale } = useAppI18n();
+  const { locale, t } = useAppI18n();
   const p = T[locale as keyof typeof T] ?? T.pt;
   const x = useFeatureTexts();
   const { current, can } = useOrg();
@@ -151,14 +161,28 @@ function PlanPage() {
   const { modes } = useFeatures();
   const money = useMoney();
   const docs = useDocsLabel();
+  const search = Route.useSearch();
   const [plan, setPlan] = useState<OrgPlan | null>(null);
+  // Voltou do pagamento: o plano só muda quando o Asaas confirmar. Acompanha por 2 minutos.
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (search.checkout !== "success") return;
+    let n = 0;
+    const id = window.setInterval(() => {
+      n++;
+      setTick((x) => x + 1);
+      if (n >= 24) window.clearInterval(id);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [search.checkout]);
 
   useEffect(() => {
     if (!current) return;
     void supabase
       .rpc("org_plan", { org: current.id })
       .then(({ data }) => setPlan((data as OrgPlan | null) ?? null));
-  }, [current]);
+  }, [current, tick]);
 
   if (!current || !usage || !plan) return <PageHeader title={p.title} subtitle={p.subtitle} />;
 
@@ -182,6 +206,20 @@ function PlanPage() {
   return (
     <>
       <PageHeader title={p.title} subtitle={p.subtitle} />
+      {search.checkout === "success" && (
+        <p
+          className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm"
+          role="status"
+        >
+          <Loader2 className="size-4 animate-spin text-brand" aria-hidden />
+          {t.billing.processing}
+        </p>
+      )}
+      {(search.checkout === "canceled" || search.checkout === "expired") && (
+        <p className="mb-4 rounded-xl border bg-white px-4 py-3 text-sm text-muted-foreground">
+          {t.billing.checkoutLeft}
+        </p>
+      )}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section
           className="grid content-start gap-4 rounded-2xl border bg-white p-5 shadow-sm"
@@ -307,11 +345,12 @@ function PlanPage() {
               ))}
             </ul>
             <p className="text-sm font-semibold">{priceOf(next.price_cents, next.period)}</p>
-            {next.id !== "mogno" && can("billing.manage") ? (
+            {next.id !== "mogno" ? (
               <Button asChild className="w-fit bg-brand hover:bg-brand-strong">
                 <Link
-                  to="/app/organization"
-                  search={{ tab: "plan" }}
+                  to="/app/plan"
+                  search={{ plano: next.id }}
+                  hash="mudar-plano"
                   onClick={() => track(next.id, "plan_page_next")}
                 >
                   {p.upgrade}
@@ -327,6 +366,10 @@ function PlanPage() {
             ) : null}
           </section>
         )}
+      </div>
+
+      <div className="mt-6">
+        <PlanChooser key={tick} usage={usage} highlight={search.plano} />
       </div>
 
       <section className="mt-6 rounded-2xl border bg-white p-5 shadow-sm" aria-labelledby="compare">

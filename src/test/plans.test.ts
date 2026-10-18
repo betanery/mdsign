@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { featureTexts } from "@/app/features";
+import { planDirection } from "@/app/components/plan-chooser";
 import { navItems, MAX_MENU_PREVIEWS } from "@/app/components/app-shell";
 import {
   docsOf,
@@ -173,5 +174,19 @@ describe("Planos & Funcionalidades: mesma regra do servidor", () => {
       expect(shape(T["en"])).toEqual(shape(T["pt"]));
       expect(shape(T["es"])).toEqual(shape(T["pt"]));
     }
+  });
+
+  it("mudar de plano: atual, mais recursos ou plano menor pela ordem da matriz", () => {
+    const order = [
+      { id: "cedro", sort: 10 },
+      { id: "jacaranda", sort: 20 },
+      { id: "angico", sort: 30 },
+      { id: "mogno", sort: 60 },
+    ];
+    expect(planDirection(order, "jacaranda", "jacaranda")).toBe("current");
+    expect(planDirection(order, "jacaranda", "angico")).toBe("up");
+    expect(planDirection(order, "jacaranda", "mogno")).toBe("up");
+    expect(planDirection(order, "angico", "jacaranda")).toBe("down");
+    expect(planDirection(order, "angico", "cedro")).toBe("down");
   });
 });

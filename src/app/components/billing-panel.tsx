@@ -1,26 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, ExternalLink, FlaskConical, Loader2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { AlertTriangle, ArrowRight, ExternalLink, FlaskConical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { ApiError, callFunction } from "../api";
+import { callFunction } from "../api";
 import { useAppConfig } from "../app-config";
-import { errorText, fieldProblems } from "../errors";
+import { errorText } from "../errors";
 import { useAppI18n } from "../i18n";
-import { formatCep, formatPhone, lookupCep, onlyDigits } from "../validation";
 import { useOrg } from "../org";
 import { useConfirm } from "./confirm-dialog";
+import { money } from "./plan-chooser";
 import { PlanUsage, type OrgUsage } from "./plan-usage";
 
 type Billing = {
@@ -39,8 +31,6 @@ type Billing = {
   pending_plan_id: string | null;
   pending_link: string | null;
 };
-type Plan = { id: string; name: string; price_cents: number | null; sort: number };
-type Ent = { plan_id: string; key: string; value_int: number | null; value_bool: boolean | null };
 type Payment = {
   asaas_payment_id: string;
   billing_type: string | null;
@@ -50,14 +40,6 @@ type Payment = {
   paid_at: string | null;
   invoice_url: string | null;
 };
-
-const money = (cents: number | null | undefined, locale: string) =>
-  cents == null
-    ? "—"
-    : new Intl.NumberFormat(locale === "en" ? "en-US" : locale === "es" ? "es" : "pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(cents / 100);
 
 /** Data sem hora (vencimentos vêm como AAAA-MM-DD; não converte fuso). */
 const formatDate = (value: string, locale: string) => {
@@ -91,21 +73,14 @@ export function BillingPanel({
   const config = useAppConfig();
   const [confirm, confirmDialog] = useConfirm();
   const [billing, setBilling] = useState<Billing | null>(null);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [ents, setEnts] = useState<Ent[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [choosing, setChoosing] = useState(false);
-  // Cartão sem telefone/endereço no cadastro do Asaas: pede os dados e refaz o pedido.
-  const [needData, setNeedData] = useState<string | null>(null);
   const manage = can("billing.manage");
 
   const load = useCallback(async () => {
     if (!current) return;
-    const [b, offer, pay] = await Promise.all([
+    const [b, pay] = await Promise.all([
       supabase.rpc("org_billing", { org: current.id }),
-      // Planos e direitos oferecidos para contratar: a matriz publicada (versão vigente).
-      supabase.rpc("plan_offer"),
       supabase
         .from("billing_payments")
         .select(
@@ -116,24 +91,6 @@ export function BillingPanel({
         .limit(24),
     ]);
     setBilling(((b.data as Billing[] | null) ?? [])[0] ?? null);
-    const o = (offer.data as {
-      plans: (Plan & { is_public: boolean; entitlements: Record<string, number | boolean> })[];
-    } | null) ?? { plans: [] };
-    setPlans(
-      o.plans
-        .filter((x) => x.is_public)
-        .map(({ id, name, price_cents, sort }) => ({ id, name, price_cents, sort })),
-    );
-    setEnts(
-      o.plans.flatMap((x) =>
-        Object.entries(x.entitlements).map(([key, v]) => ({
-          plan_id: x.id,
-          key,
-          value_int: typeof v === "number" ? v : null,
-          value_bool: typeof v === "boolean" ? v : null,
-        })),
-      ),
-    );
     setPayments((pay.data as Payment[] | null) ?? []);
   }, [current]);
 
@@ -155,50 +112,7 @@ export function BillingPanel({
 
   if (!billing) return <p className="text-muted-foreground">{t.common.loading}</p>;
   const st = state(billing);
-  const ent = (plan: string, key: string) => ents.find((x) => x.plan_id === plan && x.key === key);
   const overdue = payments.find((p) => p.status === "OVERDUE" && p.invoice_url);
-
-  async function subscribe(planId: string, method: "CREDIT_CARD" | "PIX") {
-    if (!current) return;
-    // Rebaixar acima dos limites: avisa a pendência (nada é apagado).
-    const users = ent(planId, "users_max")?.value_int;
-    const month = ent(planId, "documents_month")?.value_int;
-    const warn: string[] = [];
-    if (usage && users != null && usage.users_used > users)
-      warn.push(f(t.billing.overUsers, { used: String(usage.users_used), max: String(users) }));
-    if (usage && month != null && usage.documents_month_used > month)
-      warn.push(
-        f(t.billing.overDocs, { used: String(usage.documents_month_used), max: String(month) }),
-      );
-    const plan = plans.find((p) => p.id === planId)!;
-    const ok = await confirm({
-      title: f(t.billing.confirmTitle, { plan: plan.name }),
-      text: [
-        f(method === "PIX" ? t.billing.confirmPix : t.billing.confirmCard, {
-          plan: plan.name,
-          value: money(plan.price_cents, locale),
-        }),
-        ...warn,
-      ].join(" "),
-      action: t.billing.goCheckout,
-    });
-    if (!ok) return;
-    setBusy(planId);
-    try {
-      const r = await callFunction<{ link: string }>("billing", {
-        action: "checkout",
-        organizationId: current.id,
-        planId,
-        method,
-      });
-      window.location.assign(r.link);
-    } catch (e) {
-      setBusy(null);
-      if (e instanceof ApiError && e.code === "billing_customer_data_required")
-        return setNeedData(planId);
-      toast.error(errorText(t, e));
-    }
-  }
 
   async function cancel() {
     if (!current) return;
@@ -232,17 +146,6 @@ export function BillingPanel({
   return (
     <div className="grid gap-5" data-tour="plan-panel">
       {confirmDialog}
-      {needData && current && (
-        <CustomerDataDialog
-          organizationId={current.id}
-          onClose={() => setNeedData(null)}
-          onSaved={() => {
-            const plan = needData;
-            setNeedData(null);
-            void subscribe(plan, "CREDIT_CARD");
-          }}
-        />
-      )}
       {config.billingEnvironment === "sandbox" && (
         <p className="flex items-start gap-2 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3 text-sm text-brand-strong">
           <FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -339,12 +242,15 @@ export function BillingPanel({
             )}
             {billing.billing_status !== "exempt" && (
               <Button
+                asChild
                 variant={billing.plan_id === "cedro" ? "default" : "outline"}
                 className={billing.plan_id === "cedro" ? "bg-brand hover:bg-brand-strong" : ""}
-                onClick={() => setChoosing(!choosing)}
-                disabled={!config.billingEnvironment}
               >
-                {billing.plan_id === "cedro" ? t.billing.upgrade : t.billing.changePlan}
+                {/* A escolha e a contratação ficam em Meu plano (#mudar-plano). */}
+                <Link to="/app/plan" hash="mudar-plano">
+                  {billing.plan_id === "cedro" ? t.billing.upgrade : t.billing.changePlan}
+                  <ArrowRight aria-hidden />
+                </Link>
               </Button>
             )}
             {billing.provider === "asaas" && !billing.cancel_at && (
@@ -362,89 +268,6 @@ export function BillingPanel({
           <p className="text-sm text-muted-foreground">{t.errors["billing_not_configured"]}</p>
         )}
       </section>
-
-      {choosing && (
-        <section className="grid gap-3" aria-labelledby="choose-plan">
-          <h3 id="choose-plan" className="font-display text-lg font-semibold">
-            {t.billing.choose}
-          </h3>
-          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {plans
-              .filter((p) => p.id !== "cedro")
-              .map((p) => {
-                const isCurrent = p.id === billing.plan_id && billing.provider === "asaas";
-                const docsMonth = ent(p.id, "documents_month")?.value_int;
-                const users = ent(p.id, "users_max")?.value_int;
-                return (
-                  <li
-                    key={p.id}
-                    className={cn(
-                      "flex flex-col gap-2 rounded-2xl border bg-white p-4 shadow-sm",
-                      isCurrent && "border-brand ring-2 ring-brand/20",
-                    )}
-                  >
-                    <p className="font-display font-semibold">{p.name}</p>
-                    <p className="text-sm">
-                      {p.price_cents
-                        ? f(t.billing.perMonth, { value: money(p.price_cents, locale) })
-                        : t.billing.onRequest}
-                    </p>
-                    <ul className="text-xs text-muted-foreground">
-                      <li>
-                        {docsMonth != null
-                          ? f(t.billing.docsMonth, { n: String(docsMonth) })
-                          : t.billing.docsUnlimited}
-                      </li>
-                      {users != null && (
-                        <li>
-                          {users === 1
-                            ? t.billing.usersOne
-                            : f(t.billing.usersUpTo, { n: String(users) })}
-                        </li>
-                      )}
-                      {ent(p.id, "integrations_access")?.value_bool && (
-                        <li>{t.billing.withIntegrations}</li>
-                      )}
-                    </ul>
-                    {p.id === "mogno" ? (
-                      <Button asChild variant="outline" size="sm" className="mt-auto">
-                        <a href="/pt#planos" target="_blank" rel="noreferrer">
-                          {t.billing.talkSales}
-                        </a>
-                      </Button>
-                    ) : isCurrent ? (
-                      <span className="mt-auto flex items-center gap-1 text-sm font-semibold text-brand">
-                        <CheckCircle2 className="size-4" aria-hidden />
-                        {t.billing.yourPlan}
-                      </span>
-                    ) : (
-                      <div className="mt-auto flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          className="bg-brand hover:bg-brand-strong"
-                          onClick={() => void subscribe(p.id, "CREDIT_CARD")}
-                          disabled={busy !== null}
-                        >
-                          {busy === p.id && <Loader2 className="animate-spin" aria-hidden />}
-                          {t.billing.subscribeCard}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => void subscribe(p.id, "PIX")}
-                          disabled={busy !== null}
-                        >
-                          {t.billing.subscribePix}
-                        </Button>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-          </ul>
-          <p className="text-xs text-muted-foreground">{t.billing.changeHint}</p>
-        </section>
-      )}
 
       {payments.length > 0 && (
         <section className="grid gap-2" aria-labelledby="billing-history">
@@ -489,121 +312,5 @@ export function BillingPanel({
         </section>
       )}
     </div>
-  );
-}
-
-/** Dados de cobrança do cartão: vão direto para o cadastro do cliente no Asaas. */
-function CustomerDataDialog({
-  organizationId,
-  onClose,
-  onSaved,
-}: {
-  organizationId: string;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
-  const { t } = useAppI18n();
-  const [data, setData] = useState({
-    phone: "",
-    postalCode: "",
-    address: "",
-    addressNumber: "",
-    complement: "",
-    province: "",
-    city: "",
-  });
-  const [bad, setBad] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [cepState, setCepState] = useState<"idle" | "loading" | "notFound">("idle");
-
-  // CEP completo: busca o endereço e preenche rua, bairro e cidade (a pessoa pode corrigir).
-  async function onCep(value: string) {
-    const cep = formatCep(value);
-    setData((d) => ({ ...d, postalCode: cep }));
-    if (onlyDigits(cep).length !== 8) return setCepState("idle");
-    setCepState("loading");
-    const found = await lookupCep(cep);
-    if (!found) return setCepState("notFound");
-    setCepState("idle");
-    setData((d) => ({
-      ...d,
-      address: found.address || d.address,
-      province: found.province || d.province,
-      city: found.city || d.city,
-    }));
-  }
-  const fields = [
-    ["phone", "tel"],
-    ["postalCode", "text"],
-    ["address", "text"],
-    ["addressNumber", "text"],
-    ["complement", "text"],
-    ["province", "text"],
-    ["city", "text"],
-  ] as const;
-
-  async function save() {
-    setBusy(true);
-    setBad([]);
-    try {
-      await callFunction("billing", { action: "customer-data", organizationId, data });
-      onSaved();
-    } catch (e) {
-      setBad(fieldProblems(e));
-      if (!fieldProblems(e).length) toast.error(errorText(t, e));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t.billing.customerTitle}</DialogTitle>
-          <DialogDescription>{t.billing.customerHint}</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {fields.map(([k, type]) => (
-            <div key={k} className={cn("grid gap-1.5", k === "address" && "sm:col-span-2")}>
-              <Label htmlFor={`bc-${k}`}>{t.billing.customerFields[k]}</Label>
-              <Input
-                id={`bc-${k}`}
-                type={type}
-                inputMode={k === "postalCode" || k === "phone" ? "numeric" : undefined}
-                value={data[k]}
-                aria-invalid={bad.includes(k)}
-                onChange={(e) =>
-                  k === "postalCode"
-                    ? void onCep(e.target.value)
-                    : setData({
-                        ...data,
-                        [k]: k === "phone" ? formatPhone(e.target.value) : e.target.value,
-                      })
-                }
-              />
-              {k === "postalCode" && cepState !== "idle" && (
-                <p className="text-xs text-muted-foreground" role="status">
-                  {cepState === "loading" ? t.billing.cepLoading : t.billing.cepNotFound}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>
-            {t.common.cancel}
-          </Button>
-          <Button
-            className="bg-brand hover:bg-brand-strong"
-            onClick={() => void save()}
-            disabled={busy}
-          >
-            {busy && <Loader2 className="animate-spin" aria-hidden />}
-            {t.billing.customerSave}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
