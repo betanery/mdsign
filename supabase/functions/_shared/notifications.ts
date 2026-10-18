@@ -63,6 +63,27 @@ export async function createSignLink(p: {
 
 export const hashToken = sha256;
 
+/** Janela em que uma nova mensagem de WhatsApp para a mesma pessoa seria repetida. */
+export const WHATSAPP_REPEAT_MINUTES = 5;
+
+/** Participantes que já têm WhatsApp na fila ou enviado há pouco (evita mensagem em dobro). */
+export async function recentWhatsApp(
+  participantIds: string[],
+  now = new Date(),
+  db: Pick<typeof admin, "from"> = admin,
+) {
+  if (!participantIds.length) return new Set<string>();
+  const since = new Date(now.getTime() - WHATSAPP_REPEAT_MINUTES * 60_000).toISOString();
+  const { data } = await db
+    .from("notifications")
+    .select("participant_id")
+    .eq("channel", "whatsapp")
+    .in("participant_id", participantIds)
+    .in("status", ["pending", "sent", "delivered"])
+    .gte("created_at", since);
+  return new Set((data ?? []).map((r) => r.participant_id as string));
+}
+
 /** Enfileira notificações de WhatsApp para os participantes (se o canal estiver ligado). */
 export async function enqueueWhatsApp(
   documentId: string,
@@ -97,8 +118,9 @@ export async function enqueueWhatsApp(
     .select("id, phone, status")
     .eq("document_id", documentId)
     .in("id", participantIds);
+  const recent = await recentWhatsApp((people ?? []).map((p) => p.id as string));
   const rows = (people ?? [])
-    .filter((p) => p.status === "pending" && normalizePhone(p.phone))
+    .filter((p) => p.status === "pending" && normalizePhone(p.phone) && !recent.has(p.id))
     .map((p) => ({
       organization_id: doc.organization_id,
       document_id: documentId,

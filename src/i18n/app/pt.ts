@@ -1155,6 +1155,8 @@ const pt = {
   },
   errors: {
     whatsapp_not_configured: "O WhatsApp do MDSign ainda não está configurado.",
+    whatsapp_recent:
+      "Já há uma mensagem de WhatsApp enviada há instantes para esta pessoa. Aguarde alguns minutos antes de reenviar.",
     whatsapp_unavailable:
       "Não há celular válido, a pessoa pediu para não receber ou o canal está desligado nesta organização.",
     link_invalid: "Link inválido.",

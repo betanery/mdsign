@@ -1130,6 +1130,8 @@ const en: AppMessages = {
   },
   errors: {
     whatsapp_not_configured: "MDSign WhatsApp is not configured yet.",
+    whatsapp_recent:
+      "A WhatsApp message was just sent to this person. Wait a few minutes before resending.",
     whatsapp_unavailable:
       "No valid mobile number, the person opted out, or the channel is off in this organization.",
     link_invalid: "Invalid link.",

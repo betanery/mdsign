@@ -1144,6 +1144,8 @@ const es: AppMessages = {
   },
   errors: {
     whatsapp_not_configured: "El WhatsApp de MDSign todavía no está configurado.",
+    whatsapp_recent:
+      "Ya se envió un mensaje de WhatsApp a esta persona hace instantes. Espera unos minutos antes de reenviar.",
     whatsapp_unavailable:
       "No hay celular válido, la persona pidió no recibir o el canal está apagado en esta organización.",
     link_invalid: "Enlace inválido.",

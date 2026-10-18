@@ -30,6 +30,7 @@ import { maskPersonal, safeEqual } from "../functions/_shared/net.ts";
 import { signPayload, newSecret } from "../functions/_shared/webhooks.ts";
 import { signatureEmail } from "../functions/_shared/email.ts";
 import { isDeletedInEngine } from "../functions/_shared/documents.ts";
+import { recentWhatsApp, WHATSAPP_REPEAT_MINUTES } from "../functions/_shared/notifications.ts";
 
 const CPF = "529.982.247-25";
 const CPF2 = "111.444.777-35";
@@ -301,4 +302,32 @@ Deno.test("WhatsApp: SAIR reconhece o celular com e sem o 9 da frente", () => {
   // Fixo (começa com 2–5) não ganha 9; número inválido não gera nada.
   assertEquals(brPhoneVariants(normalizePhone("6132345678")), ["+55 61 3234-5678"]);
   assertEquals(brPhoneVariants(normalizePhone("123")), []);
+});
+
+Deno.test("WhatsApp: reenvio logo depois não duplica a mensagem", async () => {
+  const calls: [string, unknown][] = [];
+  const builder = {
+    select: (c: string) => (calls.push(["select", c]), builder),
+    eq: (c: string, v: unknown) => (calls.push([`eq:${c}`, v]), builder),
+    in: (c: string, v: unknown) => (calls.push([`in:${c}`, v]), builder),
+    gte: (c: string, v: unknown) => (
+      calls.push([`gte:${c}`, v]),
+      Promise.resolve({ data: [{ participant_id: "p1" }] })
+    ),
+  };
+  const db = { from: (t: string) => (calls.push(["from", t]), builder) } as never;
+  const now = new Date("2026-10-18T14:50:46Z");
+  const recent = await recentWhatsApp(["p1", "p2"], now, db);
+  assertEquals([...recent], ["p1"]);
+  const filters = Object.fromEntries(calls);
+  assertEquals(filters["from"], "notifications");
+  assertEquals(filters["eq:channel"], "whatsapp");
+  assertEquals(filters["in:participant_id"], ["p1", "p2"]);
+  assertEquals(filters["in:status"], ["pending", "sent", "delivered"]);
+  assertEquals(
+    filters["gte:created_at"],
+    new Date(now.getTime() - WHATSAPP_REPEAT_MINUTES * 60_000).toISOString(),
+  );
+  // Sem participantes, nem consulta o banco.
+  assertEquals((await recentWhatsApp([], now, db)).size, 0);
 });

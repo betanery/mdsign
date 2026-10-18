@@ -7,6 +7,7 @@ import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import {
   enqueueChannels,
   enqueueWhatsApp,
+  recentWhatsApp,
   processNotifications,
   whatsappConfigured,
 } from "../_shared/notifications.ts";
@@ -195,6 +196,9 @@ Deno.serve(async (req) => {
       case "whatsapp": {
         if (!(await canManage(caller, doc))) throw new AppError("forbidden", 403);
         if (!whatsappConfigured()) throw new AppError("whatsapp_not_configured", 503);
+        // Mensagem na fila ou enviada há instantes: não manda outra igual.
+        if ((await recentWhatsApp([body.participantId ?? ""])).size)
+          throw new AppError("whatsapp_recent", 409);
         const n = await enqueueWhatsApp(
           doc.id,
           [body.participantId ?? ""],
