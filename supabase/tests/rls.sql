@@ -1545,6 +1545,52 @@ do $$ begin
 end $$;
 reset role;
 
+-- Pastas: quem gerencia cria; outra organização não vê nem usa; apagar deixa "sem pasta".
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+insert into public.document_folders (organization_id, name, created_by)
+  values ((select v from t_ids where k = 'orgB'), 'Contratos', '00000000-0000-0000-0000-00000000000b');
+reset role;
+insert into t_ids values ('fldB', (select id from public.document_folders where name = 'Contratos'));
+set local role authenticated;
+do $$ declare fld uuid := (select v from t_ids where k = 'fldB'); begin
+  assert public.move_documents((select v from t_ids where k = 'orgB'),
+    array[(select v from t_ids where k = 'docObs'), (select id from public.documents where name = 'Doc webhook')], fld) = 1,
+    'move só o documento da própria organização';
+  assert (select folder_id from public.documents where id = (select v from t_ids where k = 'docObs')) = fld, 'documento na pasta';
+end $$;
+do $$ begin
+  insert into public.document_folders (organization_id, name, created_by)
+    values ((select v from t_ids where k = 'orgB'), ' contratos ', '00000000-0000-0000-0000-00000000000b');
+  assert false, 'nome repetido na mesma organização';
+exception when unique_violation then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  assert not exists (select 1 from public.document_folders where name = 'Contratos'), 'outra organização não vê a pasta';
+end $$;
+do $$ begin
+  perform public.move_documents((select v from t_ids where k = 'orgA'),
+    array[(select id from public.documents where name = 'Doc webhook')],
+    (select v from t_ids where k = 'fldB'));
+  assert false, 'pasta de outra organização';
+exception when others then assert sqlerrm in ('folder_not_found', 'forbidden'), 'pasta alheia recusada: ' || sqlerrm;
+end $$;
+do $$ begin
+  insert into public.document_folders (organization_id, name, created_by)
+    values ((select v from t_ids where k = 'orgB'), 'Invasão', '00000000-0000-0000-0000-00000000000a');
+  assert false, 'não cria pasta em outra organização';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+delete from public.document_folders where name = 'Contratos';
+do $$ begin
+  assert (select folder_id from public.documents where id = (select v from t_ids where k = 'docObs')) is null,
+    'apagar a pasta deixa o documento sem pasta';
+end $$;
+
 -- Validação pública: tentativas só para o servidor (nem visitante nem usuário logado leem).
 set local role anon;
 do $$

@@ -18,6 +18,7 @@ import { useOrg } from "@/app/org";
 import { downloadBlob, toPdf, toXlsx, type ExportTable } from "@/app/report-export";
 import { downloadCsv, toCsv } from "@/app/sheet";
 import { selectClass } from "@/app/ui";
+import { useFolders } from "@/app/folders";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -105,6 +106,7 @@ function ReportsPage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const { folders } = useFolders(orgId);
   const [report, setReport] = useState<Report | null>(null);
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
@@ -314,6 +316,14 @@ function ReportsPage() {
       key: "origin",
       options: Object.keys(t.reports.origins).map((o) => ({ id: o, name: t.reports.origins[o]! })),
     },
+    ...(folders.length
+      ? [
+          {
+            key: "folder" as const,
+            options: [{ id: "none", name: t.folders.none }, ...folders],
+          },
+        ]
+      : []),
   ];
   const card = (label: string, value: number | string | null | undefined, tone?: string) => (
     <div className="rounded-xl border bg-white p-3 shadow-sm">

@@ -68,3 +68,12 @@ describe("Anexos no envio", () => {
     expect(r.problem).toBe("too_many_attachments");
   });
 });
+
+describe("Pastas", () => {
+  it("conta documentos por pasta, com os sem pasta em 'none'", async () => {
+    const { folderCounts } = await import("@/app/folders");
+    expect(folderCounts([{ folder_id: "a" }, { folder_id: "a" }, { folder_id: null }, {}])).toEqual(
+      { a: 2, none: 2 },
+    );
+  });
+});

@@ -47,6 +47,8 @@ export type CreateInput = {
   observers?: ObserverInput[] | undefined;
   /** Anexos de apoio (sem assinatura): vão para o motor e uma cópia fica no MDSign. */
   attachments?: AttachmentInput[] | undefined;
+  /** Pasta do documento (só no MDSign); ignorada se não for da organização. */
+  folderId?: string | null | undefined;
 };
 
 export type AttachmentInput = { bytes: Uint8Array; name: string; contentType: AttachmentType };
@@ -341,9 +343,21 @@ export async function createDocument(input: CreateInput): Promise<Created> {
     engineId = created.documentId;
     const engine = await signdoc.getDocument(created.documentId);
 
+    // Pasta: só se existir nesta organização (uma pasta de outra conta é ignorada).
+    let folderId: string | null = null;
+    if (input.folderId && /^[0-9a-f-]{36}$/i.test(input.folderId)) {
+      const { data: folder } = await admin
+        .from("document_folders")
+        .select("id")
+        .eq("id", input.folderId)
+        .eq("organization_id", input.organizationId)
+        .maybeSingle();
+      folderId = (folder?.id as string | undefined) ?? null;
+    }
     const { data: doc, error } = await admin
       .from("documents")
       .insert({
+        folder_id: folderId,
         organization_id: input.organizationId,
         created_by: input.createdBy,
         kind: input.kind,

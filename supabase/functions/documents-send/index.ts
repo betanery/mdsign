@@ -32,6 +32,7 @@ type Payload = {
   /** Posições de assinatura/rubrica por participante (mesma ordem de `participants`). */
   marks?: unknown;
   observers?: unknown;
+  folderId?: string | null;
 };
 
 Deno.serve(async (req) => {
@@ -79,6 +80,7 @@ Deno.serve(async (req) => {
       marks: cleanParticipantMarks(payload.marks, participants.length),
       observers: cleanObservers(payload.observers),
       attachments,
+      folderId: payload.folderId ?? null,
     });
     return json({ documentId: created.documentId }, 200, origin);
   } catch (error) {

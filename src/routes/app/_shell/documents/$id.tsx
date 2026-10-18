@@ -5,6 +5,7 @@ import {
   Download,
   FileUp,
   Loader2,
+  Folder as FolderIcon,
   MessageCircle,
   Paperclip,
   PenLine,
@@ -40,6 +41,8 @@ import {
 } from "@/app/documents";
 import { DocumentStatusSummary, type ReminderInfo } from "@/app/components/document-status";
 import { useAppI18n } from "@/app/i18n";
+import { moveDocuments, useFolders } from "@/app/folders";
+import { selectClass } from "@/app/ui";
 import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,6 +73,7 @@ function DocumentDetail() {
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [observers, setObservers] = useState<ObserverRow[]>([]);
   const [attachments, setAttachments] = useState<{ id: string; name: string }[]>([]);
+  const { folders } = useFolders(orgId);
   const [reminders, setReminders] = useState<ReminderInfo[]>([]);
   const [notes, setNotes] = useState<
     {
@@ -306,6 +310,32 @@ function DocumentDetail() {
           </Button>
         )}
       </div>
+
+      {manage && folders.length > 0 && (
+        <label className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <FolderIcon className="size-4 text-muted-foreground" aria-hidden />
+          <span className="font-medium">{t.folders.field}</span>
+          <select
+            value={doc.folder_id ?? ""}
+            disabled={busy !== null}
+            onChange={(e) => {
+              const target = e.target.value || null;
+              void run("folder", async () => {
+                if (orgId) await moveDocuments(orgId, [id], target);
+                await load();
+              });
+            }}
+            className={cn(selectClass, "h-9 w-auto")}
+          >
+            <option value="">{t.folders.none}</option>
+            {folders.map((fo) => (
+              <option key={fo.id} value={fo.id}>
+                {fo.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       {/* Concluído: o código impresso no PDF e o atalho para a validação pública. */}
       {doc.status === "concluded" && doc.verification_key && (

@@ -27,11 +27,12 @@ export type DocumentRow = {
   updated_at: string;
   concluded_at: string | null;
   created_by: string | null;
+  folder_id?: string | null;
   document_participants: ParticipantRow[];
 };
 
 export const documentSelect =
-  "id, name, kind, status, created_at, updated_at, concluded_at, created_by, document_participants (id, user_id, name, email, phone, role, step, status, delegated_from_name, rule_name, rule_required)";
+  "id, name, kind, status, created_at, updated_at, concluded_at, created_by, folder_id, document_participants (id, user_id, name, email, phone, role, step, status, delegated_from_name, rule_name, rule_required)";
 
 /** Status em linguagem humana (PRD §26): "Aguardando assinatura de João Silva". */
 export function humanStatus(

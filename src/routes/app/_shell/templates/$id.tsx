@@ -40,6 +40,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { useFolders } from "@/app/folders";
+import { selectClass } from "@/app/ui";
 
 // Criar a partir de modelo (PRD §13): preencher → prévia → Só eu assino ou Enviar.
 export const Route = createFileRoute("/app/_shell/templates/$id")({
@@ -57,6 +59,8 @@ function UseTemplate() {
   const { id } = Route.useParams();
   const { t, locale } = useAppI18n();
   const { current } = useOrg();
+  const { folders } = useFolders(current?.id);
+  const [folderId, setFolderId] = useState("");
   const config = useAppConfig();
   const [tpl, setTpl] = useState<TemplateRow | null | undefined>(undefined);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -221,6 +225,7 @@ function UseTemplate() {
       const r = await callFunction<{ documentId: string }>("documents-from-template", {
         ...base(),
         mode: "send",
+        folderId: folderId || null,
         ...(hasTemplateMarks
           ? {}
           : {
@@ -399,6 +404,24 @@ function UseTemplate() {
       {phase === "participants" && (
         <div className={hasTemplateMarks ? "grid max-w-3xl gap-6" : "grid max-w-5xl gap-6"}>
           <section className="grid gap-3">
+            {folders.length > 0 && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="tpl-folder">{t.folders.field}</Label>
+                <select
+                  id="tpl-folder"
+                  value={folderId}
+                  onChange={(e) => setFolderId(e.target.value)}
+                  className={cn(selectClass, "h-10 w-full sm:w-80")}
+                >
+                  <option value="">{t.folders.none}</option>
+                  {folders.map((fo) => (
+                    <option key={fo.id} value={fo.id}>
+                      {fo.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <h2 className="font-display text-lg font-semibold">{t.participants.title}</h2>
             <ParticipantsEditor
               labels={roles.length ? roles.map((r) => r.label) : undefined}

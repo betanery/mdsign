@@ -50,6 +50,7 @@ type Payload = {
   /** Modelos sem marcas definidas: posições escolhidas no envio, por participante. */
   marks?: unknown;
   observers?: unknown;
+  folderId?: string | null;
 };
 
 const pdfResponse = (pdf: Uint8Array, origin: string | null) =>
@@ -139,6 +140,7 @@ Deno.serve(async (req) => {
       filename: pdfFilename(name),
       origin: "template",
       templateId: template.id,
+      folderId: p.folderId ?? null,
       ...optionalKey(requestKey("template", user.id, p.requestId)),
     };
 

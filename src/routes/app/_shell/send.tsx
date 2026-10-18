@@ -24,6 +24,7 @@ import {
   type MarksByPerson,
 } from "@/app/components/marks-editor";
 import { AttachmentsPicker } from "@/app/components/attachments-picker";
+import { useFolders } from "@/app/folders";
 import { PdfDrop, Stepper } from "@/app/components/pdf-drop";
 import {
   defaultSendOptions,
@@ -41,6 +42,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { selectClass } from "@/app/ui";
 
 // "Enviar para assinatura" (PRD §9) em 3 etapas: Documento → Quem assina → Revisar e enviar.
 // Ordem, autenticação, posição, prazo e lembretes ficam em "Ajustes (opcional)" na revisão,
@@ -77,6 +79,8 @@ function SendPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileBytes, setFileBytes] = useState<ArrayBuffer | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [folderId, setFolderId] = useState("");
+  const { folders } = useFolders(current?.id);
   const [marks, setMarks] = useState<MarksByPerson>({});
   const [name, setName] = useState("");
   const [participants, setParticipants] = useState<ParticipantDraft[]>([newParticipant()]);
@@ -136,6 +140,7 @@ function SendPage() {
           marks,
         ),
         ...sendOptionsPayload(options),
+        folderId: folderId || null,
       }),
     );
     form.append("file", file);
@@ -244,6 +249,24 @@ function SendPage() {
                   maxLength={200}
                   onChange={(e) => setName(e.target.value)}
                 />
+              </div>
+            )}
+            {file && folders.length > 0 && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="doc-folder">{t.folders.field}</Label>
+                <select
+                  id="doc-folder"
+                  value={folderId}
+                  onChange={(e) => setFolderId(e.target.value)}
+                  className={cn(selectClass, "h-10 w-full sm:w-80")}
+                >
+                  <option value="">{t.folders.none}</option>
+                  {folders.map((fo) => (
+                    <option key={fo.id} value={fo.id}>
+                      {fo.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
             {file && (

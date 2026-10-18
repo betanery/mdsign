@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCheck, FileText, Loader2, PenLine, Trash2, XCircle } from "lucide-react";
+import {
+  CheckCheck,
+  FileText,
+  Folder as FolderIcon,
+  Loader2,
+  PenLine,
+  Settings2,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/app/auth";
@@ -9,6 +18,9 @@ import { useCedroAvailability } from "@/app/availability";
 import { PageHeader } from "@/app/components/app-shell";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { RefuseDialog, SigningQueue } from "@/app/components/document-batch";
+import { FoldersDialog } from "@/app/components/folders-dialog";
+import { folderCounts, moveDocuments, useFolders } from "@/app/folders";
+import { selectClass } from "@/app/ui";
 import {
   documentSelect,
   formatDate,
@@ -32,8 +44,10 @@ const tabs: Tab[] = ["all", "waiting", "forMe", "concluded"];
 export const Route = createFileRoute("/app/_shell/documents/")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { tab?: Tab | undefined; fila?: 1 | undefined } => ({
+  ): { tab?: Tab | undefined; fila?: 1 | undefined; pasta?: string | undefined } => ({
     tab: tabs.includes(search["tab"] as Tab) ? (search["tab"] as Tab) : undefined,
+    // Pasta escolhida ("none" = sem pasta).
+    pasta: typeof search["pasta"] === "string" ? search["pasta"].slice(0, 40) : undefined,
     // Atalho do Início: abre direto a fila "Assinar todos".
     fila: String(search["fila"] ?? "") === "1" ? 1 : undefined,
   }),
@@ -47,6 +61,10 @@ function DocumentsPage() {
   const { current, can } = useOrg();
   const search = Route.useSearch();
   const [tab, setTab] = useState<Tab>(search.tab ?? "all");
+  const [folder, setFolder] = useState<string>(search.pasta ?? "");
+  const { folders, reload: reloadFolders } = useFolders(current?.id);
+  const [managing, setManaging] = useState(false);
+  const [moving, setMoving] = useState(false);
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [queue, setQueue] = useState<DocumentRow[] | null>(null);
@@ -89,7 +107,10 @@ function DocumentsPage() {
   const deletable = (d: DocumentRow) =>
     canManage(d) && (d.status === "canceled" || d.status === "refused" || d.status === "expired");
 
-  const visible = (docs ?? []).filter((d) => {
+  const counts = folderCounts(docs ?? []);
+  const inFolder = (d: DocumentRow) =>
+    !folder || (folder === "none" ? !d.folder_id : d.folder_id === folder);
+  const visible = (docs ?? []).filter(inFolder).filter((d) => {
     if (tab === "waiting") return d.status === "pending";
     if (tab === "concluded") return d.status === "concluded";
     if (tab === "forMe") return Boolean(myAction(d));
@@ -124,6 +145,26 @@ function DocumentsPage() {
     setSelected(new Set());
     void load();
   };
+
+  const toMove = chosen.filter(canManage);
+  async function moveSelected(target: string) {
+    if (!current) return;
+    setMoving(true);
+    try {
+      const n = await moveDocuments(
+        current.id,
+        toMove.map((d) => d.id),
+        target === "none" ? null : target,
+      );
+      if (n) toast.success(n === 1 ? t.folders.movedOne : f(t.folders.moved, { n: String(n) }));
+      else toast.error(t.folders.notMoved);
+    } catch (e) {
+      toast.error(errorText(t, e));
+    } finally {
+      setMoving(false);
+    }
+    after();
+  }
 
   async function removeSelected() {
     const blocked = chosen.length - toDelete.length;
@@ -207,6 +248,58 @@ function DocumentsPage() {
           </button>
         ))}
       </div>
+
+      {(folders.length > 0 || can("documents.manage")) && (
+        <div
+          className="mb-4 flex flex-wrap items-center gap-2"
+          role="group"
+          aria-label={t.folders.title}
+        >
+          <FolderIcon className="size-4 text-muted-foreground" aria-hidden />
+          {[
+            { id: "", name: t.folders.all, n: docs?.length ?? 0 },
+            ...(folders.length
+              ? [{ id: "none", name: t.folders.none, n: counts["none"] ?? 0 }]
+              : []),
+            ...folders.map((fo) => ({ id: fo.id, name: fo.name, n: counts[fo.id] ?? 0 })),
+          ].map((o) => (
+            <button
+              key={o.id || "all"}
+              type="button"
+              aria-pressed={folder === o.id}
+              onClick={() => {
+                setFolder(o.id);
+                setSelected(new Set());
+              }}
+              className={cn(
+                "min-h-8 rounded-full border px-3 text-sm",
+                folder === o.id
+                  ? "border-brand bg-brand-soft font-semibold text-brand-strong"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {o.name} <span className="tabular-nums">({o.n})</span>
+            </button>
+          ))}
+          {can("documents.manage") && (
+            <Button size="sm" variant="ghost" onClick={() => setManaging(true)}>
+              <Settings2 aria-hidden />
+              {t.folders.manage}
+            </Button>
+          )}
+        </div>
+      )}
+      {managing && current && (
+        <FoldersDialog
+          orgId={current.id}
+          folders={folders}
+          onClose={() => setManaging(false)}
+          onChanged={() => {
+            void reloadFolders();
+            void load();
+          }}
+        />
+      )}
 
       {docs === null ? (
         <p className="flex items-center gap-2 text-muted-foreground" role="status">
@@ -315,9 +408,32 @@ function DocumentsPage() {
                   {t.documents.batch.delete} ({toDelete.length})
                 </Button>
               )}
-              {!toSign.length && !toApprove.length && !toRefuse.length && !toDelete.length && (
-                <span className="text-muted-foreground">{t.documents.batch.noneValid}</span>
+              {toMove.length > 0 && folders.length > 0 && (
+                <select
+                  aria-label={t.folders.moveTo}
+                  value=""
+                  disabled={moving}
+                  onChange={(e) => e.target.value && void moveSelected(e.target.value)}
+                  className={cn(selectClass, "h-8 w-auto")}
+                >
+                  <option value="">
+                    {t.folders.moveTo} ({toMove.length})
+                  </option>
+                  <option value="none">{t.folders.none}</option>
+                  {folders.map((fo) => (
+                    <option key={fo.id} value={fo.id}>
+                      {fo.name}
+                    </option>
+                  ))}
+                </select>
               )}
+              {!toSign.length &&
+                !toApprove.length &&
+                !toRefuse.length &&
+                !toDelete.length &&
+                !(toMove.length && folders.length) && (
+                  <span className="text-muted-foreground">{t.documents.batch.noneValid}</span>
+                )}
               <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
                 {t.documents.batch.clear}
               </Button>
