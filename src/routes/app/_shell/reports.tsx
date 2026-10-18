@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { CalendarDays, Download, FileSpreadsheet, FileText, Loader2, X } from "lucide-react";
 
 import { markGuideStep } from "@/app/onboarding";
 import { PageHeader } from "@/app/components/app-shell";
@@ -283,6 +283,24 @@ function ReportsPage() {
   }
 
   const setFilter = (k: string, v: string) => setFilters((x) => ({ ...x, [k]: v }));
+  const activeFilters = Object.values(filters).filter(Boolean).length;
+  // Filtros com título visível; quem/departamento/grupo/modelo só aparecem se houver opções.
+  const filterDefs: { key: keyof typeof t.reports.f; options: Option[] }[] = [
+    ...(["user", "unit", "group", "template"] as const)
+      .filter((k) => opts[k].length)
+      .map((k) => ({ key: k, options: opts[k] })),
+    {
+      key: "status",
+      options: (["pending", "concluded", "refused", "canceled", "expired"] as const).map((x) => ({
+        id: x,
+        name: t.documents.status[x] ?? x,
+      })),
+    },
+    {
+      key: "origin",
+      options: Object.keys(t.reports.origins).map((o) => ({ id: o, name: t.reports.origins[o]! })),
+    },
+  ];
   const card = (label: string, value: number | string | null | undefined, tone?: string) => (
     <div className="rounded-xl border bg-white p-3 shadow-sm">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -328,101 +346,93 @@ function ReportsPage() {
 
       <section
         data-tour="reports-filters"
-        className="mb-5 grid gap-3 rounded-2xl border bg-white p-4 shadow-sm"
+        className="mb-5 grid gap-4 rounded-2xl border bg-white p-4 shadow-sm"
         aria-label={t.reports.filters}
       >
-        <div className="flex flex-wrap gap-1" role="group" aria-label={t.reports.period}>
-          {(["today", "7d", "30d", "month", "lastMonth", "custom"] as const).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPreset(p)}
-              aria-pressed={preset === p}
-              className={cn(
-                "rounded-full border px-3 py-1 text-sm",
-                preset === p
-                  ? "border-brand bg-brand-soft font-semibold text-brand-strong"
-                  : "text-muted-foreground",
-              )}
-            >
-              {t.reports.presets[p]}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div
+            className="flex flex-wrap gap-1 rounded-xl bg-muted/60 p-1"
+            role="group"
+            aria-label={t.reports.period}
+          >
+            {(["today", "7d", "30d", "month", "lastMonth", "custom"] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPreset(p)}
+                aria-pressed={preset === p}
+                className={cn(
+                  "min-h-8 rounded-lg px-3 text-sm font-medium",
+                  preset === p
+                    ? "bg-white text-brand-strong shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {t.reports.presets[p]}
+              </button>
+            ))}
+          </div>
+          {/* O período que os números mostram, sempre à vista. */}
+          <p className="flex items-center gap-2 text-sm font-semibold" aria-live="polite">
+            <CalendarDays className="size-4 text-brand" aria-hidden />
+            {periodText}
+          </p>
         </div>
         {preset === "custom" && (
-          <div className="flex flex-wrap gap-2">
-            <Input
-              type="date"
-              aria-label={t.reports.from}
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="w-auto"
-            />
-            <Input
-              type="date"
-              aria-label={t.reports.to}
-              value={to}
-              min={from}
-              onChange={(e) => setTo(e.target.value)}
-              className="w-auto"
-            />
+          <div className="flex flex-wrap gap-3">
+            <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+              {t.reports.from}
+              <Input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="w-auto"
+              />
+            </label>
+            <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+              {t.reports.to}
+              <Input
+                type="date"
+                value={to}
+                min={from}
+                onChange={(e) => setTo(e.target.value)}
+                className="w-auto"
+              />
+            </label>
           </div>
         )}
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          {(["user", "unit", "group", "template"] as const).map((k) =>
-            opts[k].length ? (
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-3">
+          {filterDefs.map((d) => (
+            <label key={d.key} className="grid gap-1 text-xs font-medium text-muted-foreground">
+              {t.reports.f[d.key]}
               <select
-                key={k}
-                aria-label={t.reports.f[k]}
-                value={filters[k] ?? ""}
-                onChange={(e) => setFilter(k, e.target.value)}
-                className={selectClass + " h-9"}
+                value={filters[d.key] ?? ""}
+                onChange={(e) => setFilter(d.key, e.target.value)}
+                className={cn(
+                  selectClass,
+                  "h-9 w-full text-foreground",
+                  filters[d.key] && "border-brand font-semibold text-brand-strong",
+                )}
               >
-                <option value="">
-                  {t.reports.f[k]}: {t.reports.all}
-                </option>
-                {opts[k].map((o) => (
+                <option value="">{t.reports.allOption}</option>
+                {d.options.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name}
                   </option>
                 ))}
               </select>
-            ) : null,
-          )}
-          <select
-            aria-label={t.reports.f.status}
-            value={filters["status"] ?? ""}
-            onChange={(e) => setFilter("status", e.target.value)}
-            className={selectClass + " h-9"}
-          >
-            <option value="">
-              {t.reports.f.status}: {t.reports.all}
-            </option>
-            {(["pending", "concluded", "refused", "canceled", "expired"] as const).map((s) => (
-              <option key={s} value={s}>
-                {t.documents.status[s]}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label={t.reports.f.origin}
-            value={filters["origin"] ?? ""}
-            onChange={(e) => setFilter("origin", e.target.value)}
-            className={selectClass + " h-9"}
-          >
-            <option value="">
-              {t.reports.f.origin}: {t.reports.all}
-            </option>
-            {Object.keys(t.reports.origins).map((o) => (
-              <option key={o} value={o}>
-                {t.reports.origins[o]}
-              </option>
-            ))}
-          </select>
+            </label>
+          ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {periodText} · {t.reports.scopeHint}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">{t.reports.scopeHint}</p>
+          {activeFilters > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setFilters({})}>
+              <X aria-hidden />
+              {f(t.reports.clear, { n: String(activeFilters) })}
+            </Button>
+          )}
+        </div>
       </section>
 
       {!report ? (

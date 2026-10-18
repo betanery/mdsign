@@ -878,6 +878,8 @@ const pt = {
     from: "De",
     to: "Até",
     all: "todos",
+    allOption: "Todos",
+    clear: "Limpar filtros ({n})",
     f: {
       user: "Criado por",
       unit: "Departamento",

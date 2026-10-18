@@ -855,6 +855,8 @@ const en: AppMessages = {
     from: "From",
     to: "To",
     all: "all",
+    allOption: "All",
+    clear: "Clear filters ({n})",
     f: {
       user: "Created by",
       unit: "Department",

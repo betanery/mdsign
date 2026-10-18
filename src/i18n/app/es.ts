@@ -868,6 +868,8 @@ const es: AppMessages = {
     from: "Desde",
     to: "Hasta",
     all: "todos",
+    allOption: "Todos",
+    clear: "Limpiar filtros ({n})",
     f: {
       user: "Creado por",
       unit: "Departamento",
