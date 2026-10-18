@@ -96,6 +96,22 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   return `+55 ${ddd} ${local.slice(0, local.length - 4)}-${local.slice(-4)}`;
 }
 
+/**
+ * Mesmo celular brasileiro com e sem o 9 da frente ("+55 61 99167-0611" e "+55 61 9167-0611").
+ * O WhatsApp costuma identificar celulares antigos sem o 9; o MDSign guarda como a pessoa digitou.
+ */
+export function brPhoneVariants(phone: string | null): string[] {
+  if (!phone) return [];
+  const m = /^\+55 (\d{2}) (\d{4,5})-(\d{4})$/.exec(phone);
+  if (!m) return [phone];
+  const [, ddd, head, tail] = m;
+  const local = `${head}${tail}`;
+  const fmt = (l: string) => `+55 ${ddd} ${l.slice(0, l.length - 4)}-${l.slice(-4)}`;
+  if (local.length === 9 && local.startsWith("9")) return [phone, fmt(local.slice(1))];
+  if (local.length === 8 && /^[6-9]/.test(local)) return [phone, fmt(`9${local}`)];
+  return [phone];
+}
+
 export type ParticipantInput = {
   name: string;
   email: string;

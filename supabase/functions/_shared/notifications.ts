@@ -15,7 +15,7 @@
 import { admin } from "./auth.ts";
 import { emailConfigured, emailTestMode, sendEmail, signatureEmail } from "./email.ts";
 import { fetchWithTimeout } from "./net.ts";
-import { normalizePhone } from "./participants.ts";
+import { brPhoneVariants, normalizePhone } from "./participants.ts";
 
 const BOTCONVERSA = "https://backend.botconversa.com.br/api/v1/webhook";
 const LINK_DAYS = 7;
@@ -467,21 +467,26 @@ export async function processNotifications(limit = 30) {
 
 /** Descadastro ("SAIR"): vale para as organizações que já notificaram este número. */
 export async function optOut(phoneRaw: string, reason: string) {
-  const phone = normalizePhone(phoneRaw);
-  if (!phone) return 0;
+  const variants = brPhoneVariants(normalizePhone(phoneRaw));
+  if (!variants.length) return 0;
   const { data: parts } = await admin
     .from("document_participants")
-    .select("organization_id")
-    .eq("phone", phone)
+    .select("organization_id, phone")
+    .in("phone", variants)
     .limit(500);
-  const orgs = [...new Set((parts ?? []).map((p) => p.organization_id as string))];
-  if (orgs.length)
-    await admin.from("whatsapp_opt_outs").upsert(
-      orgs.map((o) => ({ organization_id: o, phone, reason: reason.slice(0, 200) })),
-      {
-        onConflict: "organization_id,phone",
-        ignoreDuplicates: true,
-      },
-    );
-  return orgs.length;
+  // Descadastro no formato guardado em cada organização (é o que o envio confere).
+  const rows = [
+    ...new Map(
+      (parts ?? []).map((p) => [
+        `${p.organization_id}|${p.phone}`,
+        { organization_id: p.organization_id as string, phone: p.phone as string },
+      ]),
+    ).values(),
+  ].map((r) => ({ ...r, reason: reason.slice(0, 200) }));
+  if (rows.length)
+    await admin.from("whatsapp_opt_outs").upsert(rows, {
+      onConflict: "organization_id,phone",
+      ignoreDuplicates: true,
+    });
+  return new Set(rows.map((r) => r.organization_id)).size;
 }

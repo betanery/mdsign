@@ -12,6 +12,7 @@ import { PDFDocument, PDFName, PDFString } from "npm:pdf-lib@1.17.1";
 import { AppError } from "../functions/_shared/http.ts";
 import {
   availableAuthLevels,
+  brPhoneVariants,
   cleanParticipants,
   isValidCpf,
   normalizePhone,
@@ -287,3 +288,17 @@ Deno.test(
     assertEquals(requestKey("send", "u1", "../etc"), undefined);
   },
 );
+
+Deno.test("WhatsApp: SAIR reconhece o celular com e sem o 9 da frente", () => {
+  assertEquals(brPhoneVariants(normalizePhone("5561991670611")), [
+    "+55 61 99167-0611",
+    "+55 61 9167-0611",
+  ]);
+  assertEquals(brPhoneVariants(normalizePhone("556191670611")), [
+    "+55 61 9167-0611",
+    "+55 61 99167-0611",
+  ]);
+  // Fixo (começa com 2–5) não ganha 9; número inválido não gera nada.
+  assertEquals(brPhoneVariants(normalizePhone("6132345678")), ["+55 61 3234-5678"]);
+  assertEquals(brPhoneVariants(normalizePhone("123")), []);
+});
