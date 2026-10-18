@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FeatureGate } from "@/app/components/feature-preview";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CalendarDays, Download, FileSpreadsheet, FileText, Loader2, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  X,
+} from "lucide-react";
 
 import { markGuideStep } from "@/app/onboarding";
 import { PageHeader } from "@/app/components/app-shell";
@@ -11,6 +19,12 @@ import { downloadBlob, toPdf, toXlsx, type ExportTable } from "@/app/report-expo
 import { downloadCsv, toCsv } from "@/app/sheet";
 import { selectClass } from "@/app/ui";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -318,28 +332,33 @@ function ReportsPage() {
         subtitle={t.reports.subtitle}
         actions={
           can("reports.export") && report ? (
-            <div className="flex flex-wrap gap-2">
-              {(["csv", "xlsx", "pdf"] as const).map((k) => (
-                <Button
-                  key={k}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void exportAs(k)}
-                  disabled={exporting !== null}
-                >
-                  {exporting === k ? (
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={exporting !== null}>
+                  {exporting ? (
                     <Loader2 className="animate-spin" aria-hidden />
-                  ) : k === "pdf" ? (
-                    <FileText aria-hidden />
-                  ) : k === "xlsx" ? (
-                    <FileSpreadsheet aria-hidden />
                   ) : (
                     <Download aria-hidden />
                   )}
-                  {k.toUpperCase()}
+                  {t.reports.exportLabel}
+                  <ChevronDown aria-hidden />
                 </Button>
-              ))}
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {(["pdf", "xlsx", "csv"] as const).map((k) => (
+                  <DropdownMenuItem key={k} onSelect={() => void exportAs(k)}>
+                    {k === "pdf" ? (
+                      <FileText aria-hidden />
+                    ) : k === "xlsx" ? (
+                      <FileSpreadsheet aria-hidden />
+                    ) : (
+                      <Download aria-hidden />
+                    )}
+                    {t.reports.exportAs[k]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : undefined
         }
       />

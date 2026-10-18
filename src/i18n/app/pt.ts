@@ -878,6 +878,12 @@ const pt = {
     from: "De",
     to: "Até",
     all: "todos",
+    exportLabel: "Exportar",
+    exportAs: {
+      pdf: "PDF (para imprimir ou enviar)",
+      xlsx: "Excel (XLSX)",
+      csv: "CSV (planilha simples)",
+    },
     allOption: "Todos",
     clear: "Limpar filtros ({n})",
     f: {

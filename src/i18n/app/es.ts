@@ -868,6 +868,12 @@ const es: AppMessages = {
     from: "Desde",
     to: "Hasta",
     all: "todos",
+    exportLabel: "Exportar",
+    exportAs: {
+      pdf: "PDF (para imprimir o enviar)",
+      xlsx: "Excel (XLSX)",
+      csv: "CSV (planilla simple)",
+    },
     allOption: "Todos",
     clear: "Limpiar filtros ({n})",
     f: {
