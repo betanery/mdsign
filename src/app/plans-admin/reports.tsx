@@ -315,6 +315,7 @@ export function PlansSettings({
           </Button>
         </div>
       </Panel>
+      <WhatsAppTest />
       <Panel title={S.mogno} hint={S.mognoHint}>
         {mogno.error && <p className="text-sm text-destructive">{P.error}</p>}
         {!mogno.error && !mogno.data && <Loading />}
@@ -474,6 +475,74 @@ export function PlansAudit() {
             ))}
           </tbody>
         </table>
+      </div>
+    </Panel>
+  );
+}
+
+function WhatsAppTest() {
+  const P = usePlansAdminTexts();
+  const S = P.settings;
+  const [phone, setPhone] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const send = async () => {
+    setBusy(true);
+    const { error } = await supabase.functions.invoke("admin-whatsapp-test", {
+      body: { phone, confirmed: true },
+    });
+    setBusy(false);
+    if (error) {
+      const code = await (error as { context?: Response }).context
+        ?.json()
+        .then((b: { error?: string }) => b.error)
+        .catch(() => null);
+      return void toast.error(
+        code === "whatsapp_not_configured"
+          ? S.whatsappOff
+          : code === "invalid_phone"
+            ? S.whatsappInvalid
+            : S.whatsappFailed,
+      );
+    }
+    setConfirmed(false);
+    toast.success(S.whatsappSent);
+  };
+
+  return (
+    <Panel title={S.whatsapp} hint={S.whatsappHint}>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="grid gap-1">
+          <Label htmlFor="wa-test-phone">{S.whatsappPhone}</Label>
+          <Input
+            id="wa-test-phone"
+            className="w-48"
+            inputMode="tel"
+            autoComplete="off"
+            value={phone}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              setConfirmed(false);
+            }}
+          />
+        </div>
+        <label className="flex min-h-9 items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="size-5"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+          />
+          {S.whatsappConfirm}
+        </label>
+        <Button
+          className="bg-brand hover:bg-brand-strong"
+          disabled={busy || !confirmed || phone.replace(/\D/g, "").length < 10}
+          onClick={() => void send()}
+        >
+          {S.whatsappSend}
+        </Button>
       </div>
     </Panel>
   );

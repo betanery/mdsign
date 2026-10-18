@@ -196,7 +196,7 @@ function message(kind: Kind, role: string, firstName: string, org: string, link:
   return `${head}\n\nAcesse com segurança: ${link}\n\nSe você não reconhece este envio, ignore esta mensagem. Para não receber mais mensagens por aqui, responda SAIR.`;
 }
 
-async function sendBotConversa(phone: string, name: string, text: string) {
+export async function sendBotConversa(phone: string, name: string, text: string) {
   const key = Deno.env.get("BOTCONVERSA_API_KEY")!;
   const digits = phone.replace(/\D/g, "");
   const headers = { "API-KEY": key, "Content-Type": "application/json" };

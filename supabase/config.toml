@@ -489,3 +489,6 @@ verify_jwt = false
 
 [functions.data-request]
 verify_jwt = false
+
+[functions.admin-whatsapp-test]
+verify_jwt = false
