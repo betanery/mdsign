@@ -1171,6 +1171,10 @@ const pt = {
     notFound: "Documento não encontrado ou sem permissão de acesso.",
   },
   errors: {
+    too_many_attachments: "No máximo 5 anexos por documento.",
+    attachment_too_large: "Cada anexo pode ter até 10 MB.",
+    attachment_type: "Anexos podem ser PDF, JPG ou PNG.",
+    attachment_not_found: "Anexo não encontrado.",
     whatsapp_not_configured: "O WhatsApp do MDSign ainda não está configurado.",
     whatsapp_recent:
       "Já há uma mensagem de WhatsApp enviada há instantes para esta pessoa. Aguarde alguns minutos antes de reenviar.",
@@ -1271,6 +1275,7 @@ const pt = {
     quorumHintAny:
       "As pessoas do grupo recebem ao mesmo tempo; o documento segue quando o número escolhido assinar.",
     addGroup: "Adicionar grupo…",
+    repeatFrom: "Repetir participantes de um documento…",
     name: "Nome completo",
     email: "E-mail",
     cpf: "CPF",
@@ -1345,6 +1350,7 @@ const pt = {
       remindersOn: "ligados",
     },
     review: {
+      attachments: "Anexos",
       document: "Documento",
       participants: "Participantes",
       delegated: "Delegação ativa: esta aprovação vai para {name} (em delegação).",
@@ -1963,6 +1969,14 @@ const pt = {
     auto: "Sem posição, a assinatura vai automaticamente para a página de assinaturas.",
     me: "Você",
     optional: "Posicionar assinaturas (opcional)",
+  },
+  attachments: {
+    title: "Anexos (opcional)",
+    hint: "Arquivos de apoio que não precisam de assinatura: até 5 PDF, JPG ou PNG de até 10 MB.",
+    add: "Adicionar anexo",
+    remove: "Remover anexo",
+    list: "Anexos",
+    download: "Baixar",
   },
   observers: {
     title: "Observadores",

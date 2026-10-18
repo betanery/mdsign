@@ -2,7 +2,13 @@
 // Configurações → Revisão → Envio. O motor envia os e-mails aos participantes.
 
 import { requirePermission, requireUser } from "../_shared/auth.ts";
-import { createDocument, optionalKey, readPdf, requestKey } from "../_shared/create.ts";
+import {
+  createDocument,
+  optionalKey,
+  readAttachments,
+  readPdf,
+  requestKey,
+} from "../_shared/create.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import { cleanExpiration, cleanLocale, cleanMessage, cleanReminders } from "../_shared/options.ts";
 import {
@@ -44,6 +50,7 @@ Deno.serve(async (req) => {
     if (!payload.organizationId) throw new AppError("organization_required");
     await requirePermission(caller, payload.organizationId, "documents.create");
     const { bytes, name: filename } = await readPdf(form.get("file"));
+    const attachments = await readAttachments(form.getAll("attachments"));
 
     const name =
       String(payload.name ?? "")
@@ -71,6 +78,7 @@ Deno.serve(async (req) => {
       reminders: cleanReminders(payload.reminders),
       marks: cleanParticipantMarks(payload.marks, participants.length),
       observers: cleanObservers(payload.observers),
+      attachments,
     });
     return json({ documentId: created.documentId }, 200, origin);
   } catch (error) {

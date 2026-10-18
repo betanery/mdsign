@@ -1160,6 +1160,10 @@ const es: AppMessages = {
     notFound: "Documento no encontrado o sin permiso de acceso.",
   },
   errors: {
+    too_many_attachments: "Como máximo 5 anexos por documento.",
+    attachment_too_large: "Cada anexo puede tener hasta 10 MB.",
+    attachment_type: "Los anexos pueden ser PDF, JPG o PNG.",
+    attachment_not_found: "Anexo no encontrado.",
     whatsapp_not_configured: "El WhatsApp de MDSign todavía no está configurado.",
     whatsapp_recent:
       "Ya se envió un mensaje de WhatsApp a esta persona hace instantes. Espera unos minutos antes de reenviar.",
@@ -1260,6 +1264,7 @@ const es: AppMessages = {
     quorumHintAny:
       "Las personas del grupo lo reciben al mismo tiempo; el documento sigue cuando firma la cantidad elegida.",
     addGroup: "Agregar grupo…",
+    repeatFrom: "Repetir participantes de un documento…",
     name: "Nombre completo",
     email: "Correo electrónico",
     cpf: "CPF",
@@ -1335,6 +1340,7 @@ const es: AppMessages = {
       remindersOn: "activados",
     },
     review: {
+      attachments: "Anexos",
       document: "Documento",
       participants: "Participantes",
       delegated: "Delegación activa: esta aprobación va a {name} (en delegación).",
@@ -1966,6 +1972,14 @@ const es: AppMessages = {
     auto: "Sin posición, la firma va automáticamente a la página de firmas.",
     me: "Tú",
     optional: "Posicionar firmas (opcional)",
+  },
+  attachments: {
+    title: "Anexos (opcional)",
+    hint: "Archivos de apoyo que no necesitan firma: hasta 5 PDF, JPG o PNG de hasta 10 MB.",
+    add: "Agregar anexo",
+    remove: "Quitar anexo",
+    list: "Anexos",
+    download: "Descargar",
   },
   observers: {
     title: "Observadores",

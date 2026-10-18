@@ -23,6 +23,7 @@ import {
   observersValid,
   type MarksByPerson,
 } from "@/app/components/marks-editor";
+import { AttachmentsPicker } from "@/app/components/attachments-picker";
 import { PdfDrop, Stepper } from "@/app/components/pdf-drop";
 import {
   defaultSendOptions,
@@ -75,6 +76,7 @@ function SendPage() {
   }, [step, current?.id]);
   const [file, setFile] = useState<File | null>(null);
   const [fileBytes, setFileBytes] = useState<ArrayBuffer | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [marks, setMarks] = useState<MarksByPerson>({});
   const [name, setName] = useState("");
   const [participants, setParticipants] = useState<ParticipantDraft[]>([newParticipant()]);
@@ -137,6 +139,7 @@ function SendPage() {
       }),
     );
     form.append("file", file);
+    for (const a of attachments) form.append("attachments", a);
     try {
       const r = await callFunction<{ documentId: string }>("documents-send", form);
       setDocumentId(r.documentId);
@@ -162,6 +165,7 @@ function SendPage() {
   function reset() {
     setStep(0);
     setFile(null);
+    setAttachments([]);
     setName("");
     setParticipants([newParticipant()]);
     setOptions(defaultSendOptions(locale));
@@ -242,6 +246,13 @@ function SendPage() {
                 />
               </div>
             )}
+            {file && (
+              <AttachmentsPicker
+                files={attachments}
+                onChange={setAttachments}
+                onError={(code) => setError(code ? (t.errors[code] ?? null) : null)}
+              />
+            )}
           </>
         )}
         {step === 1 && (
@@ -256,6 +267,12 @@ function SendPage() {
           <dl className="grid gap-4 rounded-2xl border bg-white p-5 text-sm shadow-sm sm:grid-cols-[10rem_1fr]">
             <dt className="font-medium text-muted-foreground">{t.send.review.document}</dt>
             <dd>{name || file?.name}</dd>
+            {attachments.length > 0 && (
+              <>
+                <dt className="font-medium text-muted-foreground">{t.send.review.attachments}</dt>
+                <dd>{attachments.map((a) => a.name).join(", ")}</dd>
+              </>
+            )}
             <dt className="font-medium text-muted-foreground">{t.send.review.participants}</dt>
             <dd>
               <ol className="grid gap-1">

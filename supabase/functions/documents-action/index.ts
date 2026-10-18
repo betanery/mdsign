@@ -16,8 +16,17 @@ import { signdoc } from "../_shared/signdoc.ts";
 type Body = {
   documentId?: string;
   action?:
-    "sign-url" | "sync" | "download" | "cancel" | "remind" | "refuse" | "delete" | "whatsapp";
+    | "sign-url"
+    | "sync"
+    | "download"
+    | "attachment"
+    | "cancel"
+    | "remind"
+    | "refuse"
+    | "delete"
+    | "whatsapp";
   participantId?: string;
+  attachmentId?: string;
   reason?: string;
   version?: "signed" | "original" | "printable";
 };
@@ -107,6 +116,22 @@ Deno.serve(async (req) => {
           ? ticket.location
           : `${signdoc.baseUrl}${ticket.location}`;
         return json({ url }, 200, origin);
+      }
+
+      // Anexo: link de download curto, só para quem vê o documento (RLS do anexo).
+      case "attachment": {
+        const { data: a } = await caller.asUser
+          .from("document_attachments")
+          .select("name, storage_path")
+          .eq("id", body.attachmentId ?? "")
+          .eq("document_id", doc.id)
+          .maybeSingle();
+        if (!a) throw new AppError("attachment_not_found", 404);
+        const { data: signed, error } = await admin.storage
+          .from("attachments")
+          .createSignedUrl(a.storage_path as string, 60, { download: a.name as string });
+        if (error || !signed) throw new AppError("internal_error", 500);
+        return json({ url: signed.signedUrl }, 200, origin);
       }
 
       case "cancel": {

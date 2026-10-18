@@ -45,7 +45,72 @@ export type CreateInput = {
   idempotencyKey?: string;
   /** Observadores: acompanham e recebem as notificações, sem assinar. */
   observers?: ObserverInput[] | undefined;
+  /** Anexos de apoio (sem assinatura): vão para o motor e uma cópia fica no MDSign. */
+  attachments?: AttachmentInput[] | undefined;
 };
+
+export type AttachmentInput = { bytes: Uint8Array; name: string; contentType: AttachmentType };
+export type AttachmentType = "application/pdf" | "image/jpeg" | "image/png";
+export const MAX_ATTACHMENTS = 5;
+export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+/** Tipo real do arquivo pelos primeiros bytes (não confia na extensão nem no navegador). */
+export function attachmentType(bytes: Uint8Array): AttachmentType | null {
+  const b = bytes;
+  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return "application/pdf";
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "image/png";
+  return null;
+}
+
+/** Anexos do formulário (campo "attachments"): até 5, até 10 MB, PDF limpo, JPG ou PNG. */
+export async function readAttachments(entries: FormDataEntryValue[]): Promise<AttachmentInput[]> {
+  const files = entries.filter((f): f is File => f instanceof File && f.size > 0);
+  if (files.length > MAX_ATTACHMENTS) throw new AppError("too_many_attachments");
+  const out: AttachmentInput[] = [];
+  for (const f of files) {
+    if (f.size > MAX_ATTACHMENT_BYTES) throw new AppError("attachment_too_large");
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    const type = attachmentType(bytes);
+    if (!type) throw new AppError("attachment_type");
+    if (type === "application/pdf") await assertSafePdf(bytes);
+    const name =
+      f.name
+        .replace(/[\\/\u0000-\u001f]/g, "")
+        .trim()
+        .slice(0, 200) || "anexo";
+    out.push({ bytes, name, contentType: type });
+  }
+  return out;
+}
+
+/** Cópia dos anexos no MDSign (bucket privado) para download na página do documento. */
+async function saveAttachments(
+  documentId: string,
+  organizationId: string,
+  list: AttachmentInput[],
+) {
+  for (const [i, a] of list.entries()) {
+    const ext =
+      a.contentType === "application/pdf" ? "pdf" : a.contentType === "image/png" ? "png" : "jpg";
+    const path = `${organizationId}/${documentId}/${i + 1}.${ext}`;
+    const { error } = await admin.storage
+      .from("attachments")
+      .upload(path, a.bytes, { contentType: a.contentType, upsert: true });
+    if (error) {
+      console.error("attachment copy", error.message);
+      continue;
+    }
+    await admin.from("document_attachments").insert({
+      document_id: documentId,
+      organization_id: organizationId,
+      name: a.name,
+      content_type: a.contentType,
+      size_bytes: a.bytes.length,
+      storage_path: path,
+    });
+  }
+}
 
 export type Created = { documentId: string; engineDocumentId: string; participantIds: string[] };
 
@@ -238,6 +303,15 @@ export async function createDocument(input: CreateInput): Promise<Created> {
   try {
     const sizes = input.marks?.some((m) => m?.length) ? pageSizes(await loadPdf(input.pdf)) : [];
     const upload = await signdoc.uploadBytes(toBase64(input.pdf));
+    const attachmentUploads = [];
+    for (const a of input.attachments ?? [])
+      attachmentUploads.push({
+        id: await signdoc.uploadBytes(toBase64(a.bytes)),
+        name: a.name,
+        displayName: a.name,
+        contentType: a.contentType,
+        isPrivate: false,
+      });
     creating = true;
     const [created] = await signdoc.createDocuments({
       files: [
@@ -260,6 +334,7 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       ...(input.observers?.length
         ? { observers: input.observers.map((o) => toObserver(o, input.locale)) }
         : {}),
+      ...(attachmentUploads.length ? { attachments: attachmentUploads } : {}),
     });
     creating = false;
     if (!created) throw new AppError("engine_rejected", 422);
@@ -355,6 +430,10 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       );
     if (input.observers?.length)
       await saveObservers(doc.id, input.organizationId, input.observers, engine);
+    if (input.attachments?.length)
+      await saveAttachments(doc.id, input.organizationId, input.attachments).catch((e) =>
+        console.error("attachments", e),
+      );
 
     await admin.from("document_events").insert({
       document_id: doc.id,

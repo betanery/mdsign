@@ -6,6 +6,7 @@ import {
   FileUp,
   Loader2,
   MessageCircle,
+  Paperclip,
   PenLine,
   RefreshCw,
   ShieldCheck,
@@ -68,6 +69,7 @@ function DocumentDetail() {
   const [busy, setBusy] = useState<string | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [observers, setObservers] = useState<ObserverRow[]>([]);
+  const [attachments, setAttachments] = useState<{ id: string; name: string }[]>([]);
   const [reminders, setReminders] = useState<ReminderInfo[]>([]);
   const [notes, setNotes] = useState<
     {
@@ -102,6 +104,12 @@ function DocumentDetail() {
       .eq("document_id", id)
       .order("created_at");
     setObservers((obs.data as ObserverRow[] | null) ?? []);
+    const att = await supabase
+      .from("document_attachments")
+      .select("id, name")
+      .eq("document_id", id)
+      .order("created_at");
+    setAttachments((att.data as { id: string; name: string }[] | null) ?? []);
     const rem = await supabase
       .from("document_participants")
       .select("id, reminder_count, last_reminded_at")
@@ -148,6 +156,13 @@ function DocumentDetail() {
       );
       window.open(url, "_blank", "noopener");
       markGuideStep(orgId, "downloaded");
+    });
+  }
+
+  async function openAttachment(attachmentId: string) {
+    await run(`att-${attachmentId}`, async () => {
+      const { url } = await documentAction<{ url: string }>(id, "attachment", { attachmentId });
+      window.open(url, "_blank", "noopener");
     });
   }
 
@@ -309,6 +324,39 @@ function DocumentDetail() {
             {t.documents.validation.how}
           </a>
         </p>
+      )}
+
+      {attachments.length > 0 && (
+        <section
+          className="mb-6 grid gap-2 rounded-xl border bg-white px-4 py-3 text-sm"
+          aria-labelledby="doc-attachments"
+        >
+          <h2 id="doc-attachments" className="flex items-center gap-2 font-semibold">
+            <Paperclip className="size-4 text-brand" aria-hidden />
+            {t.attachments.list} ({attachments.length})
+          </h2>
+          <ul className="grid gap-1">
+            {attachments.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate">{a.name}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy !== null}
+                  onClick={() => void openAttachment(a.id)}
+                >
+                  {busy === `att-${a.id}` ? (
+                    <Loader2 className="animate-spin" aria-hidden />
+                  ) : (
+                    <Download aria-hidden />
+                  )}
+                  {t.attachments.download}
+                  <span className="sr-only">: {a.name}</span>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {embedUrl && (

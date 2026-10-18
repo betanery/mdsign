@@ -30,6 +30,11 @@ import { maskPersonal, safeEqual } from "../functions/_shared/net.ts";
 import { signPayload, newSecret } from "../functions/_shared/webhooks.ts";
 import { signatureEmail } from "../functions/_shared/email.ts";
 import { isDeletedInEngine } from "../functions/_shared/documents.ts";
+import {
+  attachmentType,
+  MAX_ATTACHMENT_BYTES,
+  readAttachments,
+} from "../functions/_shared/create.ts";
 import { cleanKey, looksLikePdf, publicSigners } from "../functions/_shared/validation.ts";
 import { recentWhatsApp, WHATSAPP_REPEAT_MINUTES } from "../functions/_shared/notifications.ts";
 
@@ -368,4 +373,35 @@ Deno.test("validação pública: código digitado e arquivo recebido", () => {
   assertEquals(looksLikePdf(new TextEncoder().encode("%PDF-1.7 ...")), true);
   assertEquals(looksLikePdf(new TextEncoder().encode("GIF89a")), false);
   assertEquals(looksLikePdf(new Uint8Array(11 * 1024 * 1024).fill(0x25)), false);
+});
+
+Deno.test("anexos: tipo pelo conteúdo, limite de quantidade e de tamanho", async () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+  const jpg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1]);
+  assertEquals(attachmentType(png), "image/png");
+  assertEquals(attachmentType(jpg), "image/jpeg");
+  assertEquals(attachmentType(new TextEncoder().encode("MZ executável")), null);
+  const ok = await readAttachments([new File([png], "foto.png"), new File([jpg], "../x/rg.jpg")]);
+  assertEquals(
+    ok.map((a) => [a.name, a.contentType]),
+    [
+      ["foto.png", "image/png"],
+      ["..xrg.jpg", "image/jpeg"],
+    ],
+  );
+  await assertRejects(
+    () => readAttachments(Array.from({ length: 6 }, (_, i) => new File([png], `${i}.png`))),
+    AppError,
+    "too_many_attachments",
+  );
+  await assertRejects(
+    () => readAttachments([new File([new TextEncoder().encode("MZ")], "a.exe")]),
+    AppError,
+    "attachment_type",
+  );
+  await assertRejects(
+    () => readAttachments([new File([new Uint8Array(MAX_ATTACHMENT_BYTES + 1)], "grande.pdf")]),
+    AppError,
+    "attachment_too_large",
+  );
 });

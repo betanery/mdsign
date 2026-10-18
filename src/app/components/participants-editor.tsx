@@ -67,6 +67,49 @@ export const newParticipant = (role: ParticipantDraft["role"] = "signer"): Parti
   authLevel: "basic",
 });
 
+/** Participante como ficou guardado num documento enviado (para repetir o fluxo). */
+export type PastParticipant = {
+  name: string;
+  email: string;
+  cpf: string | null;
+  no_cpf: boolean | null;
+  phone: string | null;
+  role: ParticipantDraft["role"];
+  auth_level: string | null;
+  step: number;
+  rule_name: string | null;
+  rule_required: number | null;
+};
+
+/** Repete os participantes de um documento: mesma ordem, papel, autenticação e quórum. */
+export function participantsFromDocument(
+  rows: PastParticipant[],
+  formatCpfFn: (v: string) => string = (v) => v,
+): ParticipantDraft[] {
+  const rules = new Map<string, string>();
+  return [...rows]
+    .sort((a, b) => a.step - b.step)
+    .slice(0, 30)
+    .map((r) => {
+      let rule: ParticipantDraft["rule"] = null;
+      if (r.rule_name && r.rule_required) {
+        if (!rules.has(r.rule_name)) rules.set(r.rule_name, crypto.randomUUID());
+        rule = { key: rules.get(r.rule_name)!, name: r.rule_name, required: r.rule_required };
+      }
+      return {
+        ...newParticipant(r.role),
+        name: r.name,
+        email: r.email,
+        cpf: r.cpf ? formatCpfFn(r.cpf) : "",
+        noCpf: Boolean(r.no_cpf),
+        phone: r.phone ?? "",
+        authLevel: (r.auth_level ?? "basic") as AuthLevel,
+        rule,
+        group: rule ? { key: rule.key, name: rule.name } : null,
+      };
+    });
+}
+
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /** Mesmas regras do backend (cleanParticipants), para avisar antes de enviar. */
@@ -179,6 +222,33 @@ export function ParticipantsEditor({
       .order("name")
       .then(({ data }) => setGroups((data as { id: string; name: string }[] | null) ?? []));
   }, [orgId, fixed]);
+
+  // Documentos enviados recentemente (o RLS só devolve o que a pessoa pode ver).
+  const [recent, setRecent] = useState<{ id: string; name: string; created_at: string }[]>([]);
+  useEffect(() => {
+    if (!orgId || fixed) return;
+    void supabase
+      .from("documents")
+      .select("id, name, created_at")
+      .eq("organization_id", orgId)
+      .eq("kind", "send")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => setRecent((data as typeof recent | null) ?? []));
+  }, [orgId, fixed]);
+
+  async function repeatFrom(documentId: string) {
+    const { data } = await supabase
+      .from("document_participants")
+      .select("name, email, cpf, no_cpf, phone, role, auth_level, step, rule_name, rule_required")
+      .eq("document_id", documentId)
+      .order("step");
+    const list = participantsFromDocument((data as PastParticipant[] | null) ?? [], formatCpf);
+    if (!list.length) return;
+    const empty = value.every((p) => !p.name.trim() && !p.email.trim());
+    onChange(empty ? list : [...value, ...list].slice(0, 30));
+  }
 
   // Grupo inteiro de uma vez ("todos do grupo"): cada membro vira um participante.
   async function addGroup(groupId: string) {
@@ -462,6 +532,21 @@ export function ParticipantsEditor({
           <UserRound aria-hidden />
           {t.participants.addMe}
         </Button>
+        {recent.length > 0 && (
+          <select
+            aria-label={t.participants.repeatFrom}
+            value=""
+            onChange={(e) => e.target.value && void repeatFrom(e.target.value)}
+            className={cn(selectClass, "h-10 w-auto max-w-full")}
+          >
+            <option value="">{t.participants.repeatFrom}</option>
+            {recent.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name.slice(0, 60)} · {new Date(d.created_at).toLocaleDateString()}
+              </option>
+            ))}
+          </select>
+        )}
         {groups.length > 0 && (
           <select
             aria-label={t.participants.addGroup}

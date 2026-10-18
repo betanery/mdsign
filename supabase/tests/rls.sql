@@ -1521,6 +1521,30 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Anexos: vê quem vê o documento (observadora sim, outra organização não); gravação só no servidor.
+insert into public.document_attachments (document_id, organization_id, name, content_type, size_bytes, storage_path)
+  values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'),
+          'apoio.pdf', 'application/pdf', 1234, 'teste/docObs/1.pdf');
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000c","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.document_attachments) = 1, 'observadora vê o anexo do documento';
+end $$;
+do $$ begin
+  insert into public.document_attachments (document_id, organization_id, name, content_type, size_bytes, storage_path)
+    values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'), 'x.pdf', 'application/pdf', 1, 'x/y.pdf');
+  raise exception 'FALHOU: usuário gravou anexo direto';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.document_attachments
+          where document_id = (select v from t_ids where k = 'docObs')) = 0, 'outra organização não vê o anexo';
+end $$;
+reset role;
+
 -- Validação pública: tentativas só para o servidor (nem visitante nem usuário logado leem).
 set local role anon;
 do $$
