@@ -47,6 +47,27 @@ export type EngineDocument = {
   expirationDate?: string | null;
   flowActions: EngineFlowAction[];
   observers?: { id: string; user?: { name?: string; email?: string } }[];
+  /** Código de validação (impresso na página de assinaturas do PDF). */
+  key?: string | null;
+};
+
+/** Assinatura como o motor devolve na validação (só os campos que o MDSign usa). */
+export type EngineSigner = {
+  subjectName?: string | null;
+  identifier?: string | null;
+  emailAddress?: string | null;
+  isElectronic?: boolean | null;
+  signingTime?: string | null;
+  validationResults?: { isValid?: boolean | null } | null;
+};
+
+export type EngineSignaturesInfo = {
+  name?: string | null;
+  status?: string | null;
+  isConcluded?: boolean | null;
+  creationDate?: string | null;
+  updateDate?: string | null;
+  signers?: EngineSigner[] | null;
 };
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
@@ -81,6 +102,8 @@ async function call<T>(
   path: string,
   body?: unknown,
   init?: RequestInit,
+  /** Validação pública: código ou PDF recusado é resposta normal, não erro do motor. */
+  quiet = false,
 ): Promise<T> {
   if (!API_KEY) throw new AppError("engine_not_configured", 503);
   let res: Response;
@@ -113,8 +136,17 @@ async function call<T>(
   if (!res.ok) {
     const code = String(data?.["code"] ?? data?.["exceptionCode"] ?? "") || null;
     const message = typeof data?.["message"] === "string" ? (data["message"] as string) : text;
-    console.error("signdoc", method, maskPath(path), res.status, maskPersonal(text.slice(0, 500)));
-    await recordEngineError(method, path, "http", res.status, code, message);
+    const expected = quiet && res.status >= 400 && res.status < 500;
+    if (!expected) {
+      console.error(
+        "signdoc",
+        method,
+        maskPath(path),
+        res.status,
+        maskPersonal(text.slice(0, 500)),
+      );
+      await recordEngineError(method, path, "http", res.status, code, message);
+    }
     // 400/422 trazem o motivo; 500 traz exceptionCode para os logs do servidor.
     throw new AppError(
       res.status >= 500 ? "engine_unavailable" : "engine_rejected",
@@ -138,6 +170,27 @@ export const signdoc = {
     form.append("file", file, file.name);
     const r = await call<{ id: string }>("POST", "/api/uploads", form);
     return r.id;
+  },
+  /** Validação pelo código impresso no documento. */
+  validateByKey(key: string) {
+    return call<EngineSignaturesInfo>(
+      "GET",
+      `/api/documents/keys/${encodeURIComponent(key)}/signatures`,
+      undefined,
+      undefined,
+      true,
+    );
+  },
+  /** Validação de um PDF assinado enviado por qualquer pessoa. */
+  async validateFile(file: File) {
+    const fileId = await this.upload(file);
+    return call<EngineSigner[]>(
+      "POST",
+      "/api/documents/validate-signatures",
+      { fileId, mimeType: "application/pdf" },
+      undefined,
+      true,
+    );
   },
   async uploadBytes(base64: string): Promise<string> {
     const r = await call<{ id: string }>("POST", "/api/uploads/bytes", { bytes: base64 });

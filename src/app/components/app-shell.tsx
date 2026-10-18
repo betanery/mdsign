@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  BadgeCheck,
   Compass,
   BarChart3,
   Building2,
@@ -263,7 +264,7 @@ function OrgSwitcher() {
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: (() => void) | undefined }) {
-  const { t } = useAppI18n();
+  const { t, locale } = useAppI18n();
   const { signOut, user } = useAuth();
   const { isPlatformAdmin } = useOrg();
   const nav = useNavModel();
@@ -324,6 +325,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: (() => void) | undefined 
           <Compass className="size-4" aria-hidden />
           {t.guide.menu}
         </button>
+        <a
+          href={`/${locale}/validar`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex min-h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-white/85 hover:bg-white/10"
+        >
+          <BadgeCheck className="size-4" aria-hidden />
+          {t.nav.validate}
+        </a>
         <LanguageSelect className="w-fit border-white/30 bg-white" />
         <p className="truncate px-1 text-xs text-white/70">{user?.email}</p>
         <button

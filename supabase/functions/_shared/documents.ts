@@ -150,6 +150,14 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
     }
   }
 
+  // Código de validação: guardado uma vez (mostrado em "Como validar este documento").
+  if (current.key)
+    await admin
+      .from("documents")
+      .update({ verification_key: current.key.slice(0, 80) })
+      .eq("id", doc.id)
+      .is("verification_key", null);
+
   const status = mapDocumentStatus(current.status);
   if (status !== doc.status) {
     const { data: changed } = await admin

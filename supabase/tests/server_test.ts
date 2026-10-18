@@ -30,6 +30,7 @@ import { maskPersonal, safeEqual } from "../functions/_shared/net.ts";
 import { signPayload, newSecret } from "../functions/_shared/webhooks.ts";
 import { signatureEmail } from "../functions/_shared/email.ts";
 import { isDeletedInEngine } from "../functions/_shared/documents.ts";
+import { cleanKey, looksLikePdf, publicSigners } from "../functions/_shared/validation.ts";
 import { recentWhatsApp, WHATSAPP_REPEAT_MINUTES } from "../functions/_shared/notifications.ts";
 
 const CPF = "529.982.247-25";
@@ -330,4 +331,41 @@ Deno.test("WhatsApp: reenvio logo depois não duplica a mensagem", async () => {
   );
   // Sem participantes, nem consulta o banco.
   assertEquals((await recentWhatsApp([], now, db)).size, 0);
+});
+
+Deno.test("validação pública: só nome, quando, como e se é válida", () => {
+  const out = publicSigners([
+    {
+      subjectName: "Fulana de Tal",
+      identifier: "12345678909",
+      emailAddress: "fulana@exemplo.com",
+      isElectronic: false,
+      signingTime: "2026-10-17T13:31:00Z",
+      validationResults: { isValid: true },
+      // campos que não podem sair
+      ...({ certificateThumbprint: "abc", evidences: { ip: "1.2.3.4" } } as object),
+    },
+    { subjectName: "Sicrano", identifier: null, isElectronic: true, validationResults: null },
+  ]);
+  assertEquals(out, [
+    {
+      name: "Fulana de Tal",
+      cpf: "***.456.789-**",
+      signedAt: "2026-10-17T13:31:00Z",
+      kind: "certificate",
+      valid: true,
+    },
+    { name: "Sicrano", cpf: null, signedAt: null, kind: "electronic", valid: null },
+  ]);
+  const text = JSON.stringify(out);
+  assert(!text.includes("@") && !text.includes("12345678909") && !text.includes("abc"));
+});
+
+Deno.test("validação pública: código digitado e arquivo recebido", () => {
+  assertEquals(cleanKey(" abcd-1234.efgh "), "ABCD-1234EFGH");
+  assertEquals(cleanKey("x"), null);
+  assertEquals(cleanKey("<script>"), null);
+  assertEquals(looksLikePdf(new TextEncoder().encode("%PDF-1.7 ...")), true);
+  assertEquals(looksLikePdf(new TextEncoder().encode("GIF89a")), false);
+  assertEquals(looksLikePdf(new Uint8Array(11 * 1024 * 1024).fill(0x25)), false);
 });

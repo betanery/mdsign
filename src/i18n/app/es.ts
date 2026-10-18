@@ -386,6 +386,7 @@ const es: AppMessages = {
       account: "Cuenta",
     },
     more: "Más",
+    validate: "Validar documento",
     newAction: "Nueva acción",
     admin: "Super Admin",
     switchOrg: "Cambiar organización",
@@ -1088,6 +1089,10 @@ const es: AppMessages = {
     },
     title: "Documentos",
     subtitle: "Sigue todo lo que se envió y firmó.",
+    validation: {
+      code: "Código de validación",
+      how: "Cómo validar este documento",
+    },
     signAll: "Firmar todos ({n})",
     signAllCount: "{n} documentos esperando por ti.",
     signAllOne: "1 documento esperando por ti.",

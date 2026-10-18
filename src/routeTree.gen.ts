@@ -22,6 +22,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as TitularRouteImport } from './routes/titular'
+import { Route as ValidarRouteImport } from './routes/validar'
 import { Route as LangIndexRouteImport } from './routes/$lang/index'
 import { Route as LangAssinarGratisRouteImport } from './routes/$lang/assinar-gratis'
 import { Route as LangCondicoesCedroRouteImport } from './routes/$lang/condicoes-cedro'
@@ -30,6 +31,7 @@ import { Route as LangEntrarRouteImport } from './routes/$lang/entrar'
 import { Route as LangPrivacidadeRouteImport } from './routes/$lang/privacidade'
 import { Route as LangTermosRouteImport } from './routes/$lang/termos'
 import { Route as LangTitularRouteImport } from './routes/$lang/titular'
+import { Route as LangValidarRouteImport } from './routes/$lang/validar'
 import { Route as AppShellRouteImport } from './routes/app/_shell'
 import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-password'
 import { Route as AppLoginRouteImport } from './routes/app/login'
@@ -126,6 +128,11 @@ const TitularRoute = TitularRouteImport.update({
   path: '/titular',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ValidarRoute = ValidarRouteImport.update({
+  id: '/validar',
+  path: '/validar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LangIndexRoute = LangIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -164,6 +171,11 @@ const LangTermosRoute = LangTermosRouteImport.update({
 const LangTitularRoute = LangTitularRouteImport.update({
   id: '/titular',
   path: '/titular',
+  getParentRoute: () => LangRouteRoute,
+} as any)
+const LangValidarRoute = LangValidarRouteImport.update({
+  id: '/validar',
+  path: '/validar',
   getParentRoute: () => LangRouteRoute,
 } as any)
 const AppShellRoute = AppShellRouteImport.update({
@@ -330,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/titular': typeof TitularRoute
+  '/validar': typeof ValidarRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
@@ -337,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/$lang/privacidade': typeof LangPrivacidadeRoute
   '/$lang/termos': typeof LangTermosRoute
   '/$lang/titular': typeof LangTitularRoute
+  '/$lang/validar': typeof LangValidarRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
@@ -381,6 +395,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/titular': typeof TitularRoute
+  '/validar': typeof ValidarRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
@@ -388,6 +403,7 @@ export interface FileRoutesByTo {
   '/$lang/privacidade': typeof LangPrivacidadeRoute
   '/$lang/termos': typeof LangTermosRoute
   '/$lang/titular': typeof LangTitularRoute
+  '/$lang/validar': typeof LangValidarRoute
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
@@ -433,6 +449,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/termos': typeof TermosRoute
   '/titular': typeof TitularRoute
+  '/validar': typeof ValidarRoute
   '/$lang/assinar-gratis': typeof LangAssinarGratisRoute
   '/$lang/condicoes-cedro': typeof LangCondicoesCedroRoute
   '/$lang/desenvolvedores': typeof LangDesenvolvedoresRoute
@@ -440,6 +457,7 @@ export interface FileRoutesById {
   '/$lang/privacidade': typeof LangPrivacidadeRoute
   '/$lang/termos': typeof LangTermosRoute
   '/$lang/titular': typeof LangTitularRoute
+  '/$lang/validar': typeof LangValidarRoute
   '/app/_shell': typeof AppShellRouteWithChildren
   '/app/forgot-password': typeof AppForgotPasswordRoute
   '/app/login': typeof AppLoginRoute
@@ -488,6 +506,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/termos'
     | '/titular'
+    | '/validar'
     | '/$lang/assinar-gratis'
     | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
@@ -495,6 +514,7 @@ export interface FileRouteTypes {
     | '/$lang/privacidade'
     | '/$lang/termos'
     | '/$lang/titular'
+    | '/$lang/validar'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/reset-password'
@@ -539,6 +559,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/termos'
     | '/titular'
+    | '/validar'
     | '/$lang/assinar-gratis'
     | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
@@ -546,6 +567,7 @@ export interface FileRouteTypes {
     | '/$lang/privacidade'
     | '/$lang/termos'
     | '/$lang/titular'
+    | '/$lang/validar'
     | '/app/forgot-password'
     | '/app/login'
     | '/app/reset-password'
@@ -590,6 +612,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/termos'
     | '/titular'
+    | '/validar'
     | '/$lang/assinar-gratis'
     | '/$lang/condicoes-cedro'
     | '/$lang/desenvolvedores'
@@ -597,6 +620,7 @@ export interface FileRouteTypes {
     | '/$lang/privacidade'
     | '/$lang/termos'
     | '/$lang/titular'
+    | '/$lang/validar'
     | '/app/_shell'
     | '/app/forgot-password'
     | '/app/login'
@@ -644,6 +668,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermosRoute: typeof TermosRoute
   TitularRoute: typeof TitularRoute
+  ValidarRoute: typeof ValidarRoute
   FTokenRoute: typeof FTokenRoute
   STokenRoute: typeof STokenRoute
 }
@@ -741,6 +766,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TitularRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/validar': {
+      id: '/validar'
+      path: '/validar'
+      fullPath: '/validar'
+      preLoaderRoute: typeof ValidarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$lang/': {
       id: '/$lang/'
       path: '/'
@@ -795,6 +827,13 @@ declare module '@tanstack/react-router' {
       path: '/titular'
       fullPath: '/$lang/titular'
       preLoaderRoute: typeof LangTitularRouteImport
+      parentRoute: typeof LangRouteRoute
+    }
+    '/$lang/validar': {
+      id: '/$lang/validar'
+      path: '/validar'
+      fullPath: '/$lang/validar'
+      preLoaderRoute: typeof LangValidarRouteImport
       parentRoute: typeof LangRouteRoute
     }
     '/app/_shell': {
@@ -1018,6 +1057,7 @@ interface LangRouteRouteChildren {
   LangPrivacidadeRoute: typeof LangPrivacidadeRoute
   LangTermosRoute: typeof LangTermosRoute
   LangTitularRoute: typeof LangTitularRoute
+  LangValidarRoute: typeof LangValidarRoute
   LangIndexRoute: typeof LangIndexRoute
   LangLpSlugRoute: typeof LangLpSlugRoute
 }
@@ -1030,6 +1070,7 @@ const LangRouteRouteChildren: LangRouteRouteChildren = {
   LangPrivacidadeRoute: LangPrivacidadeRoute,
   LangTermosRoute: LangTermosRoute,
   LangTitularRoute: LangTitularRoute,
+  LangValidarRoute: LangValidarRoute,
   LangIndexRoute: LangIndexRoute,
   LangLpSlugRoute: LangLpSlugRoute,
 }
@@ -1126,6 +1167,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermosRoute: TermosRoute,
   TitularRoute: TitularRoute,
+  ValidarRoute: ValidarRoute,
   FTokenRoute: FTokenRoute,
   STokenRoute: STokenRoute,
 }

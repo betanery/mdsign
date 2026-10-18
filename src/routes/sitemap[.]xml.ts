@@ -10,6 +10,7 @@ const paths = [
   "/desenvolvedores",
   "/assinar-gratis",
   "/titular",
+  "/validar",
   ...CAMPAIGN_SLUGS.map((slug) => `/lp/${slug}`),
 ];
 

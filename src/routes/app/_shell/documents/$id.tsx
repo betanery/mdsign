@@ -8,6 +8,7 @@ import {
   MessageCircle,
   PenLine,
   RefreshCw,
+  ShieldCheck,
   Users,
   XCircle,
 } from "lucide-react";
@@ -58,9 +59,11 @@ function DocumentDetail() {
   useEffect(() => {
     markGuideStep(orgId, "viewed_document");
   }, [orgId]);
-  const [doc, setDoc] = useState<(DocumentRow & { deleted_at?: string | null }) | null | undefined>(
-    undefined,
-  );
+  const [doc, setDoc] = useState<
+    | (DocumentRow & { deleted_at?: string | null; verification_key?: string | null })
+    | null
+    | undefined
+  >(undefined);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
@@ -82,7 +85,11 @@ function DocumentDetail() {
 
   const load = useCallback(async () => {
     const [d, e] = await Promise.all([
-      supabase.from("documents").select(`${documentSelect}, deleted_at`).eq("id", id).maybeSingle(),
+      supabase
+        .from("documents")
+        .select(`${documentSelect}, deleted_at, verification_key`)
+        .eq("id", id)
+        .maybeSingle(),
       supabase
         .from("document_events")
         .select("id, type, actor_name, occurred_at")
@@ -284,6 +291,25 @@ function DocumentDetail() {
           </Button>
         )}
       </div>
+
+      {/* Concluído: o código impresso no PDF e o atalho para a validação pública. */}
+      {doc.status === "concluded" && doc.verification_key && (
+        <p className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border bg-white px-4 py-3 text-sm">
+          <ShieldCheck className="size-4 text-brand" aria-hidden />
+          <span>
+            {t.documents.validation.code}:{" "}
+            <span className="font-mono font-semibold">{doc.verification_key}</span>
+          </span>
+          <a
+            href={`/${locale}/validar?codigo=${encodeURIComponent(doc.verification_key)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-brand hover:underline"
+          >
+            {t.documents.validation.how}
+          </a>
+        </p>
+      )}
 
       {embedUrl && (
         <div className="mb-6">

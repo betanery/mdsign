@@ -79,12 +79,18 @@ export function Footer() {
           <span>
             © {new Date().getFullYear()} MDSign · {siteConfig.company}. {t.footer.rights}
           </span>
-          <nav aria-label={`${t.footer.terms} · ${t.footer.privacy}`} className="flex gap-4">
+          <nav
+            aria-label={`${t.footer.terms} · ${t.footer.privacy}`}
+            className="flex flex-wrap gap-x-4 gap-y-2"
+          >
             <a href={path("/termos")} className="hover:text-white">
               {t.footer.terms}
             </a>
             <a href={path("/privacidade")} className="hover:text-white">
               {t.footer.privacy}
+            </a>
+            <a href={path("/validar")} className="hover:text-white">
+              {t.footer.validate}
             </a>
             <a href={path("/titular")} className="hover:text-white">
               {t.footer.dataRights}

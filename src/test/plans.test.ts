@@ -15,6 +15,7 @@ import {
 } from "@/app/plans-admin/api";
 import { plansAdminTexts } from "@/app/plans-admin/texts";
 import { planPageTexts } from "@/routes/app/_shell/plan";
+import { validateTexts } from "@/routes/$lang/validar";
 
 const shape = (o: unknown, prefix = ""): string[] =>
   o && typeof o === "object" && !Array.isArray(o)
@@ -170,7 +171,10 @@ describe("Planos & Funcionalidades: mesma regra do servidor", () => {
   });
 
   it("textos com as mesmas chaves nos 3 idiomas", () => {
-    for (const T of [plansAdminTexts, planPageTexts, featureTexts] as Record<string, unknown>[]) {
+    for (const T of [plansAdminTexts, planPageTexts, featureTexts, validateTexts] as Record<
+      string,
+      unknown
+    >[]) {
       expect(shape(T["en"])).toEqual(shape(T["pt"]));
       expect(shape(T["es"])).toEqual(shape(T["pt"]));
     }

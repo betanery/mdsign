@@ -397,6 +397,7 @@ const pt = {
       account: "Conta",
     },
     more: "Mais",
+    validate: "Validar documento",
     newAction: "Nova ação",
     admin: "Super Admin",
     switchOrg: "Trocar organização",
@@ -1099,6 +1100,10 @@ const pt = {
     },
     title: "Documentos",
     subtitle: "Acompanhe tudo o que foi enviado e assinado.",
+    validation: {
+      code: "Código de validação",
+      how: "Como validar este documento",
+    },
     signAll: "Assinar todos ({n})",
     signAllCount: "{n} documentos esperando por você.",
     signAllOne: "1 documento esperando por você.",

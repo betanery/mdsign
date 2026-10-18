@@ -304,6 +304,7 @@ const es: Messages = {
     privacy: "Política de privacidad",
     cookies: "Preferencias de cookies",
     dataRights: "Sus datos (LGPD)",
+    validate: "Validar documento",
     rights: "Todos los derechos reservados.",
   },
   lead: {

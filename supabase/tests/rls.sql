@@ -2,6 +2,26 @@
 -- Rodam dentro de uma transação que é desfeita no final (scripts/test-rls.sh): nada fica gravado.
 -- Cada verificação usa ASSERT; a primeira falha interrompe com a mensagem do caso.
 
+-- Estado-base da bateria (desfeito no rollback, como todo o resto): matriz 2026_10 vigente,
+-- a oficial 2026_11 em rascunho, nenhuma outra versão e WhatsApp ainda em desenvolvimento —
+-- a situação em que os testes foram escritos, independente do que foi publicado depois.
+do $$
+declare extra text[] := array(select id from public.plan_versions
+                              where id not in ('matriz_2026_10', 'matriz_2026_11'));
+begin
+  update public.subscriptions set plan_version_id = 'matriz_2026_10' where plan_version_id = any(extra);
+  update public.free_allowances set version_id = 'matriz_2026_10' where version_id = any(extra);
+  delete from public.plan_version_features where version_id = any(extra);
+  delete from public.plan_version_entitlements where version_id = any(extra);
+  delete from public.plan_version_prices where version_id = any(extra);
+  update public.plan_versions set status = 'retired' where status = 'published';
+  delete from public.plan_versions where id = any(extra);
+  update public.plan_versions set status = 'published' where id = 'matriz_2026_10';
+  update public.plan_versions set status = 'draft', published_at = null where id = 'matriz_2026_11';
+  update public.subscriptions set plan_version_id = 'matriz_2026_10' where plan_version_id = 'matriz_2026_11';
+  update public.features set implementation = 'in_development' where code = 'whatsapp';
+end $$;
+
 -- Usuários de teste
 insert into auth.users (id, email, aud, role, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@teste.mdsign', 'authenticated', 'authenticated', '{"full_name":"Ana Teste","locale":"en"}'),
@@ -1497,6 +1517,24 @@ set local role authenticated;
 do $$ begin
   perform public.admin_growth_upgrade_insights('{}');
   assert false, 'usuário comum não vê oportunidades';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+
+-- Validação pública: tentativas só para o servidor (nem visitante nem usuário logado leem).
+set local role anon;
+do $$
+begin
+  perform 1 from public.validation_attempts limit 1;
+  raise exception 'FALHOU: visitante leu validation_attempts';
+exception when insufficient_privilege then null;
+end $$;
+reset role;
+set local role authenticated;
+do $$
+begin
+  insert into public.validation_attempts (kind) values ('code');
+  raise exception 'FALHOU: usuário gravou validation_attempts';
 exception when insufficient_privilege then null;
 end $$;
 reset role;

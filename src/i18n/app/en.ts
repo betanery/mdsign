@@ -375,6 +375,7 @@ const en: AppMessages = {
       account: "Account",
     },
     more: "More",
+    validate: "Validate a document",
     newAction: "New action",
     admin: "Super Admin",
     switchOrg: "Switch organization",
@@ -1074,6 +1075,10 @@ const en: AppMessages = {
     },
     title: "Documents",
     subtitle: "Track everything that was sent and signed.",
+    validation: {
+      code: "Validation code",
+      how: "How to validate this document",
+    },
     signAll: "Sign all ({n})",
     signAllCount: "{n} documents waiting for you.",
     signAllOne: "1 document waiting for you.",
