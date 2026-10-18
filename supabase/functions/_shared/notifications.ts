@@ -83,6 +83,12 @@ export async function enqueueWhatsApp(
     .eq("organization_id", doc.organization_id)
     .maybeSingle();
   if (!settings?.whatsapp_enabled) return 0;
+  // WhatsApp é funcionalidade do plano: fora do plano (ou ainda não liberada), não enfileira.
+  const { data: allowed } = await admin.rpc("feature_enabled", {
+    org: doc.organization_id,
+    code: "whatsapp",
+  });
+  if (!allowed) return 0;
   if (kind === "signature_requested" && !settings.whatsapp_on_invite) return 0;
   if (kind === "reminder" && !settings.whatsapp_on_reminder) return 0;
 
