@@ -5,7 +5,7 @@
 import { admin } from "../_shared/auth.ts";
 import { AppError, corsHeaders, handleError, json } from "../_shared/http.ts";
 import { hashToken } from "../_shared/notifications.ts";
-import { signdoc } from "../_shared/signdoc.ts";
+import { type EngineSignaturesInfo, signdoc } from "../_shared/signdoc.ts";
 import {
   cleanKey,
   looksLikePdf,
@@ -72,39 +72,45 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as { code?: unknown };
     const key = cleanKey(body.code);
     if (!key) throw new AppError("invalid_code", 400);
+    // Situação e quantas assinaturas faltam vêm do MDSign (o motor só lista quem já assinou).
+    const { data: doc } = await admin
+      .from("documents")
+      .select("name, status, created_at, updated_at, document_participants(status)")
+      .eq("verification_key", key)
+      .limit(1)
+      .maybeSingle();
+    const local = doc
+      ? {
+          status: doc.status as PublicDocument["status"],
+          pending: pendingCount(doc.document_participants as { status: string }[]),
+        }
+      : null;
+    let info: EngineSignaturesInfo;
     try {
-      const info = await signdoc.validateByKey(key);
-      await record("code", true);
-      // Situação e quantas assinaturas faltam vêm do MDSign (o motor só lista quem já assinou).
-      const { data: doc } = await admin
-        .from("documents")
-        .select("status, document_participants(status)")
-        .eq("verification_key", key)
-        .limit(1)
-        .maybeSingle();
-      const local = doc
-        ? {
-            status: doc.status as PublicDocument["status"],
-            pending: pendingCount(doc.document_participants as { status: string }[]),
-          }
-        : null;
-      return json(
-        {
-          found: true,
-          document: publicDocument(info, local),
-          signers: publicSigners(info.signers),
-        },
-        200,
-        origin,
-      );
+      info = await signdoc.validateByKey(key);
     } catch (e) {
-      // Código inexistente (ou de outra conta do motor): "não encontrado", sem detalhes.
-      if (e instanceof AppError && e.code === "engine_rejected") {
+      if (!(e instanceof AppError && e.code === "engine_rejected")) throw e;
+      // O motor não acha documento sem nenhuma assinatura (ou cancelado antes de assinar);
+      // se o código é de um documento do MDSign, mostra a situação dele sem assinaturas.
+      if (!doc) {
+        // Código inexistente (ou de outra conta do motor): "não encontrado", sem detalhes.
         await record("code", false);
         return json({ found: false, document: null, signers: [] }, 200, origin);
       }
-      throw e;
+      info = {
+        name: doc.name,
+        isConcluded: false,
+        creationDate: doc.created_at,
+        updateDate: doc.updated_at,
+        signers: [],
+      };
     }
+    await record("code", true);
+    return json(
+      { found: true, document: publicDocument(info, local), signers: publicSigners(info.signers) },
+      200,
+      origin,
+    );
   } catch (e) {
     return handleError(e, origin);
   }

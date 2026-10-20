@@ -489,8 +489,10 @@ function ValidatePage() {
                   </p>
                   {incomplete && result.document && (
                     <div className="grid gap-1 rounded-xl border border-amber-200 bg-white p-3 text-sm text-amber-900">
-                      <p className="font-semibold">{pendingText(result.document)}</p>
-                      <p>{stoppedText(result.document) ?? c.pendingHint}</p>
+                      <p className="font-semibold">
+                        {stoppedText(result.document) ?? pendingText(result.document)}
+                      </p>
+                      {!stoppedText(result.document) && <p>{c.pendingHint}</p>}
                     </div>
                   )}
                   {result.document && (
