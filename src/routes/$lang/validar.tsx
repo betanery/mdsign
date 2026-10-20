@@ -4,7 +4,9 @@ import {
   AlertTriangle,
   BadgeCheck,
   CircleHelp,
+  Clock,
   FileUp,
+  FileX,
   KeyRound,
   Loader2,
   ShieldCheck,
@@ -48,6 +50,23 @@ const copy = {
     document: "Documento",
     concluded: "Concluído",
     inProgress: "Ainda aguardando assinaturas",
+    foundPending: "Documento encontrado, assinaturas pendentes",
+    pendingOne: "Falta 1 assinatura para concluir.",
+    pendingMany: "Faltam {n} assinaturas para concluir.",
+    pendingUnknown: "Ainda faltam assinaturas para concluir.",
+    pendingHint:
+      "As assinaturas já feitas são válidas, mas o documento só fica completo quando todos assinarem.",
+    noSignersYet: "Ninguém assinou ainda.",
+    stopped: {
+      canceled: "Documento cancelado: não receberá novas assinaturas.",
+      refused: "Documento recusado por um participante: não será concluído.",
+      expired: "O prazo terminou antes de todos assinarem: não será concluído.",
+    },
+    fileNote:
+      "O arquivo mostra só as assinaturas já feitas. Para saber se falta alguém, valide pelo código de validação.",
+    noSignatures: "Este PDF não tem assinaturas",
+    noSignaturesText:
+      "Conseguimos ler o arquivo, mas ele não tem nenhuma assinatura digital. Pode ser o original, antes de assinar. Envie o PDF baixado depois da conclusão ou valide pelo código.",
     signatures: "Assinaturas",
     signedAt: "Assinado em",
     kinds: { certificate: "Certificado digital ICP-Brasil", electronic: "Assinatura eletrônica" },
@@ -91,6 +110,23 @@ const copy = {
     document: "Document",
     concluded: "Completed",
     inProgress: "Still waiting for signatures",
+    foundPending: "Document found, signatures pending",
+    pendingOne: "1 signature left to complete.",
+    pendingMany: "{n} signatures left to complete.",
+    pendingUnknown: "Signatures are still missing.",
+    pendingHint:
+      "The signatures already made are valid, but the document is only complete once everyone signs.",
+    noSignersYet: "No one has signed yet.",
+    stopped: {
+      canceled: "Document canceled: it won't receive new signatures.",
+      refused: "Document refused by a participant: it won't be completed.",
+      expired: "The deadline passed before everyone signed: it won't be completed.",
+    },
+    fileNote:
+      "The file only shows signatures already made. To know if anyone is missing, validate with the validation code.",
+    noSignatures: "This PDF has no signatures",
+    noSignaturesText:
+      "We could read the file, but it has no digital signatures. It may be the original, before signing. Upload the PDF downloaded after completion or validate with the code.",
     signatures: "Signatures",
     signedAt: "Signed on",
     kinds: { certificate: "ICP-Brasil digital certificate", electronic: "Electronic signature" },
@@ -134,6 +170,23 @@ const copy = {
     document: "Documento",
     concluded: "Concluido",
     inProgress: "Aún esperando firmas",
+    foundPending: "Documento encontrado, firmas pendientes",
+    pendingOne: "Falta 1 firma para concluir.",
+    pendingMany: "Faltan {n} firmas para concluir.",
+    pendingUnknown: "Aún faltan firmas para concluir.",
+    pendingHint:
+      "Las firmas ya realizadas son válidas, pero el documento solo queda completo cuando todos firman.",
+    noSignersYet: "Nadie ha firmado todavía.",
+    stopped: {
+      canceled: "Documento cancelado: no recibirá nuevas firmas.",
+      refused: "Documento rechazado por un participante: no se concluirá.",
+      expired: "El plazo terminó antes de que todos firmaran: no se concluirá.",
+    },
+    fileNote:
+      "El archivo muestra solo las firmas ya realizadas. Para saber si falta alguien, valide con el código de validación.",
+    noSignatures: "Este PDF no tiene firmas",
+    noSignaturesText:
+      "Pudimos leer el archivo, pero no tiene ninguna firma digital. Puede ser el original, antes de firmar. Envíe el PDF descargado después de la conclusión o valide con el código.",
     signatures: "Firmas",
     signedAt: "Firmado el",
     kinds: { certificate: "Certificado digital ICP-Brasil", electronic: "Firma electrónica" },
@@ -166,8 +219,15 @@ type Signer = {
 };
 type Result = {
   found: boolean;
+  noSignatures: boolean;
   via: "code" | "file";
-  document: { name: string | null; concluded: boolean; updatedAt: string | null } | null;
+  document: {
+    name: string | null;
+    concluded: boolean;
+    updatedAt: string | null;
+    status?: "pending" | "concluded" | "refused" | "canceled" | "expired" | null;
+    pending?: number | null;
+  } | null;
   signers: Signer[];
 };
 
@@ -230,6 +290,7 @@ function ValidatePage() {
       if (res.ok)
         setResult({
           found: Boolean(out.found),
+          noSignatures: Boolean(out.noSignatures),
           via,
           document: out.document ?? null,
           signers: out.signers ?? [],
@@ -263,6 +324,21 @@ function ValidatePage() {
   useEffect(() => {
     if (result) resultRef.current?.focus();
   }, [result]);
+
+  // Pelo código: documento achado, mas nem todos assinaram (ou parou: cancelado, recusado…).
+  const incomplete = Boolean(
+    result?.found && result.via === "code" && result.document && !result.document.concluded,
+  );
+  const pendingText = (d: NonNullable<Result["document"]>) =>
+    d.pending == null || d.pending === 0
+      ? c.pendingUnknown
+      : d.pending === 1
+        ? c.pendingOne
+        : c.pendingMany.replace("{n}", String(d.pending));
+  const stoppedText = (d: NonNullable<Result["document"]>) =>
+    d.status === "canceled" || d.status === "refused" || d.status === "expired"
+      ? c.stopped[d.status]
+      : null;
 
   return (
     <>
@@ -392,11 +468,31 @@ function ValidatePage() {
               aria-live="polite"
             >
               {result.found ? (
-                <section className="grid gap-4 rounded-2xl border border-success/30 bg-success/5 p-5">
-                  <p className="flex items-center gap-2 text-lg font-semibold text-success">
-                    <BadgeCheck className="size-6" aria-hidden />
-                    {result.via === "code" ? c.found : c.foundFile}
+                <section
+                  className={cn(
+                    "grid gap-4 rounded-2xl border p-5",
+                    incomplete ? "border-amber-300 bg-amber-50" : "border-success/30 bg-success/5",
+                  )}
+                >
+                  <p
+                    className={cn(
+                      "flex items-center gap-2 text-lg font-semibold",
+                      incomplete ? "text-amber-900" : "text-success",
+                    )}
+                  >
+                    {incomplete ? (
+                      <Clock className="size-6" aria-hidden />
+                    ) : (
+                      <BadgeCheck className="size-6" aria-hidden />
+                    )}
+                    {result.via === "file" ? c.foundFile : incomplete ? c.foundPending : c.found}
                   </p>
+                  {incomplete && result.document && (
+                    <div className="grid gap-1 rounded-xl border border-amber-200 bg-white p-3 text-sm text-amber-900">
+                      <p className="font-semibold">{pendingText(result.document)}</p>
+                      <p>{stoppedText(result.document) ?? c.pendingHint}</p>
+                    </div>
+                  )}
                   {result.document && (
                     <dl className="grid gap-1 text-sm">
                       <dt className="text-muted-foreground">{c.document}</dt>
@@ -408,6 +504,9 @@ function ValidatePage() {
                           : ""}
                       </dd>
                     </dl>
+                  )}
+                  {result.signers.length === 0 && (
+                    <p className="text-sm text-muted-foreground">{c.noSignersYet}</p>
                   )}
                   {result.signers.length > 0 && (
                     <div className="grid gap-2">
@@ -452,6 +551,20 @@ function ValidatePage() {
                       </ul>
                     </div>
                   )}
+                  {result.via === "file" && (
+                    <p className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <CircleHelp className="mt-0.5 size-4 shrink-0" aria-hidden />
+                      {c.fileNote}
+                    </p>
+                  )}
+                </section>
+              ) : result.noSignatures ? (
+                <section className="grid gap-2 rounded-2xl border bg-muted/40 p-5">
+                  <p className="flex items-center gap-2 text-lg font-semibold">
+                    <FileX className="size-6 text-muted-foreground" aria-hidden />
+                    {c.noSignatures}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{c.noSignaturesText}</p>
                 </section>
               ) : (
                 <section className="grid gap-2 rounded-2xl border border-orange-200 bg-orange-50 p-5 text-orange-900">

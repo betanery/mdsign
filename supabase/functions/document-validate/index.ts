@@ -9,8 +9,10 @@ import { signdoc } from "../_shared/signdoc.ts";
 import {
   cleanKey,
   looksLikePdf,
+  pendingCount,
   publicDocument,
   publicSigners,
+  type PublicDocument,
   type PublicSigner,
 } from "../_shared/validation.ts";
 
@@ -58,7 +60,12 @@ Deno.serve(async (req) => {
         else throw e;
       }
       await record("file", signers.length > 0);
-      return json({ found: signers.length > 0, document: null, signers }, 200, origin);
+      // PDF lido, mas sem nenhuma assinatura digital (ex.: o original, antes de assinar).
+      return json(
+        { found: signers.length > 0, noSignatures: signers.length === 0, document: null, signers },
+        200,
+        origin,
+      );
     }
 
     // Pelo código de validação.
@@ -68,8 +75,25 @@ Deno.serve(async (req) => {
     try {
       const info = await signdoc.validateByKey(key);
       await record("code", true);
+      // Situação e quantas assinaturas faltam vêm do MDSign (o motor só lista quem já assinou).
+      const { data: doc } = await admin
+        .from("documents")
+        .select("status, document_participants(status)")
+        .eq("verification_key", key)
+        .limit(1)
+        .maybeSingle();
+      const local = doc
+        ? {
+            status: doc.status as PublicDocument["status"],
+            pending: pendingCount(doc.document_participants as { status: string }[]),
+          }
+        : null;
       return json(
-        { found: true, document: publicDocument(info), signers: publicSigners(info.signers) },
+        {
+          found: true,
+          document: publicDocument(info, local),
+          signers: publicSigners(info.signers),
+        },
         200,
         origin,
       );

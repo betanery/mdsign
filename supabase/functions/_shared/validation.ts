@@ -19,7 +19,17 @@ export type PublicDocument = {
   concluded: boolean;
   createdAt: string | null;
   updatedAt: string | null;
+  /** Situação no MDSign (cancelado, expirado…); null quando o documento não é deste MDSign. */
+  status: "pending" | "concluded" | "refused" | "canceled" | "expired" | null;
+  /** Quantas pessoas ainda precisam assinar ou aprovar; null quando não dá para saber. */
+  pending: number | null;
 };
+
+/** Quem ainda não assinou nem aprovou (sem nomes: só a contagem sai na validação pública). */
+export function pendingCount(participants: { status: string }[] | null | undefined) {
+  if (!participants) return null;
+  return participants.filter((p) => p.status === "pending" || p.status === "created").length;
+}
 
 /** Código como a pessoa digita (" abcd-1234 ") → "ABCD-1234"; null se não parecer código. */
 export function cleanKey(raw: unknown): string | null {
@@ -45,12 +55,18 @@ export function publicSigners(signers: EngineSigner[] | null | undefined): Publi
   }));
 }
 
-export function publicDocument(info: EngineSignaturesInfo): PublicDocument {
+export function publicDocument(
+  info: EngineSignaturesInfo,
+  local: { status: PublicDocument["status"]; pending: number | null } | null = null,
+): PublicDocument {
+  const concluded = Boolean(info.isConcluded) || local?.status === "concluded";
   return {
     name: info.name ? String(info.name).slice(0, 200) : null,
-    concluded: Boolean(info.isConcluded),
+    concluded,
     createdAt: info.creationDate ?? null,
     updatedAt: info.updateDate ?? null,
+    status: local?.status ?? null,
+    pending: concluded ? 0 : (local?.pending ?? null),
   };
 }
 
