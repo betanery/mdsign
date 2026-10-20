@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { BadgeCheck, Menu, X } from "lucide-react";
 
 import { navAnchors } from "@/content/landing";
 import {
@@ -86,6 +86,13 @@ export function Header() {
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
           <div className="hidden items-center gap-3 xl:flex">
+            <a
+              href={path("/validar")}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-foreground/80 transition-colors hover:text-brand"
+            >
+              <BadgeCheck className="size-4" aria-hidden />
+              {t.footer.validate}
+            </a>
             <Cta kind="login" source="header" variant="outline" size="sm" />
             <Cta kind="free" source="header" size="sm" />
           </div>
@@ -117,6 +124,16 @@ export function Header() {
                   </a>
                 </li>
               ))}
+              <li>
+                <a
+                  href={path("/validar")}
+                  className="flex items-center gap-2 rounded-md px-2 py-3 text-base font-medium hover:bg-brand-soft"
+                  onClick={() => setOpen(false)}
+                >
+                  <BadgeCheck className="size-5 text-brand" aria-hidden />
+                  {t.footer.validate}
+                </a>
+              </li>
             </ul>
             <div className="mt-3 grid grid-cols-2 gap-3 pb-2">
               <Cta kind="login" source="header_mobile" variant="outline" />
