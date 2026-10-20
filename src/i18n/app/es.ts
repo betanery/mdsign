@@ -1062,6 +1062,17 @@ const es: AppMessages = {
       reason: "Motivo del rechazo",
       refuseConfirm: "Rechazar",
       refused: "{n} documento(s) rechazado(s).",
+      cancel: "Cancelar envío",
+      cancelTitle: "Cancelar {n} documento(s)",
+      cancelHint:
+        "Los participantes ya no podrán firmar y serán avisados. Las firmas ya realizadas siguen registradas. No se puede deshacer.",
+      cancelReason: "Motivo (opcional, lo ven los participantes)",
+      cancelConfirm: "Cancelar {n}",
+      canceled: "{n} documento(s) cancelado(s).",
+      keep: "Volver",
+      progress: "Procesando {n} de {total}…",
+      queueProgress: "Progreso de la fila",
+      queueAuto: "Al terminar cada uno, el siguiente se abre solo.",
       deleteTitle: "¿Eliminar {n} documento(s)?",
       deleteText:
         "Estás por eliminar estos documentos. Salen de las listas, pero el registro y la auditoría se conservan.",

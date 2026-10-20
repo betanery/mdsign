@@ -1048,6 +1048,17 @@ const en: AppMessages = {
       reason: "Rejection reason",
       refuseConfirm: "Reject",
       refused: "{n} document(s) rejected.",
+      cancel: "Cancel sending",
+      cancelTitle: "Cancel {n} document(s)",
+      cancelHint:
+        "Participants will no longer be able to sign and are notified. Signatures already made stay on record. This can't be undone.",
+      cancelReason: "Reason (optional, shown to participants)",
+      cancelConfirm: "Cancel {n}",
+      canceled: "{n} document(s) canceled.",
+      keep: "Go back",
+      progress: "Processing {n} of {total}…",
+      queueProgress: "Queue progress",
+      queueAuto: "When you finish each one, the next opens automatically.",
       deleteTitle: "Delete {n} document(s)?",
       deleteText:
         "You are about to delete these documents. They leave the lists, but the record and audit trail are kept.",

@@ -1073,6 +1073,17 @@ const pt = {
       reason: "Motivo da rejeição",
       refuseConfirm: "Rejeitar",
       refused: "{n} documento(s) rejeitado(s).",
+      cancel: "Cancelar envio",
+      cancelTitle: "Cancelar {n} documento(s)",
+      cancelHint:
+        "Os participantes não poderão mais assinar e são avisados. Assinaturas já feitas continuam registradas. Não dá para desfazer.",
+      cancelReason: "Motivo (opcional, aparece para os participantes)",
+      cancelConfirm: "Cancelar {n}",
+      canceled: "{n} documento(s) cancelado(s).",
+      keep: "Voltar",
+      progress: "Processando {n} de {total}…",
+      queueProgress: "Progresso da fila",
+      queueAuto: "Ao concluir cada um, o próximo abre sozinho.",
       deleteTitle: "Excluir {n} documento(s)?",
       deleteText:
         "Você está prestes a excluir estes documentos. Eles saem das listas, mas o registro e a auditoria continuam guardados.",

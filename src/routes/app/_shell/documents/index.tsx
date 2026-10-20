@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  Ban,
   CheckCheck,
   FileText,
   Folder as FolderIcon,
@@ -17,7 +18,7 @@ import { documentAction } from "@/app/api";
 import { useCedroAvailability } from "@/app/availability";
 import { PageHeader } from "@/app/components/app-shell";
 import { useConfirm } from "@/app/components/confirm-dialog";
-import { RefuseDialog, SigningQueue } from "@/app/components/document-batch";
+import { ReasonDialog, SigningQueue } from "@/app/components/document-batch";
 import { FoldersDialog } from "@/app/components/folders-dialog";
 import { folderCounts, moveDocuments, useFolders } from "@/app/folders";
 import { selectClass } from "@/app/ui";
@@ -68,7 +69,10 @@ function DocumentsPage() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [queue, setQueue] = useState<DocumentRow[] | null>(null);
-  const [refusing, setRefusing] = useState<DocumentRow[] | null>(null);
+  const [reasoning, setReasoning] = useState<{
+    mode: "refuse" | "cancel";
+    docs: DocumentRow[];
+  } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [confirm, confirmDialog] = useConfirm();
 
@@ -133,6 +137,7 @@ function DocumentsPage() {
   const toApprove = chosen.filter((d) => myAction(d)?.role === "approver");
   const toRefuse = chosen.filter((d) => myAction(d));
   const toDelete = chosen.filter(deletable);
+  const toCancel = chosen.filter((d) => d.status === "pending" && canManage(d));
   const allSelected = visible.length > 0 && visible.every((d) => selected.has(d.id));
   const toggle = (id: string) =>
     setSelected((s) => {
@@ -206,12 +211,13 @@ function DocumentsPage() {
           }}
         />
       )}
-      {refusing && (
-        <RefuseDialog
-          docs={refusing}
-          onClose={() => setRefusing(null)}
+      {reasoning && (
+        <ReasonDialog
+          mode={reasoning.mode}
+          docs={reasoning.docs}
+          onClose={() => setReasoning(null)}
           onDone={() => {
-            setRefusing(null);
+            setReasoning(null);
             after();
           }}
         />
@@ -388,9 +394,24 @@ function DocumentsPage() {
                 </Button>
               )}
               {toRefuse.length > 0 && (
-                <Button size="sm" variant="outline" onClick={() => setRefusing(toRefuse)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setReasoning({ mode: "refuse", docs: toRefuse })}
+                >
                   <XCircle aria-hidden />
                   {t.documents.batch.refuse} ({toRefuse.length})
+                </Button>
+              )}
+              {toCancel.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive"
+                  onClick={() => setReasoning({ mode: "cancel", docs: toCancel })}
+                >
+                  <Ban aria-hidden />
+                  {t.documents.batch.cancel} ({toCancel.length})
                 </Button>
               )}
               {toDelete.length > 0 && (
@@ -430,6 +451,7 @@ function DocumentsPage() {
               {!toSign.length &&
                 !toApprove.length &&
                 !toRefuse.length &&
+                !toCancel.length &&
                 !toDelete.length &&
                 !(toMove.length && folders.length) && (
                   <span className="text-muted-foreground">{t.documents.batch.noneValid}</span>

@@ -59,6 +59,26 @@ export function SigningQueue({ docs, onClose }: { docs: DocumentRow[]; onClose: 
               : doc.name}
           </DialogDescription>
         </DialogHeader>
+        {docs.length > 1 && (
+          <div className="grid gap-1.5">
+            <div
+              className="h-1.5 overflow-hidden rounded-full bg-muted"
+              role="progressbar"
+              aria-label={t.documents.batch.queueProgress}
+              aria-valuemin={0}
+              aria-valuemax={docs.length}
+              aria-valuenow={Math.min(index, docs.length)}
+            >
+              <div
+                className="h-full rounded-full bg-brand transition-all"
+                style={{ width: `${(Math.min(index, docs.length) / docs.length) * 100}%` }}
+              />
+            </div>
+            {!finished && (
+              <p className="text-xs text-muted-foreground">{t.documents.batch.queueAuto}</p>
+            )}
+          </div>
+        )}
         {!finished &&
           (embedUrl ? (
             <SigningFrame
@@ -96,33 +116,43 @@ export function SigningQueue({ docs, onClose }: { docs: DocumentRow[]; onClose: 
   );
 }
 
-/** Rejeitar em lote: um motivo para todos; cada recusa é registrada por documento. */
-export function RefuseDialog({
+/**
+ * Rejeitar (quem está com a vez) ou cancelar (quem enviou) em lote: um motivo para todos; cada
+ * recusa/cancelamento é feito e registrado por documento, um de cada vez, mostrando o progresso.
+ */
+export function ReasonDialog({
+  mode,
   docs,
   onClose,
   onDone,
 }: {
+  mode: "refuse" | "cancel";
   docs: DocumentRow[];
   onClose: () => void;
   onDone: () => void;
 }) {
   const { t, f } = useAppI18n();
+  const b = t.documents.batch;
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  // Cancelar aceita sem motivo (o MDSign registra um padrão); rejeitar exige motivo.
+  const minReason = mode === "refuse" ? 3 : 0;
 
   async function run() {
     setBusy(true);
     let ok = 0;
-    for (const d of docs) {
+    for (const [i, d] of docs.entries()) {
+      setProgress(i + 1);
       try {
-        await documentAction(d.id, "refuse", { reason: reason.trim() });
+        await documentAction(d.id, mode, { reason: reason.trim() });
         ok++;
       } catch (e) {
         toast.error(`${d.name}: ${errorText(t, e)}`);
       }
     }
     setBusy(false);
-    if (ok) toast.success(f(t.documents.batch.refused, { n: String(ok) }));
+    if (ok) toast.success(f(mode === "refuse" ? b.refused : b.canceled, { n: String(ok) }));
     onDone();
   }
 
@@ -130,29 +160,47 @@ export function RefuseDialog({
     <Dialog open onOpenChange={(o) => !o && !busy && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{f(t.documents.batch.refuseTitle, { n: String(docs.length) })}</DialogTitle>
-          <DialogDescription>{t.documents.batch.refuseHint}</DialogDescription>
+          <DialogTitle>
+            {f(mode === "refuse" ? b.refuseTitle : b.cancelTitle, { n: String(docs.length) })}
+          </DialogTitle>
+          <DialogDescription>{mode === "refuse" ? b.refuseHint : b.cancelHint}</DialogDescription>
         </DialogHeader>
+        {mode === "cancel" && (
+          <ul className="grid max-h-36 gap-1 overflow-y-auto rounded-lg bg-muted/40 p-2 text-sm">
+            {docs.map((d) => (
+              <li key={d.id} className="truncate">
+                {d.name}
+              </li>
+            ))}
+          </ul>
+        )}
         <label className="grid gap-1.5 text-sm">
-          <span className="font-medium">{t.documents.batch.reason}</span>
+          <span className="font-medium">{mode === "refuse" ? b.reason : b.cancelReason}</span>
           <Textarea
             value={reason}
             maxLength={400}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
+            disabled={busy}
           />
         </label>
+        {busy && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+            {f(b.progress, { n: String(progress), total: String(docs.length) })}
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            {t.common.cancel}
+            {mode === "cancel" ? b.keep : t.common.cancel}
           </Button>
           <Button
             variant="destructive"
             onClick={() => void run()}
-            disabled={busy || reason.trim().length < 3}
+            disabled={busy || reason.trim().length < minReason}
           >
             {busy && <Loader2 className="animate-spin" aria-hidden />}
-            {t.documents.batch.refuseConfirm}
+            {mode === "refuse" ? b.refuseConfirm : f(b.cancelConfirm, { n: String(docs.length) })}
           </Button>
         </div>
       </DialogContent>
