@@ -1,5 +1,14 @@
 import { useEffect, useId, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2, UserRound } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  CheckCheck,
+  PenLine,
+  Plus,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -412,12 +421,29 @@ export function ParticipantsEditor({
                     {t.participants.roles.witness}
                   </span>
                 )}
+                {p.role === "approver" && (
+                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-900 uppercase">
+                    {t.participants.roles.approver}
+                  </span>
+                )}
                 {p.rule && (
                   <span className="rounded bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand">
                     {ruleLabel(p.rule, value)}
                   </span>
                 )}
               </span>
+              {!fixed && (
+                <select
+                  aria-label={`${t.participants.role}: ${p.name || t.participants.title + " " + (i + 1)}`}
+                  value={p.role}
+                  onChange={(e) => update(i, { role: e.target.value as ParticipantDraft["role"] })}
+                  className={cn(selectClass, "ml-auto h-8 w-auto text-sm")}
+                >
+                  <option value="signer">{t.participants.roles.signer}</option>
+                  <option value="approver">{t.participants.roles.approver}</option>
+                  <option value="witness">{t.participants.roles.witness}</option>
+                </select>
+              )}
               {!fixed && value.length > 1 && (
                 <Button
                   type="button"
@@ -509,6 +535,7 @@ export function ParticipantsEditor({
       {contacts.length > 0 && (
         <p className="text-xs text-muted-foreground">{t.participants.contactsHint}</p>
       )}
+      {!fixed && <p className="text-xs text-muted-foreground">{t.participants.approverHint}</p>}
       <div className={fixed ? "hidden" : "flex flex-wrap gap-2"}>
         <Button
           type="button"
@@ -518,6 +545,15 @@ export function ParticipantsEditor({
         >
           <Plus aria-hidden />
           {t.participants.add}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onChange(withApprover(value))}
+          disabled={value.length >= 30}
+        >
+          <CheckCheck aria-hidden />
+          {t.participants.addApprover}
         </Button>
         <Button
           type="button"
@@ -564,6 +600,103 @@ export function ParticipantsEditor({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Novo aprovador entra antes de quem assina (depois dos aprovadores já incluídos): com a ordem
+ * ligada, as assinaturas só começam depois da aprovação, como num fluxo jurídico.
+ */
+export function withApprover(list: ParticipantDraft[]): ParticipantDraft[] {
+  const at = list.findIndex((p) => p.role !== "approver");
+  const next = [...list];
+  next.splice(at < 0 ? list.length : at, 0, newParticipant("approver"));
+  return next;
+}
+
+export type FlowStage = {
+  step: number;
+  people: { name: string; role: ParticipantDraft["role"] }[];
+};
+
+/** Etapas do fluxo: em ordem, cada pessoa (ou grupo com quórum) é uma etapa; sem ordem, uma só. */
+export function flowStages(list: ParticipantDraft[], sequential: boolean): FlowStage[] {
+  const stages: FlowStage[] = [];
+  list.forEach((p, i) => {
+    const person = { name: p.name.trim() || p.email.trim(), role: p.role };
+    const prev = list[i - 1];
+    const same = !sequential || Boolean(p.rule && prev?.rule?.key === p.rule.key);
+    const last = stages[stages.length - 1];
+    if (last && same) last.people.push(person);
+    else stages.push({ step: stages.length + 1, people: [person] });
+  });
+  return stages;
+}
+
+/** Desenho do fluxo: "Etapa 1 · Aprova: Jurídico → Etapa 2 · Assina: Ana, Bruno". */
+export function FlowPreview({
+  participants,
+  sequential,
+  onSequential,
+}: {
+  participants: ParticipantDraft[];
+  sequential: boolean;
+  onSequential?: (() => void) | undefined;
+}) {
+  const { t, f } = useAppI18n();
+  const stages = flowStages(participants, sequential);
+  const hasApprover = participants.some((p) => p.role === "approver");
+  if (!participants.some((p) => p.name.trim() || p.email.trim())) return null;
+  return (
+    <section className="grid gap-3 rounded-2xl border bg-white p-4" aria-labelledby="flow-preview">
+      <div>
+        <h3 id="flow-preview" className="text-sm font-semibold">
+          {t.participants.flowTitle}
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          {sequential ? t.participants.flowSequential : t.participants.flowParallel}
+        </p>
+      </div>
+      <ol className="flex flex-wrap items-stretch gap-2">
+        {stages.map((st, i) => (
+          <li key={st.step} className="flex items-center gap-2">
+            <div className="grid gap-1 rounded-xl border bg-muted/30 px-3 py-2 text-sm">
+              {sequential && (
+                <span className="text-xs font-semibold text-brand">
+                  {f(t.participants.flowStep, { n: String(st.step) })}
+                </span>
+              )}
+              {st.people.map((person, j) => (
+                <span key={j} className="flex items-center gap-1.5">
+                  {person.role === "approver" ? (
+                    <CheckCheck className="size-4 shrink-0 text-amber-700" aria-hidden />
+                  ) : (
+                    <PenLine className="size-4 shrink-0 text-brand" aria-hidden />
+                  )}
+                  <span className="text-muted-foreground">
+                    {t.participants.roles[person.role]}:
+                  </span>
+                  <span className="max-w-[12rem] truncate font-medium">{person.name || "—"}</span>
+                </span>
+              ))}
+            </div>
+            {i < stages.length - 1 && (
+              <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            )}
+          </li>
+        ))}
+      </ol>
+      {hasApprover && !sequential && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          <span className="min-w-0 flex-1">{t.participants.flowApproverParallel}</span>
+          {onSequential && (
+            <Button type="button" size="sm" variant="outline" onClick={onSequential}>
+              {t.participants.flowTurnOn}
+            </Button>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 

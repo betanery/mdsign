@@ -498,6 +498,7 @@ export function SplitWizard({ preset }: { preset?: SplitPreset | undefined }) {
       {confirmDialog}
       <Stepper
         steps={t.split.steps}
+        hints={t.split.stepHints}
         current={step}
         onStep={(i) => {
           setError(null);

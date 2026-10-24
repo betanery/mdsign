@@ -82,34 +82,73 @@ export function PdfDrop({
 /** Indicador de passos do assistente. */
 export function Stepper({
   steps,
+  hints,
   current,
   onStep,
 }: {
   steps: readonly string[];
+  /** O que cada etapa pede: mostrado desde o início, para ninguém ser pego de surpresa. */
+  hints?: readonly string[] | undefined;
   current: number;
   /** Passos já concluídos ficam clicáveis para voltar e editar. */
   onStep?: ((step: number) => void) | undefined;
 }) {
   const { t } = useAppI18n();
   return (
-    <ol className="mb-6 flex flex-wrap gap-2 text-sm" aria-label={t.common.steps}>
+    <ol
+      className={cn(
+        "mb-6 text-sm",
+        hints
+          ? "grid grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))] gap-2"
+          : "flex flex-wrap gap-2",
+      )}
+      aria-label={t.common.steps}
+    >
       {steps.map((label, i) => {
+        const hint = hints?.[i];
         const className = cn(
-          "flex items-center gap-2 rounded-full border px-3 py-1",
+          hint
+            ? "grid h-full w-full content-start gap-1 rounded-xl border bg-white p-3 text-left"
+            : "flex items-center gap-2 rounded-full border px-3 py-1",
           i === current && "border-brand bg-brand-soft font-semibold text-brand-strong",
           i < current && "border-success/40 text-success",
-          i > current && "text-muted-foreground",
+          i > current && (hint ? "text-foreground/80" : "text-muted-foreground"),
         );
-        const content = (
+        const number = (
+          <span
+            className={cn(
+              "flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+              hint ? "bg-muted" : "bg-white",
+              hint && i === current && "bg-brand text-white",
+              hint && i < current && "bg-success text-white",
+            )}
+          >
+            {i + 1}
+          </span>
+        );
+        const content = hint ? (
           <>
-            <span className="flex size-5 items-center justify-center rounded-full bg-white text-xs font-semibold">
-              {i + 1}
+            <span className="flex items-center gap-2">
+              {number}
+              {label}
             </span>
+            <span
+              className={cn(
+                "text-xs font-normal",
+                i === current ? "text-brand-strong/80" : "text-muted-foreground",
+              )}
+            >
+              {hint}
+            </span>
+          </>
+        ) : (
+          <>
+            {number}
             {label}
           </>
         );
         return (
-          <li key={label} aria-current={i === current ? "step" : undefined}>
+          <li key={label} aria-current={i === current ? "step" : undefined} className="min-w-0">
             {onStep && i < current ? (
               <button
                 type="button"

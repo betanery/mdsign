@@ -3,7 +3,12 @@ import { CheckCircle2, Clock, Info, XCircle } from "lucide-react";
 import { formatDate, type DocumentRow, type ParticipantRow } from "../documents";
 import { useAppI18n } from "../i18n";
 
-type Event = { type: string; actor_name: string | null; occurred_at: string };
+type Event = {
+  type: string;
+  actor_name: string | null;
+  occurred_at: string;
+  data?: { reason?: unknown } | null;
+};
 export type ReminderInfo = { id: string; reminder_count: number; last_reminded_at: string | null };
 
 const DONE = new Set(["participant.signed", "participant.approved"]);
@@ -38,6 +43,7 @@ export function DocumentStatusSummary({
   const sent = events.find((e) => e.type === "document.sent")?.occurred_at ?? doc.created_at;
   const refused = participants.filter((p) => p.status === "refused");
   const pending = participants.filter((p) => p.status === "pending");
+  const refusal = events.filter((e) => e.type === "participant.refused").at(-1);
 
   // A vez de quem está pendente começou quando a última pessoa das etapas anteriores concluiu
   // (ou no envio, se for a primeira etapa ou o fluxo for paralelo).
@@ -67,7 +73,14 @@ export function DocumentStatusSummary({
       ) : refused.length > 0 ? (
         <p className="flex items-start gap-2 text-sm text-destructive">
           <XCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
-          {f(t.documents.now.refused, { name: refused.map((p) => p.name).join(", ") })}
+          <span>
+            {f(t.documents.now.refused, { name: refused.map((p) => p.name).join(", ") })}
+            {typeof refusal?.data?.reason === "string" && refusal.data.reason.trim() && (
+              <span className="block text-foreground">
+                {t.documents.reasonLabel}: “{refusal.data.reason.trim()}”
+              </span>
+            )}
+          </span>
         </p>
       ) : doc.status !== "pending" ? (
         <p className="text-sm text-muted-foreground">{t.documents.status[doc.status]}</p>

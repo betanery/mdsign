@@ -1038,6 +1038,7 @@ const es: AppMessages = {
     deletedBanner:
       "Este documento fue eliminado el {date}. Ya no aparece en la lista y no acepta nuevas acciones.",
     delegatedFrom: "en delegación de {name}",
+    reasonLabel: "Motivo",
     batch: {
       selectAll: "Seleccionar todos",
       selectOne: "Seleccionar {name}",
@@ -1269,6 +1270,16 @@ const es: AppMessages = {
     add: "Agregar participante",
     addMe: "Incluirme",
     addWitness: "Agregar testigo",
+    addApprover: "Agregar aprobador",
+    approverHint:
+      "El aprobador revisa y aprueba antes de las firmas (por ejemplo, el área jurídica). No firma ni aparece como firmante. Si rechaza, indica el motivo.",
+    flowTitle: "Cómo circulará el documento",
+    flowSequential: "En orden: cada etapa recibe el documento solo cuando la anterior termina.",
+    flowParallel: "Sin orden: todos lo reciben al mismo tiempo.",
+    flowStep: "Etapa {n}",
+    flowApproverParallel:
+      "El orden está desactivado: el aprobador lo recibe junto con quienes firman. Active el orden para que las firmas empiecen solo después de la aprobación.",
+    flowTurnOn: "Activar el orden",
     quorumLabel: "Quién del grupo firma",
     quorumAll: "Todos del grupo firman",
     quorumAny: "Basta {n} del grupo",
@@ -1329,7 +1340,12 @@ const es: AppMessages = {
   send: {
     title: "Enviar para firma",
     subtitle: "Define quién firma, en qué orden y cómo se autentica cada persona.",
-    steps: ["Documento", "Quién firma", "Revisar y enviar"],
+    steps: ["Documento", "Quién aprueba y firma", "Revisar y enviar"],
+    stepHints: [
+      "El PDF (hasta 20 MB), el nombre, la carpeta y anexos opcionales.",
+      "Nombre, correo y CPF de cada persona, y si aprueba o firma.",
+      "Orden, autenticación, dónde firma cada uno, plazo, recordatorios y mensaje.",
+    ],
     next: "Continuar",
     back: "Volver",
     submit: "Enviar documento",
@@ -1526,6 +1542,13 @@ const es: AppMessages = {
     new: "Nuevo envío masivo",
     empty: "Aún no hay envíos masivos.",
     steps: ["Plantilla", "Planilla", "Columnas", "Revisión", "Envío"],
+    stepHints: [
+      "La plantilla de documento que se usará.",
+      "La planilla (Excel o CSV) con una fila por documento.",
+      "Qué columna completa cada campo de la plantilla.",
+      "Revisar las filas con problemas antes de enviar.",
+      "Seguir el envío de cada documento.",
+    ],
     chooseTemplate: "Elige la plantilla de los documentos",
     upload: "Sube la planilla",
     uploadHint:
@@ -1723,6 +1746,12 @@ const es: AppMessages = {
     fromPdf: "Usar un PDF listo",
     fromPdfText: "Sube el PDF de tu empresa y posiciona campos, firmas y rúbricas.",
     steps: ["Documento", "Participantes", "Campos", "Probar"],
+    stepHints: [
+      "El PDF base de la plantilla y el nombre.",
+      "Los roles (quién aprueba y quién firma) y el orden.",
+      "Dónde van los campos a completar y las firmas.",
+      "Generar una vista previa con datos de ejemplo.",
+    ],
     upload: "Sube el PDF de la plantilla para ver la vista previa.",
     uploading: "Subiendo el PDF…",
     draftFound: "Tienes una plantilla en curso: “{name}” (guardada el {when}).",
@@ -1829,6 +1858,14 @@ const es: AppMessages = {
       "Ninguna página tiene CPF, legajo ni correo. Si este PDF es una plantilla en blanco para completar con la planilla, crea una plantilla a partir de él y usa “Generar a partir de una plantilla”.",
     blankPdfAction: "Crear plantilla a partir del PDF",
     steps: ["Subir", "Separar", "Identificar", "Revisar", "Firma", "Confirmar"],
+    stepHints: [
+      "El PDF con varios documentos juntos.",
+      "Cómo dividir las páginas en documentos.",
+      "De quién es cada documento (nombre, correo y CPF).",
+      "Revisar los documentos encontrados.",
+      "Quién más firma y dónde van las firmas.",
+      "Revisar todo y enviar.",
+    ],
     uploadHint: "Solo PDF, hasta 50 MB y 1.000 páginas.",
     uploadFirst: "Sube el PDF para continuar.",
     reading: "Leyendo el PDF y el texto de cada página…",

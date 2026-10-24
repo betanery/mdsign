@@ -9,6 +9,7 @@ import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
 import {
   FlowEditor,
+  FlowPreview,
   identityFields,
   newParticipant,
   onlyFields,
@@ -220,6 +221,7 @@ function SendPage() {
       <PageHeader title={t.send.title} subtitle={t.send.subtitle} />
       <Stepper
         steps={t.send.steps}
+        hints={t.send.stepHints}
         current={step}
         onStep={(i) => {
           setError(null);
@@ -279,12 +281,19 @@ function SendPage() {
           </>
         )}
         {step === 1 && (
-          <ParticipantsEditor
-            value={participants}
-            onChange={setParticipants}
-            config={config}
-            problems={problems}
-          />
+          <>
+            <ParticipantsEditor
+              value={participants}
+              onChange={setParticipants}
+              config={config}
+              problems={problems}
+            />
+            <FlowPreview
+              participants={participants}
+              sequential={sequential}
+              onSequential={() => setSequential(true)}
+            />
+          </>
         )}
         {step === 2 && (
           <dl className="grid gap-4 rounded-2xl border bg-white p-5 text-sm shadow-sm sm:grid-cols-[10rem_1fr]">

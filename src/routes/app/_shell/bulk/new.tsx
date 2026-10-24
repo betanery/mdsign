@@ -612,6 +612,7 @@ function TemplateBulk({
       <PageHeader title={t.bulk.new} subtitle={t.bulk.subtitle} />
       <Stepper
         steps={t.bulk.steps}
+        hints={t.bulk.stepHints}
         current={step}
         onStep={(i) => {
           setError(null);

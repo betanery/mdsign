@@ -51,7 +51,13 @@ import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/app/_shell/documents/$id")({ component: DocumentDetail });
 
-type EventRow = { id: number; type: string; actor_name: string | null; occurred_at: string };
+type EventRow = {
+  id: number;
+  type: string;
+  actor_name: string | null;
+  occurred_at: string;
+  data?: { reason?: unknown } | null;
+};
 
 function DocumentDetail() {
   const { id } = Route.useParams();
@@ -98,7 +104,7 @@ function DocumentDetail() {
         .maybeSingle(),
       supabase
         .from("document_events")
-        .select("id, type, actor_name, occurred_at")
+        .select("id, type, actor_name, occurred_at, data")
         .eq("document_id", id)
         .order("occurred_at", { ascending: true }),
     ]);
@@ -542,6 +548,11 @@ function DocumentDetail() {
                 <p className="text-sm font-medium">
                   {f(t.documents.events[e.type] ?? e.type, { name: e.actor_name ?? "" })}
                 </p>
+                {typeof e.data?.reason === "string" && e.data.reason.trim() && (
+                  <p className="mt-0.5 text-sm break-words text-muted-foreground">
+                    {t.documents.reasonLabel}: “{e.data.reason.trim()}”
+                  </p>
+                )}
                 <time className="text-xs text-muted-foreground" dateTime={e.occurred_at}>
                   {formatDate(e.occurred_at, locale)}
                 </time>

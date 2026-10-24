@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { addAttachments, MAX_ATTACHMENT_BYTES } from "@/app/components/attachments-picker";
 import {
+  flowStages,
+  newParticipant,
   participantsFromDocument,
+  withApprover,
+  type ParticipantDraft,
   type PastParticipant,
 } from "@/app/components/participants-editor";
 
@@ -75,5 +79,29 @@ describe("Pastas", () => {
     expect(folderCounts([{ folder_id: "a" }, { folder_id: "a" }, { folder_id: null }, {}])).toEqual(
       { a: 2, none: 2 },
     );
+  });
+});
+
+describe("aprovador no fluxo", () => {
+  const person = (name: string, role: ParticipantDraft["role"] = "signer") => ({
+    ...newParticipant(role),
+    name,
+  });
+
+  it("novo aprovador entra antes de quem assina, depois dos aprovadores já incluídos", () => {
+    const list = withApprover([person("Jurídico", "approver"), person("Ana"), person("Bruno")]);
+    expect(list.map((p) => p.role)).toEqual(["approver", "approver", "signer", "signer"]);
+    expect(withApprover([]).map((p) => p.role)).toEqual(["approver"]);
+  });
+
+  it("em ordem, cada pessoa é uma etapa; sem ordem, uma etapa só", () => {
+    const list = [person("Jurídico", "approver"), person("Ana"), person("Bruno")];
+    const inOrder = flowStages(list, true);
+    expect(inOrder.map((s) => s.people.map((p) => `${p.role}:${p.name}`))).toEqual([
+      ["approver:Jurídico"],
+      ["signer:Ana"],
+      ["signer:Bruno"],
+    ]);
+    expect(flowStages(list, false)).toHaveLength(1);
   });
 });

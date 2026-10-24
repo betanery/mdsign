@@ -467,6 +467,7 @@ export function PdfTemplateEditor({
     <>
       <Stepper
         steps={t.pdf.steps}
+        hints={t.pdf.stepHints}
         current={step}
         onStep={(i) => {
           setError(null);
