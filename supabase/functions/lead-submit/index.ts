@@ -7,7 +7,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const PLANS = ["cedro", "jacaranda", "angico", "aroeira", "ipe", "mogno"];
+const PLANS = ["cedro", "jacaranda", "ipe", "mogno"];
 const LOCALES = ["pt", "en", "es"];
 const MAX_PER_IP = 5; // envios por IP a cada 10 minutos
 const WINDOW_MINUTES = 10;

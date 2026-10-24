@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  FileText,
+  ListOrdered,
+  Loader2,
+  UsersRound,
+} from "lucide-react";
 
 import { callFunction } from "@/app/api";
 import { supabase } from "@/lib/supabase";
@@ -51,7 +59,7 @@ import { selectClass } from "@/app/ui";
 export const Route = createFileRoute("/app/_shell/send")({ component: SendPage });
 
 function SendPage() {
-  const { t, locale } = useAppI18n();
+  const { t, f, locale } = useAppI18n();
   const { current } = useOrg();
   const config = useAppConfig();
   const [step, setStep] = useState(0);
@@ -208,6 +216,13 @@ function SendPage() {
     );
 
   const r = options.reminders;
+  // Resumo: quem já tem nome ou e-mail conta como participante; pendências = documento faltando
+  // + pessoas com dados obrigatórios incompletos.
+  const named = participants.filter((p) => p.name.trim() || p.email.trim());
+  const approverCount = named.filter((p) => p.role === "approver").length;
+  const pendingItems =
+    (file ? 0 : 1) +
+    Object.keys(onlyFields(validateParticipants(participants, config), identityFields)).length;
   const markCount = Object.values(marks).reduce((n, list) => n + list.length, 0);
   // Na Revisão, um grupo com quórum é uma etapa só (mesmo número para todos do grupo).
   const reviewSteps: number[] = [];
@@ -228,9 +243,74 @@ function SendPage() {
           setStep(i);
         }}
       />
+      {/* Resumo fixo: o que já está definido e o que falta, em todas as etapas. */}
+      <p
+        className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border bg-white px-4 py-2.5 text-sm"
+        aria-label={t.send.summary.label}
+      >
+        <span className="flex min-w-0 items-center gap-1.5">
+          <FileText className="size-4 shrink-0 text-brand" aria-hidden />
+          <span className="max-w-[16rem] truncate font-medium">
+            {file ? name || file.name : t.send.summary.noFile}
+          </span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <UsersRound className="size-4 text-brand" aria-hidden />
+          {f(t.send.summary.people, { n: String(named.length) })}
+          {named.length > 0 && (
+            <span className="text-muted-foreground">
+              (
+              {[
+                approverCount ? f(t.send.summary.approvers, { n: String(approverCount) }) : null,
+                f(t.send.summary.signers, { n: String(named.length - approverCount) }),
+              ]
+                .filter(Boolean)
+                .join(", ")}
+              )
+            </span>
+          )}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <ListOrdered className="size-4 text-brand" aria-hidden />
+          {sequential ? t.send.summary.inOrder : t.send.summary.parallel}
+        </span>
+        <span
+          className={cn(
+            "flex items-center gap-1.5 font-medium",
+            pendingItems ? "text-amber-800" : "text-success",
+          )}
+        >
+          {pendingItems ? (
+            <AlertCircle className="size-4" aria-hidden />
+          ) : (
+            <CheckCircle2 className="size-4" aria-hidden />
+          )}
+          {pendingItems
+            ? f(t.send.summary.pending, { n: String(pendingItems) })
+            : t.send.summary.ok}
+        </span>
+      </p>
       <div className={step === 2 && panel === "marks" ? "grid gap-5" : "grid max-w-3xl gap-5"}>
         {step === 0 && (
           <>
+            {!file && (
+              <section
+                className="rounded-2xl border border-brand/20 bg-brand-soft/40 p-4"
+                aria-labelledby="send-need"
+              >
+                <h2 id="send-need" className="text-sm font-semibold">
+                  {t.send.needTitle}
+                </h2>
+                <ul className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
+                  {t.send.need.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             <PdfDrop
               file={file}
               onFile={(f) => {

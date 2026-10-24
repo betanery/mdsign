@@ -17,6 +17,9 @@ import { centsToInput, parseMoney, rpcErrorCode, type Catalog } from "./api";
 import { Loading } from "./shared";
 import { usePlansAdminTexts } from "./texts";
 
+/** Planos tirados do catálogo no lançamento (continuam no banco pelo histórico). */
+const RETIRED = new Set(["angico", "aroeira"]);
+
 /** Chamada de leitura com descarte de respostas antigas. */
 function useRpc<T>(fn: string, args: Record<string, unknown> | undefined, deps: unknown[]) {
   const [data, setData] = useState<T | null>(null);
@@ -96,16 +99,19 @@ export function PlansOverview() {
               </tr>
             </thead>
             <tbody>
-              {data.by_plan.map((p) => (
-                <tr key={p.plan_id} className="border-b last:border-0">
-                  <th scope="row" className="p-2 text-left font-medium">
-                    {p.name}
-                  </th>
-                  <td className="p-2 tabular-nums">{p.orgs}</td>
-                  <td className="p-2 tabular-nums">{p.users}</td>
-                  <td className="p-2 tabular-nums">{p.docs_month}</td>
-                </tr>
-              ))}
+              {/* Planos fora do catálogo só aparecem se ainda tiverem organizações. */}
+              {data.by_plan
+                .filter((p) => p.orgs > 0 || !RETIRED.has(p.plan_id))
+                .map((p) => (
+                  <tr key={p.plan_id} className="border-b last:border-0">
+                    <th scope="row" className="p-2 text-left font-medium">
+                      {p.name}
+                    </th>
+                    <td className="p-2 tabular-nums">{p.orgs}</td>
+                    <td className="p-2 tabular-nums">{p.users}</td>
+                    <td className="p-2 tabular-nums">{p.docs_month}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -171,15 +177,17 @@ export function PlansConsumption() {
           <MoneyTable
             title={C.byPlan}
             head={[C.plan, P.overview.orgs, C.docs, C.avg, C.cost, C.revenue, C.balance]}
-            rows={data.by_plan.map((r) => [
-              r.plan_id,
-              r.orgs,
-              r.docs,
-              r.avg_docs ?? "—",
-              money(r.cost_cents),
-              money(r.revenue_cents),
-              money(r.balance_cents),
-            ])}
+            rows={data.by_plan
+              .filter((r) => r.orgs > 0 || !RETIRED.has(r.plan_id))
+              .map((r) => [
+                r.plan_id,
+                r.orgs,
+                r.docs,
+                r.avg_docs ?? "—",
+                money(r.cost_cents),
+                money(r.revenue_cents),
+                money(r.balance_cents),
+              ])}
           />
           <MoneyTable
             title={C.org}

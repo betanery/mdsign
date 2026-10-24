@@ -4,10 +4,15 @@ import {
   ArrowRight,
   ArrowUp,
   CheckCheck,
+  CheckCircle2,
+  ClipboardCheck,
+  FileText,
+  Lock,
   PenLine,
   Plus,
   Trash2,
   UserRound,
+  UserRoundPlus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +23,7 @@ import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { needsPhone, type AppConfig, type AuthLevel } from "../app-config";
 import { useAuth } from "../auth";
+import { useFeaturePreview, useFeatures } from "../features";
 import { useAppI18n } from "../i18n";
 import { useOrg } from "../org";
 import { selectClass } from "../ui";
@@ -219,6 +225,13 @@ export function ParticipantsEditor({
   const contacts = useContacts();
   const fixed = Boolean(labels);
   const listId = useId();
+  // Cedro: 1 aprovador por documento (aprovação em várias etapas é dos planos pagos). O servidor
+  // confere de novo ao enviar.
+  const { mode } = useFeatures();
+  const preview = useFeaturePreview();
+  const approvers = value.filter((p) => p.role === "approver").length;
+  const multiLocked = mode("approval_multi") === "preview" || mode("approval_multi") === "hidden";
+  const approverLocked = multiLocked && approvers >= 1;
   const { current } = useOrg();
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
   const orgId = current?.id;
@@ -536,6 +549,11 @@ export function ParticipantsEditor({
         <p className="text-xs text-muted-foreground">{t.participants.contactsHint}</p>
       )}
       {!fixed && <p className="text-xs text-muted-foreground">{t.participants.approverHint}</p>}
+      {!fixed && multiLocked && approvers > 1 && (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900" role="alert">
+          {t.participants.approverLimit}
+        </p>
+      )}
       <div className={fixed ? "hidden" : "flex flex-wrap gap-2"}>
         <Button
           type="button"
@@ -543,16 +561,20 @@ export function ParticipantsEditor({
           onClick={() => onChange([...value, newParticipant()])}
           disabled={value.length >= 30}
         >
-          <Plus aria-hidden />
-          {t.participants.add}
+          <UserRoundPlus aria-hidden />
+          {t.participants.addSigner}
         </Button>
         <Button
           type="button"
           variant="outline"
-          onClick={() => onChange(withApprover(value))}
+          onClick={() =>
+            approverLocked
+              ? preview.open("approval_multi", "participants")
+              : onChange(withApprover(value))
+          }
           disabled={value.length >= 30}
         >
-          <CheckCheck aria-hidden />
+          {approverLocked ? <Lock aria-hidden /> : <ClipboardCheck aria-hidden />}
           {t.participants.addApprover}
         </Button>
         <Button
@@ -658,7 +680,14 @@ export function FlowPreview({
         </p>
       </div>
       <ol className="flex flex-wrap items-stretch gap-2">
-        {stages.map((st, i) => (
+        <li className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 rounded-xl border border-dashed px-3 py-2 text-sm text-muted-foreground">
+            <FileText className="size-4" aria-hidden />
+            {t.participants.flowStart}
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        </li>
+        {stages.map((st) => (
           <li key={st.step} className="flex items-center gap-2">
             <div className="grid gap-1 rounded-xl border bg-muted/30 px-3 py-2 text-sm">
               {sequential && (
@@ -680,11 +709,15 @@ export function FlowPreview({
                 </span>
               ))}
             </div>
-            {i < stages.length - 1 && (
-              <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-            )}
+            <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           </li>
         ))}
+        <li className="flex items-center">
+          <span className="flex items-center gap-1.5 rounded-xl border border-dashed border-success/40 px-3 py-2 text-sm text-success">
+            <CheckCircle2 className="size-4" aria-hidden />
+            {t.participants.flowEnd}
+          </span>
+        </li>
       </ol>
       {hasApprover && !sequential && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">

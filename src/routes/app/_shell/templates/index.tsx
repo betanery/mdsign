@@ -15,6 +15,7 @@ import { friendlyError } from "@/app/validation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/lib/supabase";
+import { EmptyState } from "@/app/components/empty-state";
 import { cn } from "@/lib/utils";
 
 // Modelos (PRD §13): biblioteca MDSign, da organização e pessoais.
@@ -136,9 +137,11 @@ function TemplatesPage() {
             {templates === null ? (
               <p className="text-muted-foreground">{t.common.loading}</p>
             ) : byTab[k].length === 0 ? (
-              <p className="rounded-2xl border bg-white p-5 text-muted-foreground">
-                {t.templates.empty}
-              </p>
+              <EmptyState
+                icon={LayoutTemplate}
+                title={t.empty.templates}
+                text={t.empty.templatesText}
+              />
             ) : (
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {byTab[k].map((tpl) => (

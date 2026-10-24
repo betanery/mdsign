@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ContactRound, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { EmptyState } from "@/app/components/empty-state";
 import { toast } from "sonner";
 
 import { useAuth } from "@/app/auth";
@@ -105,7 +106,12 @@ function ContactsPage() {
         {contacts === null ? (
           <p className="p-5 text-muted-foreground">{t.common.loading}</p>
         ) : filtered.length === 0 ? (
-          <p className="p-5 text-muted-foreground">{t.contacts.empty}</p>
+          <EmptyState
+            icon={ContactRound}
+            className="border-0 shadow-none"
+            title={contacts.length ? t.empty.contactsSearch : t.empty.contacts}
+            text={contacts.length ? undefined : t.empty.contactsText}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">

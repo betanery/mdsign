@@ -84,7 +84,16 @@ export function useCatalog() {
     const { data, error: e } = await supabase.rpc("admin_plans_catalog");
     if (e) return setError(true);
     setError(false);
-    setCatalog(data as Catalog);
+    // Planos fora do catálogo naquela versão (ex.: Angico e Aroeira no lançamento) não aparecem
+    // na matriz, no simulador nem nos indicadores: ficam só para o histórico.
+    const c = data as Catalog;
+    setCatalog({
+      ...c,
+      versions: c.versions.map((v) => ({
+        ...v,
+        plans: v.plans?.filter((p) => p.is_public) ?? null,
+      })),
+    });
   }, []);
   useEffect(() => {
     void reload();

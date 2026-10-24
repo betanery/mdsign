@@ -2,6 +2,7 @@
 // modelos, formulários e envio em massa: uma única regra de criação.
 
 import { admin } from "./auth.ts";
+import { assertFeature } from "./features.ts";
 import { AppError } from "./http.ts";
 import { enqueueChannels, ownEmailFor } from "./notifications.ts";
 import {
@@ -10,7 +11,14 @@ import {
   type CleanParticipant,
   type ObserverInput,
 } from "./participants.ts";
-import { assertSafePdf, loadPdf, pageSizes, toEngineMarks, type RelMark } from "./pdf.ts";
+import {
+  assertSafePdf,
+  loadPdf,
+  pageSizes,
+  sha256Hex,
+  toEngineMarks,
+  type RelMark,
+} from "./pdf.ts";
 import { signdoc, type EngineFlowAction } from "./signdoc.ts";
 import { deliverDue } from "./webhooks.ts";
 
@@ -264,6 +272,9 @@ export async function createDocument(input: CreateInput): Promise<Created> {
   await assertSafePdf(input.pdf);
   // Quórum só com a política ligada (ou para o Super Admin, durante a homologação).
   if (input.participants.some((p) => p.rule)) await assertQuorumAllowed(input.createdBy);
+  // Mais de um aprovador (aprovação em várias etapas) depende do plano; no Cedro, 1 aprovador.
+  if (input.participants.filter((p) => p.role === "approver").length > 1)
+    await assertFeature(input.organizationId, "approval_multi");
   // Consumo (franquia da pessoa no Cedro; mês no plano pago): reserva antes de criar no motor.
   // O que consome 1 documento: a criação de 1 documento no motor, com qualquer número de
   // participantes. Mesma chave = mesma reserva (reenvio não cobra duas vezes).
@@ -382,6 +393,17 @@ export async function createDocument(input: CreateInput): Promise<Created> {
       reservation,
       doc: doc.id,
       engine: created.documentId,
+    });
+    // Versão 1, com o hash do arquivo enviado (correções viram versão 2, 3…).
+    await admin.from("document_versions").insert({
+      document_id: doc.id,
+      organization_id: input.organizationId,
+      number: 1,
+      file_name: input.filename.slice(0, 200),
+      sha256: await sha256Hex(input.pdf),
+      size_bytes: input.pdf.length,
+      created_by: input.createdBy,
+      created_by_name: input.actorName.slice(0, 160) || null,
     });
 
     // Liga cada participante à ação do motor (mesma ordem de envio) e à conta MDSign, se houver.

@@ -3,6 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Ban,
   CheckCheck,
+  ClipboardCheck,
+  FilePlus2,
   FileText,
   Folder as FolderIcon,
   Loader2,
@@ -19,6 +21,7 @@ import { useCedroAvailability } from "@/app/availability";
 import { PageHeader } from "@/app/components/app-shell";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { ReasonDialog, SigningQueue } from "@/app/components/document-batch";
+import { EmptyState } from "@/app/components/empty-state";
 import { FoldersDialog } from "@/app/components/folders-dialog";
 import { folderCounts, moveDocuments, useFolders } from "@/app/folders";
 import { selectClass } from "@/app/ui";
@@ -226,9 +229,20 @@ function DocumentsPage() {
         title={t.documents.title}
         subtitle={t.documents.subtitle}
         actions={
-          <Button asChild className="bg-brand hover:bg-brand-strong">
-            <Link to="/app/sign">{t.actions.selfSign}</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/sign">
+                <PenLine aria-hidden />
+                {t.quick.signDoc}
+              </Link>
+            </Button>
+            <Button asChild className="bg-brand hover:bg-brand-strong">
+              <Link to="/app/send">
+                <FilePlus2 aria-hidden />
+                {t.quick.newDoc}
+              </Link>
+            </Button>
+          </div>
         }
       />
       <div
@@ -313,17 +327,41 @@ function DocumentsPage() {
           {t.common.loading}
         </p>
       ) : visible.length === 0 ? (
-        <div className="rounded-2xl border bg-white p-8 text-center shadow-sm">
-          <p className="text-muted-foreground">{t.documents.empty}</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button asChild variant="outline">
-              <Link to="/app/sign">{t.documents.emptyAction}</Link>
-            </Button>
-            <Button asChild className="bg-brand hover:bg-brand-strong">
-              <Link to="/app/send">{t.documents.emptySend}</Link>
-            </Button>
-          </div>
-        </div>
+        <EmptyState
+          icon={tab === "forMe" ? ClipboardCheck : (docs?.length ?? 0) > 0 ? FileText : FilePlus2}
+          title={
+            tab === "forMe"
+              ? t.empty.forMe
+              : (docs?.length ?? 0) > 0
+                ? t.empty.filtered
+                : t.empty.documents
+          }
+          text={
+            tab === "forMe"
+              ? t.empty.forMeText
+              : (docs?.length ?? 0) > 0
+                ? undefined
+                : t.empty.documentsText
+          }
+          actions={
+            tab === "forMe" ? undefined : (
+              <>
+                <Button asChild variant="outline">
+                  <Link to="/app/sign">
+                    <PenLine aria-hidden />
+                    {t.quick.signDoc}
+                  </Link>
+                </Button>
+                <Button asChild className="bg-brand hover:bg-brand-strong">
+                  <Link to="/app/send">
+                    <FilePlus2 aria-hidden />
+                    {t.quick.newDoc}
+                  </Link>
+                </Button>
+              </>
+            )
+          }
+        />
       ) : (
         <>
           {tab === "forMe" && mine.length > 0 && (

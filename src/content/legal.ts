@@ -110,7 +110,7 @@ const terms: LegalDoc = {
     {
       title: "8. Planos e franquias",
       paragraphs: [
-        "Cedro: gratuito, 1 usuário, franquia total de 5 documentos por pessoa (somando as organizações no plano gratuito), não renovada mensalmente e sem exigência de cartão de crédito. Os demais planos são Jacarandá (R$ 39,90/mês; 20 documentos/mês; 1 usuário), Angico (R$ 99,97/mês; documentos ilimitados; 4 usuários), Aroeira (R$ 149,97/mês; documentos ilimitados; 6 usuários), Ipê (R$ 199,97/mês; documentos ilimitados; 10 usuários) e Mogno (sob proposta e contrato).",
+        "Cedro: gratuito, 1 usuário, franquia total de 5 documentos por pessoa (somando as organizações no plano gratuito), não renovada mensalmente e sem exigência de cartão de crédito. Os demais planos são Jacarandá (R$ 39,90/mês; 50 documentos/mês; 1 usuário), Ipê (R$ 99,97/mês; documentos ilimitados; até 4 usuários) e Mogno (sob proposta e contrato).",
         "“Ilimitado” refere-se à franquia de documentos, sem afastar regras de uso aceitável e limites técnicos razoáveis. Para planos sujeitos a franquia, cada documento consome uma unidade no momento da criação; cancelamento, recusa ou exclusão posterior não restituem essa unidade. Falhas técnicas que impeçam a criação do documento não consomem a franquia.",
         "Valores e ofertas vigentes devem ser exibidos antes da contratação, com impostos e condições aplicáveis, sem prejuízo das condições de contratos empresariais já firmados.",
       ],

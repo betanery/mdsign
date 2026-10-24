@@ -14,6 +14,7 @@ import {
 import { markGuideStep } from "@/app/onboarding";
 import { PageHeader } from "@/app/components/app-shell";
 import { useAppI18n } from "@/app/i18n";
+import { useFeatures } from "@/app/features";
 import { useOrg } from "@/app/org";
 import { downloadBlob, toPdf, toXlsx, type ExportTable } from "@/app/report-export";
 import { downloadCsv, toCsv } from "@/app/sheet";
@@ -98,6 +99,7 @@ function range(preset: Preset, from: string, to: string): [Date, Date] {
 
 function ReportsPage() {
   const { t, f, locale } = useAppI18n();
+  const { mode: featureMode } = useFeatures();
   const { current, can } = useOrg();
   const guideOrg = current?.id;
   useEffect(() => markGuideStep(guideOrg, "viewed_reports"), [guideOrg]);
@@ -299,11 +301,14 @@ function ReportsPage() {
   }
 
   const setFilter = (k: string, v: string) => setFilters((x) => ({ ...x, [k]: v }));
+  const advanced = featureMode("reports_advanced") === "available";
   const activeFilters = Object.values(filters).filter(Boolean).length;
   // Filtros com título visível; quem/departamento/grupo/modelo só aparecem se houver opções.
+  // Relatórios gerenciais (Ipê): período, situação e pessoa da equipe, exportação CSV.
+  // Relatórios avançados (Mogno): também origem, modelo, departamento, grupo, pasta, Excel e PDF.
   const filterDefs: { key: keyof typeof t.reports.f; options: Option[] }[] = [
     ...(["user", "unit", "group", "template"] as const)
-      .filter((k) => opts[k].length)
+      .filter((k) => opts[k].length && (advanced || k === "user"))
       .map((k) => ({ key: k, options: opts[k] })),
     {
       key: "status",
@@ -312,11 +317,18 @@ function ReportsPage() {
         name: t.documents.status[x] ?? x,
       })),
     },
-    {
-      key: "origin",
-      options: Object.keys(t.reports.origins).map((o) => ({ id: o, name: t.reports.origins[o]! })),
-    },
-    ...(folders.length
+    ...(advanced
+      ? [
+          {
+            key: "origin" as const,
+            options: Object.keys(t.reports.origins).map((o) => ({
+              id: o,
+              name: t.reports.origins[o]!,
+            })),
+          },
+        ]
+      : []),
+    ...(advanced && folders.length
       ? [
           {
             key: "folder" as const,
@@ -355,7 +367,7 @@ function ReportsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {(["pdf", "xlsx", "csv"] as const).map((k) => (
+                {(advanced ? (["pdf", "xlsx", "csv"] as const) : (["csv"] as const)).map((k) => (
                   <DropdownMenuItem key={k} onSelect={() => void exportAs(k)}>
                     {k === "pdf" ? (
                       <FileText aria-hidden />

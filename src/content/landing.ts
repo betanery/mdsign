@@ -7,10 +7,6 @@ import cedro from "@/assets/plans/cedro.webp";
 import cedroSmall from "@/assets/plans/cedro-320.webp";
 import jacaranda from "@/assets/plans/jacaranda.webp";
 import jacarandaSmall from "@/assets/plans/jacaranda-320.webp";
-import angico from "@/assets/plans/angico.webp";
-import angicoSmall from "@/assets/plans/angico-320.webp";
-import aroeira from "@/assets/plans/aroeira.webp";
-import aroeiraSmall from "@/assets/plans/aroeira-320.webp";
 import ipe from "@/assets/plans/ipe.webp";
 import ipeSmall from "@/assets/plans/ipe-320.webp";
 import mogno from "@/assets/plans/mogno.webp";
@@ -83,7 +79,7 @@ export const apiExample = {
 
 export const apiDocsReferenceUrl = "https://sign.signdocmd.com.br/swagger/index.html";
 
-export type PlanId = "cedro" | "jacaranda" | "angico" | "aroeira" | "ipe" | "mogno";
+export type PlanId = "cedro" | "jacaranda" | "ipe" | "mogno";
 
 export type Plan = {
   id: PlanId;
@@ -94,10 +90,12 @@ export type Plan = {
   imageSmall: string;
   /** Preço em reais; sem conversão de moeda nesta fase (PRD 27.4). */
   price?: string;
+  /** Destaque visual da oferta principal (sem afirmações como "mais vendido"). */
+  featured?: boolean;
   cta: "free" | "subscribe" | "specialist";
 };
 
-/** Ordem fixa definida no PRD. Cada plano usa a foto real da espécie. */
+/** Os 4 planos do lançamento, em ordem. Cada plano usa a foto real da espécie. */
 export const plans: Plan[] = [
   { id: "cedro", name: "Cedro", image: cedro, imageSmall: cedroSmall, cta: "free" },
   {
@@ -109,28 +107,13 @@ export const plans: Plan[] = [
     cta: "subscribe",
   },
   {
-    id: "angico",
-    name: "Angico",
-    image: angico,
-    imageSmall: angicoSmall,
-    price: "R$ 99,97",
-    cta: "subscribe",
-  },
-  {
-    id: "aroeira",
-    name: "Aroeira",
-    image: aroeira,
-    imageSmall: aroeiraSmall,
-    price: "R$ 149,97",
-    cta: "subscribe",
-  },
-  {
     id: "ipe",
     name: "Ipê",
     image: ipe,
     imageSmall: ipeSmall,
-    price: "R$ 199,97",
+    price: "R$ 99,97",
     cta: "subscribe",
+    featured: true,
   },
   { id: "mogno", name: "Mogno", image: mogno, imageSmall: mognoSmall, cta: "specialist" },
 ];
@@ -155,4 +138,26 @@ export const footerCompanyLinks: (string | undefined)[] = [
   undefined,
   "/#contato",
   "/#contato",
+];
+
+/**
+ * Comparação completa (seção expansível da página de planos). Reflete a matriz de lançamento;
+ * "soon" = ainda em homologação, nunca anunciado como disponível.
+ */
+export type CompareCell = "yes" | "no" | "soon" | "basic" | "advanced" | "contract";
+export const planComparison: { row: string; cells: Record<PlanId, CompareCell> }[] = [
+  { row: "esign", cells: { cedro: "yes", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "history", cells: { cedro: "yes", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "order", cells: { cedro: "yes", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "approval", cells: { cedro: "yes", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "returnFix", cells: { cedro: "yes", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "reject", cells: { cedro: "yes", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "templates", cells: { cedro: "no", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "certificate", cells: { cedro: "no", jacaranda: "soon", ipe: "soon", mogno: "soon" } },
+  { row: "multiApproval", cells: { cedro: "no", jacaranda: "yes", ipe: "yes", mogno: "yes" } },
+  { row: "team", cells: { cedro: "no", jacaranda: "no", ipe: "yes", mogno: "yes" } },
+  { row: "reports", cells: { cedro: "no", jacaranda: "no", ipe: "basic", mogno: "advanced" } },
+  { row: "bulk", cells: { cedro: "no", jacaranda: "no", ipe: "no", mogno: "yes" } },
+  { row: "api", cells: { cedro: "no", jacaranda: "no", ipe: "no", mogno: "yes" } },
+  { row: "support", cells: { cedro: "no", jacaranda: "no", ipe: "no", mogno: "contract" } },
 ];

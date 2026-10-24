@@ -28,6 +28,8 @@ type Body = {
   participantId?: string;
   attachmentId?: string;
   reason?: string;
+  /** Recusa: devolver para correção (padrão) ou rejeitar definitivamente. */
+  kind?: "return" | "reject";
   version?: "signed" | "original" | "printable";
 };
 
@@ -152,17 +154,20 @@ Deno.serve(async (req) => {
         return json({ status: "canceled" }, 200, origin);
       }
 
-      // Recusa por quem está com a vez (ações em lote ou na página do documento). O motor registra
-      // a recusa pelo aplicativo do MDSign; por isso o motivo leva o nome de quem recusou, e a
-      // linha do tempo/auditoria do MDSign registram a pessoa.
+      // Recusa por quem está com a vez (página do documento ou ações em lote). Dois tipos:
+      // "return" = devolver para correção (quem enviou sobe uma nova versão e o fluxo recomeça);
+      // "reject" = rejeitar definitivamente (o processo termina e não aceita nova versão).
+      // O motor registra a recusa pelo aplicativo do MDSign; por isso o motivo leva o nome de
+      // quem recusou, e a linha do tempo/auditoria do MDSign registram a pessoa e a versão.
       case "refuse": {
         if (doc.status !== "pending") throw new AppError("document_not_pending", 409);
+        const kind = body.kind === "reject" ? "reject" : "return";
         const reason = (body.reason ?? "").trim();
         if (reason.length < 3 || reason.length > 400)
           throw new AppError("refusal_reason_required", 422);
         const { data: rows } = await admin
           .from("document_participants")
-          .select("id, user_id, name, email, status")
+          .select("id, user_id, name, email, status, role, step")
           .eq("document_id", doc.id)
           .eq("status", "pending");
         const email = caller.user.email?.toLowerCase();
@@ -170,29 +175,51 @@ Deno.serve(async (req) => {
           (p) => p.user_id === caller.user.id || (email && p.email.toLowerCase() === email),
         );
         if (!me) throw new AppError("nothing_to_refuse", 409);
-        await signdoc.refuse(
-          doc.engine_document_id,
-          `Recusado por ${me.name} pelo MDSign: ${reason}`.slice(0, 500),
-        );
+        // Trava contra decisões simultâneas: só a primeira recusa marca o documento.
+        const { data: locked } = await admin
+          .from("documents")
+          .update({ refusal_kind: kind })
+          .eq("id", doc.id)
+          .eq("status", "pending")
+          .is("refusal_kind", null)
+          .select("id");
+        if (!locked?.length) throw new AppError("document_not_pending", 409);
+        const { data: version } = await admin
+          .from("document_versions")
+          .select("number")
+          .eq("document_id", doc.id)
+          .order("number", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const label = kind === "reject" ? "Rejeitado definitivamente" : "Devolvido para correção";
+        try {
+          await signdoc.refuse(
+            doc.engine_document_id,
+            `${label} por ${me.name} pelo MDSign: ${reason}`.slice(0, 500),
+          );
+        } catch (e) {
+          await admin.from("documents").update({ refusal_kind: null }).eq("id", doc.id);
+          throw e;
+        }
         await admin.from("document_participants").update({ status: "refused" }).eq("id", me.id);
         await admin.from("document_events").insert({
           document_id: doc.id,
           organization_id: doc.organization_id,
-          type: "participant.refused",
+          type: kind === "reject" ? "participant.rejected" : "participant.returned",
           actor_name: me.name,
           source: "mdsign",
-          data: { reason },
+          data: { reason, version: version?.number ?? 1, step: me.step, role: me.role },
         });
         await syncDocument(doc).catch(() => undefined);
         await admin.rpc("write_audit_as", {
           org: doc.organization_id,
           actor: caller.user.id,
-          act: "document.refused",
+          act: kind === "reject" ? "document.rejected" : "document.returned",
           ent: "document",
           ent_id: doc.id,
-          payload: { reason },
+          payload: { reason, version: version?.number ?? 1 },
         });
-        return json({ status: "refused" }, 200, origin);
+        return json({ status: "refused", kind }, 200, origin);
       }
 
       // Exclusão lógica: some das listas, mas fica guardado (prova no motor, auditoria aqui).

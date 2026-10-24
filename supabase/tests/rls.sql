@@ -1609,4 +1609,69 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- Relatórios: filtros avançados só com "relatórios avançados"; período/situação continuam liberados.
+update public.plan_version_features set mode = 'hidden'
+  where feature_code = 'reports_advanced'
+    and (version_id, plan_id) = (select s.plan_version_id, s.plan_id from public.subscriptions s
+                                 where s.organization_id = (select v from t_ids where k = 'orgB'));
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+declare r jsonb;
+begin
+  r := public.org_report((select v from t_ids where k = 'orgB'), now() - interval '1 day', now() + interval '1 day',
+                         '{"status":"pending"}'::jsonb);
+  assert r is not null, 'filtro por situação continua no relatório básico';
+  begin
+    r := public.org_report((select v from t_ids where k = 'orgB'), now() - interval '1 day', now() + interval '1 day',
+                           '{"folder":"none"}'::jsonb);
+    raise exception 'FALHOU: filtro por pasta sem relatórios avançados';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+
+-- Versões do documento: leitura acompanha quem vê o documento; ninguém grava pelo navegador;
+-- histórico (eventos e versões) não pode ser editado depois de gravado.
+insert into public.document_versions (document_id, organization_id, number, sha256)
+values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'), 2, repeat('c', 64));
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+declare doc uuid := (select v from t_ids where k = 'docObs');
+begin
+  assert (select count(*) from public.document_versions where document_id = doc)
+       = case when public.can_view_document(doc) then (select count(*) from public.document_versions where document_id = doc) else 0 end,
+    'versões seguem a visibilidade do documento';
+  begin
+    insert into public.document_versions (document_id, organization_id, number)
+      values (doc, (select v from t_ids where k = 'orgB'), 9);
+    raise exception 'FALHOU: usuário gravou versão';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$ begin
+  assert (select count(*) from public.document_versions where document_id = (select v from t_ids where k = 'docObs')
+          and number = 2) = 1, 'quem vê o documento vê as versões';
+end $$;
+reset role;
+do $$
+begin
+  update public.document_versions set sha256 = repeat('d', 64) where number = 2
+    and document_id = (select v from t_ids where k = 'docObs');
+  raise exception 'FALHOU: versão foi editada';
+exception when insufficient_privilege then null;
+end $$;
+insert into public.document_events (document_id, organization_id, type, source)
+values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'), 'participant.returned', 'mdsign');
+do $$
+begin
+  update public.document_events set type = 'x' where document_id = (select v from t_ids where k = 'docObs');
+  if found then raise exception 'FALHOU: evento foi editado'; end if;
+exception when insufficient_privilege then null;
+end $$;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

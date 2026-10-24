@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bell,
+  CircleX,
+  ClipboardCheck,
   Download,
+  History,
   FileUp,
   Loader2,
   Folder as FolderIcon,
@@ -10,6 +13,7 @@ import {
   Paperclip,
   PenLine,
   RefreshCw,
+  RotateCcw,
   ShieldCheck,
   Users,
   XCircle,
@@ -30,12 +34,14 @@ import {
   ReplaceDocumentDialog,
   type ObserverRow,
 } from "@/app/components/document-edit";
+import { DecisionDialog, type Decision } from "@/app/components/decision-dialog";
 import { SigningFrame } from "@/app/components/signing-frame";
 import {
   documentSelect,
   formatDate,
   formatDay,
   humanStatus,
+  isReturned,
   statusTone,
   type DocumentRow,
 } from "@/app/documents";
@@ -56,7 +62,14 @@ type EventRow = {
   type: string;
   actor_name: string | null;
   occurred_at: string;
-  data?: { reason?: unknown } | null;
+  data?: { reason?: unknown; version?: unknown } | null;
+};
+type VersionRow = {
+  number: number;
+  file_name: string | null;
+  sha256: string | null;
+  created_by_name: string | null;
+  created_at: string;
 };
 
 function DocumentDetail() {
@@ -94,6 +107,8 @@ function DocumentDetail() {
   const config = useAppConfig();
   const availability = useCedroAvailability();
   const [editing, setEditing] = useState<"flow" | "replace" | null>(null);
+  const [deciding, setDeciding] = useState<Decision | null>(null);
+  const [versions, setVersions] = useState<VersionRow[]>([]);
 
   const load = useCallback(async () => {
     const [d, e] = await Promise.all([
@@ -108,6 +123,12 @@ function DocumentDetail() {
         .eq("document_id", id)
         .order("occurred_at", { ascending: true }),
     ]);
+    const ver = await supabase
+      .from("document_versions")
+      .select("number, file_name, sha256, created_by_name, created_at")
+      .eq("document_id", id)
+      .order("number", { ascending: false });
+    setVersions((ver.data as VersionRow[] | null) ?? []);
     const obs = await supabase
       .from("document_observers")
       .select("id, name, email")
@@ -202,6 +223,15 @@ function DocumentDetail() {
     doc.status === "pending" &&
     parts.some((p) => p.user_id === user?.id && p.status === "pending");
   const manage = !deletedAt && (doc.created_by === user?.id || can("documents.manage"));
+  const myRole = parts.find((p) => p.user_id === user?.id && p.status === "pending")?.role;
+  const returned = isReturned(doc);
+  const refuser = parts.find((p) => p.status === "refused")?.name ?? "";
+  const refusal = [...events]
+    .reverse()
+    .find((e) =>
+      ["participant.returned", "participant.rejected", "participant.refused"].includes(e.type),
+    );
+  const refusalReason = typeof refusal?.data?.reason === "string" ? refusal.data.reason.trim() : "";
 
   return (
     <>
@@ -256,11 +286,34 @@ function DocumentDetail() {
           >
             {busy === "sign" ? (
               <Loader2 className="animate-spin" aria-hidden />
+            ) : myRole === "approver" ? (
+              <ClipboardCheck aria-hidden />
             ) : (
               <PenLine aria-hidden />
             )}
-            {t.documents.actions.sign}
+            {myRole === "approver" ? t.documents.decision.approve : t.documents.decision.sign}
           </Button>
+        )}
+        {myTurn && (
+          <>
+            <Button
+              variant="outline"
+              disabled={busy !== null}
+              onClick={() => setDeciding("return")}
+            >
+              <RotateCcw aria-hidden />
+              {t.documents.decision.returnFix}
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-destructive"
+              disabled={busy !== null}
+              onClick={() => setDeciding("reject")}
+            >
+              <CircleX aria-hidden />
+              {t.documents.decision.reject}
+            </Button>
+          </>
         )}
         {!avail?.expired && (
           <Button variant="outline" disabled={busy !== null} onClick={() => void download()}>
@@ -316,6 +369,47 @@ function DocumentDetail() {
           </Button>
         )}
       </div>
+
+      {doc.status === "refused" && (
+        <div
+          className={cn(
+            "mb-4 grid gap-2 rounded-2xl border p-4 text-sm",
+            returned
+              ? "border-amber-300 bg-amber-50 text-amber-950"
+              : "border-destructive/30 bg-destructive/5",
+          )}
+        >
+          <p className="flex items-start gap-2 font-semibold">
+            {returned ? (
+              <RotateCcw className="mt-0.5 size-4 shrink-0" aria-hidden />
+            ) : (
+              <CircleX className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden />
+            )}
+            {f(returned ? t.documents.returnedBanner : t.documents.rejectedBanner, {
+              name: refuser,
+            })}
+          </p>
+          {refusalReason && (
+            <p className="break-words">
+              {t.documents.reasonLabel}: “{refusalReason}”
+            </p>
+          )}
+          {returned && manage && (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                size="sm"
+                className="bg-brand hover:bg-brand-strong"
+                disabled={busy !== null}
+                onClick={() => setEditing("replace")}
+              >
+                <FileUp aria-hidden />
+                {t.documents.returnedAction}
+              </Button>
+              <span className="text-xs">{t.documents.returnedHint}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {manage && folders.length > 0 && (
         <label className="mb-4 flex flex-wrap items-center gap-2 text-sm">
@@ -548,6 +642,11 @@ function DocumentDetail() {
                 <p className="text-sm font-medium">
                   {f(t.documents.events[e.type] ?? e.type, { name: e.actor_name ?? "" })}
                 </p>
+                {typeof e.data?.version === "number" && (
+                  <span className="mt-0.5 inline-block rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                    {f(t.documents.versionN, { n: String(e.data.version) })}
+                  </span>
+                )}
                 {typeof e.data?.reason === "string" && e.data.reason.trim() && (
                   <p className="mt-0.5 text-sm break-words text-muted-foreground">
                     {t.documents.reasonLabel}: “{e.data.reason.trim()}”
@@ -559,8 +658,66 @@ function DocumentDetail() {
               </li>
             ))}
           </ol>
+          {versions.length > 0 && (
+            <section
+              className="mt-4 rounded-2xl border bg-white p-4 shadow-sm"
+              aria-labelledby="doc-versions"
+            >
+              <h2 id="doc-versions" className="flex items-center gap-2 font-display font-semibold">
+                <History className="size-4 text-brand" aria-hidden />
+                {t.documents.versions}
+              </h2>
+              <ol className="mt-3 grid gap-2">
+                {versions.map((v, i) => (
+                  <li
+                    key={v.number}
+                    className="grid gap-0.5 rounded-lg bg-muted/40 px-3 py-2 text-sm"
+                  >
+                    <span className="font-medium">
+                      {f(t.documents.versionN, { n: String(v.number) })}
+                      {i === 0 && (
+                        <span className="ml-2 rounded bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold text-brand">
+                          {t.documents.versionCurrent}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {[
+                        v.file_name,
+                        v.created_by_name
+                          ? f(t.documents.versionBy, { name: v.created_by_name })
+                          : null,
+                        formatDate(v.created_at, locale),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                    {v.sha256 && (
+                      <span
+                        className="truncate font-mono text-[11px] text-muted-foreground"
+                        title={v.sha256}
+                      >
+                        {t.documents.versionHash}: {v.sha256}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
         </TabsContent>
       </Tabs>
+      {deciding && (
+        <DecisionDialog
+          documentId={id}
+          kind={deciding}
+          onClose={() => setDeciding(null)}
+          onDone={() => {
+            setDeciding(null);
+            void load();
+          }}
+        />
+      )}
       {editing === "flow" && (
         <EditFlowDialog
           documentId={id}

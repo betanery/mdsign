@@ -2,25 +2,25 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BadgeCheck,
-  Compass,
-  BarChart3,
-  Building2,
+  ChartNoAxesColumn,
   ChevronsUpDown,
-  FilePen,
-  FileStack,
+  Compass,
+  ContactRound,
+  FilePlus2,
   Files,
+  FileStack,
   Gem,
   Home,
   LayoutTemplate,
   Lock,
   LogOut,
   Menu,
+  PenLine,
   Plug,
   Plus,
-  Send,
   Settings,
   ShieldCheck,
-  Users,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -90,7 +90,13 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { key: "home", to: "/app", icon: Home, group: "operation" },
   { key: "documents", to: "/app/documents", icon: Files, group: "operation" },
-  { key: "contacts", to: "/app/contacts", icon: Users, group: "operation", feature: "contacts" },
+  {
+    key: "contacts",
+    to: "/app/contacts",
+    icon: ContactRound,
+    group: "operation",
+    feature: "contacts",
+  },
   {
     key: "templates",
     to: "/app/templates",
@@ -108,11 +114,11 @@ export const navItems: NavItem[] = [
     feature: "bulk_send",
     perm: "bulk.send",
   },
-  { key: "organization", to: "/app/organization", icon: Building2, group: "team" },
+  { key: "organization", to: "/app/organization", icon: UsersRound, group: "team" },
   {
     key: "reports",
     to: "/app/reports",
-    icon: BarChart3,
+    icon: ChartNoAxesColumn,
     group: "team",
     feature: "reports",
     perm: "reports.export",
@@ -161,8 +167,8 @@ export function useNavModel() {
 
 /** As quatro portas principais (PRD §1 e §6), com o recurso de plano de cada uma. */
 export const journeys = [
-  { key: "selfSign", icon: FilePen, to: "/app/sign" },
-  { key: "send", icon: Send, to: "/app/send" },
+  { key: "selfSign", icon: PenLine, to: "/app/sign" },
+  { key: "send", icon: FilePlus2, to: "/app/send" },
   { key: "template", icon: LayoutTemplate, to: "/app/templates", feature: "templates" },
   { key: "bulk", icon: FileStack, to: "/app/bulk/new", feature: "bulk_send" },
 ] as const;

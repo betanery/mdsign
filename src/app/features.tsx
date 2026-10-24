@@ -30,7 +30,9 @@ export type FeatureCode =
   | "reports"
   | "advanced_management"
   | "api_webhooks"
-  | "whatsapp";
+  | "whatsapp"
+  | "approval_multi"
+  | "reports_advanced";
 
 export type OfferPlan = {
   id: string;
@@ -237,6 +239,18 @@ const T = {
         benefit: "Mais assinaturas no mesmo dia.",
         examples: [],
       },
+      approval_multi: {
+        name: "Aprovação em várias etapas",
+        text: "Mais de um aprovador no mesmo documento, em ordem, antes das assinaturas.",
+        benefit: "Validar o documento em vários níveis antes de assinar.",
+        examples: ["Jurídico e depois diretoria", "Gestor e depois financeiro"],
+      },
+      reports_advanced: {
+        name: "Relatórios avançados",
+        text: "Filtros por origem, modelo, departamento, grupo e pasta, com exportação em Excel e PDF.",
+        benefit: "Análises detalhadas e relatórios consolidados.",
+        examples: ["Documentos por departamento", "Relatório mensal em Excel"],
+      },
     } as Record<FeatureCode, { name: string; text: string; benefit: string; examples: string[] }>,
     available: "Disponível",
     preview: "Disponível no plano {plan}",
@@ -340,6 +354,18 @@ const T = {
         benefit: "More signatures on the same day.",
         examples: [],
       },
+      approval_multi: {
+        name: "Multi-step approval",
+        text: "More than one approver on the same document, in order, before the signatures.",
+        benefit: "Validate the document at several levels before signing.",
+        examples: ["Legal, then the board", "Manager, then finance"],
+      },
+      reports_advanced: {
+        name: "Advanced reports",
+        text: "Filters by origin, template, department, group and folder, with Excel and PDF export.",
+        benefit: "Detailed analysis and consolidated reports.",
+        examples: ["Documents by department", "Monthly report in Excel"],
+      },
     },
     available: "Available",
     preview: "Available on the {plan} plan",
@@ -442,6 +468,18 @@ const T = {
         text: "Invitaciones y recordatorios por WhatsApp con enlace seguro.",
         benefit: "Más firmas el mismo día.",
         examples: [],
+      },
+      approval_multi: {
+        name: "Aprobación en varias etapas",
+        text: "Más de un aprobador en el mismo documento, en orden, antes de las firmas.",
+        benefit: "Validar el documento en varios niveles antes de firmar.",
+        examples: ["Jurídico y luego dirección", "Gerente y luego finanzas"],
+      },
+      reports_advanced: {
+        name: "Informes avanzados",
+        text: "Filtros por origen, plantilla, departamento, grupo y carpeta, con exportación en Excel y PDF.",
+        benefit: "Análisis detallados e informes consolidados.",
+        examples: ["Documentos por departamento", "Informe mensual en Excel"],
       },
     },
     available: "Disponible",

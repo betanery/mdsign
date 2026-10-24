@@ -3,6 +3,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   CheckCircle2,
+  ClipboardCheck,
+  FilePlus2,
+  Files,
   Circle,
   Clock,
   FileCheck2,
@@ -13,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/app/auth";
-import { PageHeader, useJourneys } from "@/app/components/app-shell";
+import { PageHeader } from "@/app/components/app-shell";
 import { FreePlanCard, freeUsage } from "@/app/components/free-plan-card";
 import { PlanUsage, useOrgUsage } from "@/app/components/plan-usage";
 import { GuideCard } from "@/app/components/onboarding-panel";
@@ -22,6 +25,7 @@ import { documentSelect, type DocumentRow } from "@/app/documents";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { supabase } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/_shell/")({ component: Dashboard });
 
@@ -36,7 +40,6 @@ function isLate(d: Doc, now: number) {
 }
 
 function Dashboard() {
-  const journeyList = useJourneys();
   const { t, f } = useAppI18n();
   const { user } = useAuth();
   const { current } = useOrg();
@@ -95,9 +98,15 @@ function Dashboard() {
     const refused = docs.filter(
       (d) => d.status === "refused" && now - new Date(d.updated_at).getTime() < 7 * DAY,
     );
+    const approvals = forMe.filter((d) =>
+      d.document_participants.some(
+        (p) => p.user_id === user?.id && p.status === "pending" && p.role === "approver",
+      ),
+    );
     return {
       waiting: docs.filter((d) => d.status === "pending").length,
       forMe,
+      approvals,
       late,
       refused,
       concluded: docs.filter((d) => d.status === "concluded").length,
@@ -212,30 +221,79 @@ function Dashboard() {
         </section>
       )}
 
+      {/* Acesso rápido: ícone + título curto + uma linha, cada cartão abre a ação de verdade. */}
       <section aria-label={t.nav.newAction}>
-        {/* No celular: 2 por linha e sem descrição, para "Precisa da sua atenção" aparecer logo. */}
         <ul className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-          {journeyList.map(({ key, icon: Icon, to }) => (
-            <li key={key}>
-              <Link
-                to={to}
-                data-tour={`journey-${key}`}
-                className="flex h-full flex-col gap-2 rounded-2xl border bg-white p-3 shadow-sm transition-colors hover:border-brand sm:gap-3 sm:p-5"
-              >
-                <span className="flex size-9 items-center justify-center rounded-xl bg-brand-soft sm:size-11">
-                  <Icon className="size-5 text-brand" aria-hidden />
-                </span>
-                <div className="flex-1">
-                  <h2 className="font-display text-sm font-semibold sm:text-base">
-                    {t.actions[key]}
-                  </h2>
-                  <p className="mt-1 hidden text-sm text-muted-foreground sm:block">
-                    {t.actions[`${key}Text`]}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
+          {(
+            [
+              {
+                key: "newDoc",
+                to: "/app/send",
+                icon: FilePlus2,
+                primary: true,
+                count: 0,
+              },
+              { key: "signDoc", to: "/app/sign", icon: PenLine, count: 0 },
+              { key: "myDocs", to: "/app/documents", icon: Files, count: 0 },
+              {
+                key: "approvals",
+                to: "/app/documents",
+                search: { tab: "forMe" },
+                icon: ClipboardCheck,
+                count: stats.approvals.length,
+              },
+            ] as const
+          ).map((card) => {
+            const Icon = card.icon;
+            const primary = "primary" in card && card.primary;
+            return (
+              <li key={card.key}>
+                <Link
+                  to={card.to}
+                  {...("search" in card ? { search: card.search } : {})}
+                  data-tour={`quick-${card.key}`}
+                  className={cn(
+                    "flex h-full flex-col gap-2 rounded-2xl border p-3 shadow-sm transition-colors sm:gap-3 sm:p-5",
+                    primary
+                      ? "border-brand bg-brand text-white hover:bg-brand-strong"
+                      : "bg-white hover:border-brand",
+                  )}
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span
+                      className={cn(
+                        "flex size-9 items-center justify-center rounded-xl sm:size-11",
+                        primary ? "bg-white/20" : "bg-brand-soft",
+                      )}
+                    >
+                      <Icon
+                        className={cn("size-5", primary ? "text-white" : "text-brand")}
+                        aria-hidden
+                      />
+                    </span>
+                    {card.count > 0 && (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                        {f(t.quick.pending, { n: String(card.count) })}
+                      </span>
+                    )}
+                  </span>
+                  <span className="flex-1">
+                    <span className="block font-display text-sm font-semibold sm:text-base">
+                      {t.quick[card.key]}
+                    </span>
+                    <span
+                      className={cn(
+                        "mt-1 hidden text-sm sm:block",
+                        primary ? "text-white/85" : "text-muted-foreground",
+                      )}
+                    >
+                      {t.quick[`${card.key}Text`]}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </section>
 

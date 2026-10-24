@@ -28,15 +28,23 @@ export type DocumentRow = {
   concluded_at: string | null;
   created_by: string | null;
   folder_id?: string | null;
+  /** Tipo da recusa: devolvido para correção (null/return) ou rejeitado definitivamente. */
+  refusal_kind?: "return" | "reject" | null;
   document_participants: ParticipantRow[];
 };
 
+/** Recusado e ainda corrigível (devolução); rejeição definitiva encerra o processo. */
+export const isReturned = (d: Pick<DocumentRow, "status" | "refusal_kind">) =>
+  d.status === "refused" && d.refusal_kind !== "reject";
+
 export const documentSelect =
-  "id, name, kind, status, created_at, updated_at, concluded_at, created_by, folder_id, document_participants (id, user_id, name, email, phone, role, step, status, delegated_from_name, rule_name, rule_required)";
+  "id, name, kind, status, refusal_kind, created_at, updated_at, concluded_at, created_by, folder_id, document_participants (id, user_id, name, email, phone, role, step, status, delegated_from_name, rule_name, rule_required)";
 
 /** Status em linguagem humana (PRD §26): "Aguardando assinatura de João Silva". */
 export function humanStatus(
-  doc: Pick<DocumentRow, "status" | "document_participants">,
+  doc: Pick<DocumentRow, "status" | "document_participants"> & {
+    refusal_kind?: DocumentRow["refusal_kind"];
+  },
   userId: string | undefined,
   t: AppMessages,
   f: (text: string, values: Record<string, string>) => string,
@@ -51,7 +59,9 @@ export function humanStatus(
   }
   if (doc.status === "refused") {
     const who = parts.find((p) => p.status === "refused");
-    if (who) return f(t.documents.refusedBy, { name: who.name });
+    const text = doc.refusal_kind === "reject" ? t.documents.rejectedBy : t.documents.returnedBy;
+    if (who) return f(text, { name: who.name });
+    return doc.refusal_kind === "reject" ? t.documents.rejected : t.documents.returned;
   }
   return t.documents.status[doc.status] ?? doc.status;
 }
