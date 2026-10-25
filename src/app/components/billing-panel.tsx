@@ -264,9 +264,12 @@ export function BillingPanel({
         {billing.billing_status === "exempt" && (
           <p className="text-sm text-muted-foreground">{t.billing.exemptHint}</p>
         )}
-        {!config.billingEnvironment && manage && billing.billing_status !== "exempt" && (
-          <p className="text-sm text-muted-foreground">{t.errors["billing_not_configured"]}</p>
-        )}
+        {config.loaded &&
+          !config.billingEnvironment &&
+          manage &&
+          billing.billing_status !== "exempt" && (
+            <p className="text-sm text-muted-foreground">{t.errors["billing_not_configured"]}</p>
+          )}
       </section>
 
       {payments.length > 0 && (

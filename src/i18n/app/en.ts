@@ -1735,6 +1735,7 @@ const en: AppMessages = {
     docsTotal: "{n} documents in total",
     choose: "Choose a plan",
     docsMonth: "{n} documents/month",
+    docsContract: "Documents under contract",
     docsUnlimited: "Unlimited documents",
     usersUpTo: "Up to {n} users",
     usersOne: "1 user",

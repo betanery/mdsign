@@ -1761,6 +1761,7 @@ const pt = {
     docsTotal: "{n} documentos no total",
     choose: "Escolha o plano",
     docsMonth: "{n} documentos/mês",
+    docsContract: "Documentos conforme contrato",
     docsUnlimited: "Documentos ilimitados",
     usersUpTo: "Até {n} usuários",
     usersOne: "1 usuário",

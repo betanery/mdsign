@@ -25,6 +25,8 @@ export type AppConfig = {
   quorumGroups?: boolean;
   /** E-mail próprio (Resend): "test" = remetente de teste (só Super Admin). */
   ownEmail?: "off" | "test" | "on";
+  /** false até a resposta do servidor chegar (evita avisos piscando com o valor padrão). */
+  loaded?: boolean;
 };
 
 const fallback: AppConfig = {
@@ -49,7 +51,7 @@ export function useAppConfig(): AppConfig {
       }) as Promise<AppConfig>;
       void cache.then((c) => {
         if (!alive) return;
-        if (c) setConfig(c);
+        if (c) setConfig({ ...c, loaded: true });
         else if (attempt < 4) timer = window.setTimeout(() => load(attempt + 1), 1500);
       });
     };

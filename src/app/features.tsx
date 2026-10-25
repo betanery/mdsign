@@ -216,8 +216,8 @@ const T = {
         examples: ["Contracheques do mês", "Termos para todos os colaboradores"],
       },
       reports: {
-        name: "Relatórios avançados",
-        text: "Indicadores por período, pessoa, unidade, modelo e origem, com exportação.",
+        name: "Relatórios gerenciais",
+        text: "Painel com indicadores, filtros por período, situação e pessoa da equipe, e exportação em CSV.",
         benefit: "Medir a operação e prestar contas.",
         examples: ["Tempo médio até a assinatura", "Documentos por unidade"],
       },
@@ -331,8 +331,8 @@ const T = {
         examples: ["Monthly payslips", "Agreements for all employees"],
       },
       reports: {
-        name: "Advanced reports",
-        text: "Metrics by period, person, unit, template and source, with export.",
+        name: "Management reports",
+        text: "Dashboard with metrics, filters by period, status and team member, and CSV export.",
         benefit: "Measure the operation and report on it.",
         examples: ["Average time to sign", "Documents per unit"],
       },
@@ -446,8 +446,8 @@ const T = {
         examples: ["Recibos de sueldo del mes", "Términos para todos los colaboradores"],
       },
       reports: {
-        name: "Informes avanzados",
-        text: "Indicadores por período, persona, unidad, plantilla y origen, con exportación.",
+        name: "Informes de gestión",
+        text: "Panel con indicadores, filtros por período, estado y persona del equipo, y exportación en CSV.",
         benefit: "Medir la operación y rendir cuentas.",
         examples: ["Tiempo medio hasta la firma", "Documentos por unidad"],
       },

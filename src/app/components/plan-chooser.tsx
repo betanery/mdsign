@@ -185,7 +185,7 @@ export function PlanChooser({
       {!exempt && !manage && (
         <p className="text-sm text-muted-foreground">{t.billing.askBillingAdmin}</p>
       )}
-      {!exempt && manage && !config.billingEnvironment && (
+      {!exempt && manage && config.loaded && !config.billingEnvironment && (
         <p className="text-sm text-muted-foreground">{t.errors["billing_not_configured"]}</p>
       )}
       {canBuy && billing.pending_link && billing.provider !== "asaas" && (
@@ -246,7 +246,9 @@ export function PlanChooser({
                       ? f(t.billing.docsTotal, { n: String(docsTotal) })
                       : docsMonth != null
                         ? f(t.billing.docsMonth, { n: String(docsMonth) })
-                        : t.billing.docsUnlimited}
+                        : p.id === "mogno"
+                          ? t.billing.docsContract
+                          : t.billing.docsUnlimited}
                   </li>
                   {users != null && (
                     <li>
