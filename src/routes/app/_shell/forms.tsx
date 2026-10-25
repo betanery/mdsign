@@ -22,6 +22,7 @@ import {
   validateParticipants,
   type ParticipantDraft,
 } from "@/app/components/participants-editor";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { selectClass } from "@/app/ui";
@@ -66,6 +67,7 @@ const linkFor = (token: string) => `${window.location.origin}/f/${token}`;
 
 function FormsPage() {
   const { t, f, locale } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const { current, can } = useOrg();
   const [forms, setForms] = useState<FormRow[] | null>(null);
   const [creating, setCreating] = useState(false);
@@ -108,7 +110,12 @@ function FormsPage() {
   }
 
   async function remove(form: FormRow) {
-    if (!window.confirm(f(t.forms.removeConfirm, { name: form.name }))) return;
+    const ok = await confirm({
+      title: t.common.remove,
+      text: f(t.forms.removeConfirm, { name: form.name }),
+      action: t.common.remove,
+    });
+    if (!ok) return;
     const { error } = await supabase.from("forms").delete().eq("id", form.id);
     if (error) {
       toast.error(friendlyError(error, t));
@@ -229,6 +236,7 @@ function FormsPage() {
           }}
         />
       )}
+      {confirmDialog}
     </>
   );
 }

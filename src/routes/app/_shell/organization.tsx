@@ -10,6 +10,7 @@ import { AccountTab } from "@/app/components/account-tab";
 import { markGuideStep } from "@/app/onboarding";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { BillingPanel } from "@/app/components/billing-panel";
 import { NotificationsTab } from "@/app/components/notification-settings";
 import { DelegationsTab, GroupsTab } from "@/app/components/org-groups";
@@ -160,6 +161,7 @@ function PlanTab({ checkout }: { checkout?: string | undefined }) {
 
 function MembersTab({ orgId }: { orgId: string }) {
   const { t, f } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const { user } = useAuth();
   const { can, current } = useOrg();
   const [members, setMembers] = useState<Member[]>([]);
@@ -334,16 +336,18 @@ function MembersTab({ orgId }: { orgId: string }) {
                       variant="ghost"
                       size="sm"
                       aria-label={`${t.common.remove} ${m.full_name || m.email}`}
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            f(t.organization.removeConfirm, { name: m.full_name || m.email }),
-                          )
-                        )
-                          void run(
-                            supabase.rpc("remove_member", { org: orgId, member: m.user_id }),
-                          );
-                      }}
+                      onClick={() =>
+                        void confirm({
+                          title: t.common.remove,
+                          text: f(t.organization.removeConfirm, { name: m.full_name || m.email }),
+                          action: t.common.remove,
+                        }).then((ok) => {
+                          if (ok)
+                            void run(
+                              supabase.rpc("remove_member", { org: orgId, member: m.user_id }),
+                            );
+                        })
+                      }
                     >
                       <Trash2 className="text-destructive" aria-hidden />
                     </Button>
@@ -387,6 +391,7 @@ function MembersTab({ orgId }: { orgId: string }) {
         units={units}
         onDone={load}
       />
+      {confirmDialog}
     </div>
   );
 }

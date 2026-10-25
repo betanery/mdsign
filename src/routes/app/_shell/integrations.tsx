@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { callFunction } from "@/app/api";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { formatDate } from "@/app/documents";
 import { errorText } from "@/app/errors";
 import { useAppI18n } from "@/app/i18n";
@@ -202,6 +203,7 @@ function SecretOnce({
 
 function KeysTab({ orgId }: { orgId: string }) {
   const { t, f, locale } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const [keys, setKeys] = useState<ApiKey[] | null>(null);
   const [name, setName] = useState("");
   const [created, setCreated] = useState<string | null>(null);
@@ -239,7 +241,12 @@ function KeysTab({ orgId }: { orgId: string }) {
   }
 
   async function revoke(k: ApiKey) {
-    if (!window.confirm(f(t.integrations.revokeConfirm, { name: k.name }))) return;
+    const ok = await confirm({
+      title: t.integrations.revoke,
+      text: f(t.integrations.revokeConfirm, { name: k.name }),
+      action: t.integrations.revoke,
+    });
+    if (!ok) return;
     try {
       await callFunction("integrations", { action: "revoke-key", organizationId: orgId, id: k.id });
       void load();
@@ -311,12 +318,14 @@ function KeysTab({ orgId }: { orgId: string }) {
           onClose={() => setCreated(null)}
         />
       )}
+      {confirmDialog}
     </section>
   );
 }
 
 function WebhooksTab({ orgId }: { orgId: string }) {
   const { t, locale } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const [endpoints, setEndpoints] = useState<Endpoint[] | null>(null);
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [adding, setAdding] = useState(false);
@@ -445,8 +454,14 @@ function WebhooksTab({ orgId }: { orgId: string }) {
                 variant="ghost"
                 disabled={busy !== null}
                 onClick={() =>
-                  window.confirm(t.integrations.rotateConfirm) &&
-                  void act(`rotate-${e.id}`, { action: "rotate-secret", endpointId: e.id })
+                  void confirm({
+                    title: t.integrations.rotate,
+                    text: t.integrations.rotateConfirm,
+                    action: t.integrations.rotate,
+                  }).then((ok) => {
+                    if (ok)
+                      void act(`rotate-${e.id}`, { action: "rotate-secret", endpointId: e.id });
+                  })
                 }
               >
                 <RotateCcw aria-hidden />
@@ -457,8 +472,14 @@ function WebhooksTab({ orgId }: { orgId: string }) {
                 variant="ghost"
                 disabled={busy !== null}
                 onClick={() =>
-                  window.confirm(t.integrations.deleteConfirm) &&
-                  void act(`del-${e.id}`, { action: "delete-endpoint", endpointId: e.id })
+                  void confirm({
+                    title: t.common.remove,
+                    text: t.integrations.deleteConfirm,
+                    action: t.common.remove,
+                  }).then((ok) => {
+                    if (ok)
+                      void act(`del-${e.id}`, { action: "delete-endpoint", endpointId: e.id });
+                  })
                 }
               >
                 <Trash2 aria-hidden />
@@ -552,6 +573,7 @@ function WebhooksTab({ orgId }: { orgId: string }) {
           onClose={() => setSecret(null)}
         />
       )}
+      {confirmDialog}
     </section>
   );
 }

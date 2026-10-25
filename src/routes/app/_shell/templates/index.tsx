@@ -9,6 +9,7 @@ import { useAuth } from "@/app/auth";
 import { PageHeader, SectionTabs } from "@/app/components/app-shell";
 import { templateSelect, type TemplateRow } from "@/app/components/template-fields";
 import { errorText } from "@/app/errors";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { friendlyError } from "@/app/validation";
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/app/_shell/templates/")({
 
 function TemplatesPage() {
   const { t, f } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const { user } = useAuth();
   const { current, can } = useOrg();
   const [templates, setTemplates] = useState<TemplateRow[] | null>(null);
@@ -61,7 +63,12 @@ function TemplatesPage() {
   }, [load]);
 
   async function remove(tpl: TemplateRow) {
-    if (!window.confirm(f(t.templates.removeConfirm, { name: tpl.name }))) return;
+    const ok = await confirm({
+      title: t.templates.remove,
+      text: f(t.templates.removeConfirm, { name: tpl.name }),
+      action: t.templates.remove,
+    });
+    if (!ok) return;
     if (tpl.kind === "pdf" && current) {
       // Modelo PDF: a função apaga o modelo e o arquivo guardado.
       try {
@@ -219,6 +226,7 @@ function TemplatesPage() {
           </TabsContent>
         ))}
       </Tabs>
+      {confirmDialog}
     </>
   );
 }
