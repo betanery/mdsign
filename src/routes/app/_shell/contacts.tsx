@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/app/auth";
 import { PageHeader } from "@/app/components/app-shell";
 import { FormMessage } from "@/app/components/auth-layout";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { useAppI18n } from "@/app/i18n";
 import { useOrg } from "@/app/org";
 import { formatCpf, formatPhone, friendlyError, isValidCpf, onlyDigits } from "@/app/validation";
@@ -34,6 +35,7 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function ContactsPage() {
   const { t, f } = useAppI18n();
+  const [confirm, confirmDialog] = useConfirm();
   const { current, can } = useOrg();
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [query, setQuery] = useState("");
@@ -64,7 +66,12 @@ function ContactsPage() {
   }, [contacts, query]);
 
   async function remove(c: Contact) {
-    if (!window.confirm(f(t.contacts.removeConfirm, { name: c.name }))) return;
+    const ok = await confirm({
+      title: t.common.remove,
+      text: f(t.contacts.removeConfirm, { name: c.name }),
+      action: t.common.remove,
+    });
+    if (!ok) return;
     const { error } = await supabase.from("contacts").delete().eq("id", c.id);
     if (error) {
       toast.error(friendlyError(error, t));
@@ -174,6 +181,7 @@ function ContactsPage() {
           }}
         />
       )}
+      {confirmDialog}
     </>
   );
 }

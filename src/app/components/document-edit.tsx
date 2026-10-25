@@ -17,6 +17,7 @@ import { useAppConfig } from "../app-config";
 import type { ParticipantRow } from "../documents";
 import { errorText } from "../errors";
 import { useAppI18n } from "../i18n";
+import { useConfirm } from "./confirm-dialog";
 import { formatPhone, normalizePhone } from "../validation";
 import { FormMessage } from "./auth-layout";
 import {
@@ -257,9 +258,17 @@ export function ReplaceDocumentDialog({
   const [marks, setMarks] = useState<MarksByPerson>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Confirmação no diálogo do app: o confirm nativo é ignorado em navegadores embutidos.
+  const [confirm, confirmDialog] = useConfirm();
 
   async function send() {
-    if (!file || !window.confirm(t.docEdit.replaceConfirm)) return;
+    if (!file) return;
+    const ok = await confirm({
+      title: t.docEdit.replaceTitle,
+      text: t.docEdit.replaceConfirm,
+      action: t.docEdit.sendVersion,
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     const form = new FormData();
@@ -290,6 +299,7 @@ export function ReplaceDocumentDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-5xl">
+        {confirmDialog}
         <DialogHeader>
           <DialogTitle>{t.docEdit.replaceTitle}</DialogTitle>
           <DialogDescription>{t.docEdit.replaceHint}</DialogDescription>
