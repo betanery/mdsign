@@ -34,6 +34,7 @@ import {
   ReplaceDocumentDialog,
   type ObserverRow,
 } from "@/app/components/document-edit";
+import { useConfirm } from "@/app/components/confirm-dialog";
 import { DecisionDialog, type Decision } from "@/app/components/decision-dialog";
 import { SigningFrame } from "@/app/components/signing-frame";
 import {
@@ -108,6 +109,7 @@ function DocumentDetail() {
   const availability = useCedroAvailability();
   const [editing, setEditing] = useState<"flow" | "replace" | null>(null);
   const [deciding, setDeciding] = useState<Decision | null>(null);
+  const [confirm, confirmDialog] = useConfirm();
   const [versions, setVersions] = useState<VersionRow[]>([]);
 
   const load = useCallback(async () => {
@@ -236,6 +238,7 @@ function DocumentDetail() {
 
   return (
     <>
+      {confirmDialog}
       <PageHeader
         title={doc.name}
         subtitle={`${t.documents.kind[doc.kind]} · ${t.documents.createdAt} ${formatDate(doc.created_at, locale)}`}
@@ -360,10 +363,13 @@ function DocumentDetail() {
             variant="ghost"
             className="text-destructive"
             disabled={busy !== null}
-            onClick={() => {
-              if (window.confirm(t.documents.actions.cancelConfirm))
-                void run("cancel", () => documentAction(id, "cancel"));
-            }}
+            onClick={() =>
+              void confirm({
+                title: t.documents.actions.cancel,
+                text: t.documents.actions.cancelConfirm,
+                action: t.documents.actions.cancel,
+              }).then((ok) => ok && void run("cancel", () => documentAction(id, "cancel")))
+            }
           >
             <XCircle aria-hidden />
             {t.documents.actions.cancel}
