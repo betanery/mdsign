@@ -225,12 +225,13 @@ function DocumentDetail() {
   const manage = !deletedAt && (doc.created_by === user?.id || can("documents.manage"));
   const myRole = parts.find((p) => p.user_id === user?.id && p.status === "pending")?.role;
   const returned = isReturned(doc);
-  const refuser = parts.find((p) => p.status === "refused")?.name ?? "";
   const refusal = [...events]
     .reverse()
     .find((e) =>
       ["participant.returned", "participant.rejected", "participant.refused"].includes(e.type),
     );
+  // Quem recusou: pelo histórico (a ação no motor nem sempre fica marcada como recusada).
+  const refuser = refusal?.actor_name ?? parts.find((p) => p.status === "refused")?.name ?? "";
   const refusalReason = typeof refusal?.data?.reason === "string" ? refusal.data.reason.trim() : "";
 
   return (

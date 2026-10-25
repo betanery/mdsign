@@ -121,6 +121,9 @@ export async function syncDocument(doc: DocRow, engine?: EngineDocument) {
         reason = action.refusalReason ?? null;
       }
       if (next === row.status) continue;
+      // Recusa feita pelo MDSign (devolver/rejeitar): o motor recusa o documento, mas a ação da
+      // pessoa continua "Created" nele. Enquanto o documento estiver recusado, vale o MDSign.
+      if (row.status === "refused" && mapDocumentStatus(current.status) === "refused") continue;
       // Atualiza só se ainda não estiver nesse status: com o aviso do SignDoc e uma ação do
       // MDSign chegando juntos, o evento (e o webhook do cliente) é registrado uma única vez.
       const { data: changed } = await admin
