@@ -548,6 +548,16 @@ const pt = {
     accepted: "Convite aceito! Você agora faz parte da organização.",
     invalid: "Este convite não é válido ou já expirou. Peça um novo convite.",
     mismatch: "Este convite foi enviado para outro e-mail. Entre com a conta correta.",
+    from: "{org} convidou você para participar como {role}.",
+    useEmail: "O convite foi enviado para {email}. Entre ou crie a conta com esse e-mail.",
+    used: "Este convite já foi usado. Se precisa entrar na organização, peça um novo convite a quem convidou.",
+    expired: "Este convite expirou em {date}. Peça um novo convite a quem convidou.",
+    notFound:
+      "Não encontramos este convite. Ele pode ter sido cancelado ou o link está incompleto. Peça um novo convite.",
+    otherEmail: "Este convite foi enviado para {email}, mas você entrou como {me}.",
+    switchAccount: "Sair e entrar com outro e-mail",
+    alreadyMember: "Você já faz parte de {org}.",
+    open: "Abrir {org}",
   },
   settings: {
     title: "Configurações",

@@ -1674,4 +1674,34 @@ begin
 exception when insufficient_privilege then null;
 end $$;
 
+-- Convite: a página mostra organização, situação e e-mail mascarado; nunca o e-mail completo.
+insert into public.invitations (organization_id, email, role, invited_by, expires_at, token)
+values ((select v from t_ids where k = 'orgB'), 'convidada.teste@exemplo.com', 'member',
+        '00000000-0000-0000-0000-00000000000b', now() + interval '7 days', '00000000-0000-0000-0000-0000000000a1'),
+       ((select v from t_ids where k = 'orgB'), 'velha@exemplo.com', 'member',
+        '00000000-0000-0000-0000-00000000000b', now() - interval '1 day', '00000000-0000-0000-0000-0000000000a2');
+set local role anon;
+do $$
+declare p jsonb := public.invitation_preview('00000000-0000-0000-0000-0000000000a1');
+begin
+  assert p->>'status' = 'valid', 'convite válido';
+  assert p->>'organization' = 'Empresa B', 'mostra a organização';
+  assert p->>'email_hint' = 'co***@exemplo.com', 'e-mail mascarado';
+  assert position('convidada.teste' in p::text) = 0, 'não expõe o e-mail completo';
+  assert not (p->>'email_match')::boolean, 'visitante não é o convidado';
+  assert public.invitation_preview('00000000-0000-0000-0000-0000000000a2')->>'status' = 'expired', 'convite vencido';
+  assert public.invitation_preview('00000000-0000-0000-0000-0000000000ff')->>'status' = 'not_found', 'convite inexistente';
+end $$;
+reset role;
+update public.invitations set accepted_at = now() where token = '00000000-0000-0000-0000-0000000000a1';
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+declare p jsonb := public.invitation_preview('00000000-0000-0000-0000-0000000000a1');
+begin
+  assert p->>'status' = 'used', 'convite já usado';
+  assert (p->>'already_member')::boolean, 'quem já é membro vê "você já faz parte"';
+end $$;
+reset role;
+
 select 'todos os testes de RLS e permissões passaram' as resultado;

@@ -538,6 +538,16 @@ const es: AppMessages = {
     accepted: "¡Invitación aceptada! Ahora formas parte de la organización.",
     invalid: "Esta invitación no es válida o ya venció. Pide una nueva.",
     mismatch: "Esta invitación se envió a otro correo. Inicia sesión con la cuenta correcta.",
+    from: "{org} lo invitó a participar como {role}.",
+    useEmail: "La invitación se envió a {email}. Inicie sesión o cree la cuenta con ese correo.",
+    used: "Esta invitación ya fue usada. Si necesita entrar en la organización, pida una nueva invitación.",
+    expired: "Esta invitación venció el {date}. Pida una nueva invitación.",
+    notFound:
+      "No encontramos esta invitación. Puede haber sido cancelada o el enlace está incompleto. Pida una nueva invitación.",
+    otherEmail: "Esta invitación se envió a {email}, pero usted inició sesión como {me}.",
+    switchAccount: "Salir y entrar con otro correo",
+    alreadyMember: "Usted ya forma parte de {org}.",
+    open: "Abrir {org}",
   },
   settings: {
     title: "Configuración",

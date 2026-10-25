@@ -525,6 +525,16 @@ const en: AppMessages = {
     accepted: "Invitation accepted! You are now part of the organization.",
     invalid: "This invitation is not valid or has expired. Ask for a new one.",
     mismatch: "This invitation was sent to another email. Sign in with the right account.",
+    from: "{org} invited you to join as {role}.",
+    useEmail: "The invitation was sent to {email}. Sign in or create the account with that email.",
+    used: "This invitation was already used. If you need to join the organization, ask for a new invitation.",
+    expired: "This invitation expired on {date}. Ask for a new invitation.",
+    notFound:
+      "We couldn't find this invitation. It may have been canceled or the link is incomplete. Ask for a new invitation.",
+    otherEmail: "This invitation was sent to {email}, but you're signed in as {me}.",
+    switchAccount: "Sign out and use another email",
+    alreadyMember: "You're already part of {org}.",
+    open: "Open {org}",
   },
   settings: {
     title: "Settings",
