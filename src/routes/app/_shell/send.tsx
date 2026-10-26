@@ -368,11 +368,7 @@ function SendPage() {
               config={config}
               problems={problems}
             />
-            <FlowPreview
-              participants={participants}
-              sequential={sequential}
-              onSequential={() => setSequential(true)}
-            />
+            <FlowPreview participants={participants} sequential={sequential} />
           </>
         )}
         {step === 2 && (

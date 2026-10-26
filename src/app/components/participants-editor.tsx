@@ -641,16 +641,26 @@ export type FlowStage = {
   people: { name: string; role: ParticipantDraft["role"] }[];
 };
 
-/** Etapas do fluxo: em ordem, cada pessoa (ou grupo com quórum) é uma etapa; sem ordem, uma só. */
+/**
+ * Etapas do fluxo (igual ao servidor): em ordem, cada pessoa (ou grupo com quórum) é uma etapa;
+ * sem ordem, todos de uma vez, mas aprovadores antes (etapa 1) e quem assina depois (etapa 2).
+ */
 export function flowStages(list: ParticipantDraft[], sequential: boolean): FlowStage[] {
+  const person = (p: ParticipantDraft) => ({ name: p.name.trim() || p.email.trim(), role: p.role });
+  if (!sequential) {
+    const approvers = list.filter((p) => p.role === "approver").map(person);
+    const others = list.filter((p) => p.role !== "approver").map(person);
+    return [approvers, others]
+      .filter((people) => people.length)
+      .map((people, i) => ({ step: i + 1, people }));
+  }
   const stages: FlowStage[] = [];
   list.forEach((p, i) => {
-    const person = { name: p.name.trim() || p.email.trim(), role: p.role };
     const prev = list[i - 1];
-    const same = !sequential || Boolean(p.rule && prev?.rule?.key === p.rule.key);
+    const same = Boolean(p.rule && prev?.rule?.key === p.rule.key);
     const last = stages[stages.length - 1];
-    if (last && same) last.people.push(person);
-    else stages.push({ step: stages.length + 1, people: [person] });
+    if (last && same) last.people.push(person(p));
+    else stages.push({ step: stages.length + 1, people: [person(p)] });
   });
   return stages;
 }
@@ -659,11 +669,9 @@ export function flowStages(list: ParticipantDraft[], sequential: boolean): FlowS
 export function FlowPreview({
   participants,
   sequential,
-  onSequential,
 }: {
   participants: ParticipantDraft[];
   sequential: boolean;
-  onSequential?: (() => void) | undefined;
 }) {
   const { t, f } = useAppI18n();
   const stages = flowStages(participants, sequential);
@@ -690,7 +698,7 @@ export function FlowPreview({
         {stages.map((st) => (
           <li key={st.step} className="flex items-center gap-2">
             <div className="grid gap-1 rounded-xl border bg-muted/30 px-3 py-2 text-sm">
-              {sequential && (
+              {(sequential || stages.length > 1) && (
                 <span className="text-xs font-semibold text-brand">
                   {f(t.participants.flowStep, { n: String(st.step) })}
                 </span>
@@ -720,14 +728,9 @@ export function FlowPreview({
         </li>
       </ol>
       {hasApprover && !sequential && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          <span className="min-w-0 flex-1">{t.participants.flowApproverParallel}</span>
-          {onSequential && (
-            <Button type="button" size="sm" variant="outline" onClick={onSequential}>
-              {t.participants.flowTurnOn}
-            </Button>
-          )}
-        </div>
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          {t.participants.flowApproverParallel}
+        </p>
       )}
     </section>
   );

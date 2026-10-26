@@ -63,6 +63,45 @@ async function canManage(caller: Caller, doc: Doc) {
   return Boolean(data);
 }
 
+/**
+ * "Abriu o documento para assinar/aprovar" na linha do tempo: uma vez por pessoa em cada versão
+ * (a pessoa reabrir não repete o registro). Falha aqui nunca impede a assinatura.
+ */
+async function recordViewed(doc: Doc, participantId: string, caller: Caller) {
+  try {
+    const { data: version } = await admin
+      .from("document_versions")
+      .select("number, created_at")
+      .eq("document_id", doc.id)
+      .order("number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { count } = await admin
+      .from("document_events")
+      .select("id", { count: "exact", head: true })
+      .eq("document_id", doc.id)
+      .eq("type", "participant.viewed")
+      .eq("data->>participant", participantId)
+      .gte("occurred_at", version?.created_at ?? "1970-01-01");
+    if (count) return;
+    const { data: p } = await admin
+      .from("document_participants")
+      .select("name")
+      .eq("id", participantId)
+      .maybeSingle();
+    await admin.from("document_events").insert({
+      document_id: doc.id,
+      organization_id: doc.organization_id,
+      type: "participant.viewed",
+      actor_name: p?.name ?? caller.profile.full_name ?? null,
+      source: "mdsign",
+      data: { participant: participantId, version: version?.number ?? 1 },
+    });
+  } catch (e) {
+    console.error("viewed", e);
+  }
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders(origin) });
@@ -92,6 +131,7 @@ Deno.serve(async (req) => {
           ...(me.cpf ? { identifier: me.cpf } : {}),
           ...(me.engine_flow_action_id ? { flowActionId: me.engine_flow_action_id } : {}),
         });
+        await recordViewed(doc, me.id, caller);
         return json({ embedUrl: action.embedUrl }, 200, origin);
       }
 

@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
         type: "participant.link_opened",
         actor_name: p.name,
         source: "mdsign",
-        data: { channel: "whatsapp" },
+        data: { participant: link.participant_id },
       });
     await admin
       .from("sign_links")

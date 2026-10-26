@@ -83,8 +83,9 @@ export function Header() {
           </ul>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <LanguageSwitcher />
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Celular: o idioma vai para o menu, para "Entrar" caber sempre visível no topo. */}
+          <LanguageSwitcher className="hidden sm:block" />
           <div className="hidden items-center gap-3 xl:flex">
             <a
               href={path("/validar")}
@@ -96,6 +97,14 @@ export function Header() {
             <Cta kind="login" source="header" variant="outline" size="sm" />
             <Cta kind="free" source="header" size="sm" />
           </div>
+          {/* "Entrar" fixo no topo em qualquer tela (no computador fica junto de "Comece grátis"). */}
+          <Cta
+            kind="login"
+            source="header_fixed"
+            variant="outline"
+            size="sm"
+            className="xl:hidden"
+          />
           <button
             type="button"
             className="inline-flex size-11 items-center justify-center rounded-lg text-foreground xl:hidden"
@@ -135,9 +144,9 @@ export function Header() {
                 </a>
               </li>
             </ul>
-            <div className="mt-3 grid grid-cols-2 gap-3 pb-2">
-              <Cta kind="login" source="header_mobile" variant="outline" />
+            <div className="mt-3 grid gap-3 pb-2">
               <Cta kind="free" source="header_mobile" />
+              <LanguageSwitcher className="sm:hidden" />
             </div>
           </nav>
         </div>

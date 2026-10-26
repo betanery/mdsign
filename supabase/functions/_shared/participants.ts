@@ -219,12 +219,15 @@ export function cleanParticipants(
     if (bad) idx.forEach((index) => problems.push({ index, field: "rule" }));
   }
 
-  // Etapas: em ordem, cada pessoa (ou cada grupo com quórum) é uma etapa; em paralelo, todos na 1.
+  // Etapas: em ordem, cada pessoa (ou cada grupo com quórum) é uma etapa. Sem ordem, todos de
+  // uma vez — mas a aprovação vem sempre antes: aprovadores juntos na etapa 1 e quem assina
+  // (e testemunhas) juntos na etapa 2. Assim ninguém assina antes da aprovação.
+  const hasApprover = clean.some((p) => p.role === "approver");
   let step = 0;
   clean.forEach((p, i) => {
     const sameRule = p.rule && i > 0 && clean[i - 1]!.rule?.key === p.rule.key;
     if (!sameRule) step++;
-    p.step = sequential ? step : 1;
+    p.step = sequential ? step : hasApprover && p.role !== "approver" ? 2 : 1;
   });
 
   if (problems.length) throw new AppError("invalid_participants", 422, problems);

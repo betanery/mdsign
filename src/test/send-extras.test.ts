@@ -94,7 +94,7 @@ describe("aprovador no fluxo", () => {
     expect(withApprover([]).map((p) => p.role)).toEqual(["approver"]);
   });
 
-  it("em ordem, cada pessoa é uma etapa; sem ordem, uma etapa só", () => {
+  it("em ordem, cada pessoa é uma etapa; sem ordem, aprovação antes e assinaturas juntas", () => {
     const list = [person("Jurídico", "approver"), person("Ana"), person("Bruno")];
     const inOrder = flowStages(list, true);
     expect(inOrder.map((s) => s.people.map((p) => `${p.role}:${p.name}`))).toEqual([
@@ -102,6 +102,11 @@ describe("aprovador no fluxo", () => {
       ["signer:Ana"],
       ["signer:Bruno"],
     ]);
-    expect(flowStages(list, false)).toHaveLength(1);
+    // Sem ordem: aprovação antes, depois todos que assinam juntos.
+    expect(flowStages(list, false).map((s) => s.people.map((p) => p.name))).toEqual([
+      ["Jurídico"],
+      ["Ana", "Bruno"],
+    ]);
+    expect(flowStages([person("Ana"), person("Bruno")], false)).toHaveLength(1);
   });
 });

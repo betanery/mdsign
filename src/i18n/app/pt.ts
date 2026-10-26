@@ -1031,6 +1031,7 @@ const pt = {
       blocked: "WhatsApp bloqueado: {reason}",
       skipped: "WhatsApp não enviado: {reason}",
     } as Record<string, string>,
+    emailOpened: "aberto em {date}",
     emailStatus: {
       pending: "E-mail na fila ({date})",
       sent: "E-mail enviado em {date}",
@@ -1040,6 +1041,8 @@ const pt = {
       skipped: "E-mail não enviado: {reason}",
     } as Record<string, string>,
     reasons: {
+      bounced: "o endereço recusou o e-mail",
+      complained: "a pessoa marcou o e-mail como spam",
       provider_not_configured: "provedor não configurado",
       invalid_phone: "celular inválido",
       opted_out: "a pessoa pediu para não receber",
@@ -1143,7 +1146,7 @@ const pt = {
       concluded: "Todos já assinaram. Documento concluído em {date}.",
       refused: "Recusado por {name}.",
       noViewInfo:
-        "O serviço de assinatura não informa se a pessoa abriu o e-mail dele. Registramos a abertura apenas quando a pessoa usa o link enviado pelo MDSign (WhatsApp); a situação muda quando ela assina, aprova ou recusa.",
+        "Quando o convite sai pelo MDSign (e-mail próprio ou WhatsApp), mostramos se foi entregue, se o e-mail foi aberto e quando a pessoa abriu o link. Convites enviados pelo serviço de assinatura não informam leitura; nesse caso a situação muda quando a pessoa abre, assina, aprova ou recusa.",
     },
     title: "Documentos",
     subtitle: "Acompanhe tudo o que foi enviado e assinado.",
@@ -1239,6 +1242,12 @@ const pt = {
       "participant.refused": "{name} recusou",
       "participant.delegated": "Aprovação encaminhada a {name} por delegação",
       "notification.sent": "{name}: link de assinatura enviado por WhatsApp",
+      "notification.sent.email": "{name}: convite enviado por e-mail",
+      "notification.sent.whatsapp": "{name}: link de assinatura enviado por WhatsApp",
+      "notification.delivered": "{name}: e-mail entregue",
+      "notification.failed": "{name}: e-mail não entregue (endereço recusou)",
+      "participant.email_opened": "{name} abriu o e-mail do convite",
+      "participant.viewed": "{name} abriu o documento",
       "participant.link_opened": "{name} abriu o link de assinatura",
       "participant.reminded": "Lembrete enviado para {name}",
       "document.concluded": "Documento concluído",
@@ -1362,8 +1371,7 @@ const pt = {
     flowEnd: "Conclusão",
     flowStep: "Etapa {n}",
     flowApproverParallel:
-      "A ordem está desligada: o aprovador recebe junto com quem assina. Ligue a ordem para as assinaturas só começarem depois da aprovação.",
-    flowTurnOn: "Ligar a ordem",
+      "Sem ordem com aprovador: os aprovadores recebem primeiro e, depois da aprovação, todos que assinam recebem ao mesmo tempo.",
     quorumLabel: "Quem do grupo assina",
     quorumAll: "Todos do grupo assinam",
     quorumAny: "Basta {n} do grupo",

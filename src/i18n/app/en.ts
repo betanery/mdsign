@@ -1006,6 +1006,7 @@ const en: AppMessages = {
       blocked: "WhatsApp blocked: {reason}",
       skipped: "WhatsApp not sent: {reason}",
     } as Record<string, string>,
+    emailOpened: "opened on {date}",
     emailStatus: {
       pending: "Email queued ({date})",
       sent: "Email sent on {date}",
@@ -1015,6 +1016,8 @@ const en: AppMessages = {
       skipped: "Email not sent: {reason}",
     } as Record<string, string>,
     reasons: {
+      bounced: "the address refused the email",
+      complained: "the person marked the email as spam",
       provider_not_configured: "provider not configured",
       invalid_phone: "invalid mobile number",
       opted_out: "the person asked not to receive messages",
@@ -1117,7 +1120,7 @@ const en: AppMessages = {
       concluded: "Everyone has signed. Document completed on {date}.",
       refused: "Refused by {name}.",
       noViewInfo:
-        "The signing service does not report whether the person opened its email. We record the opening only when the person uses the link sent by MDSign (WhatsApp); the status changes when they sign, approve or refuse.",
+        "When the invitation goes out through MDSign (own email or WhatsApp), we show whether it was delivered, whether the email was opened and when the person opened the link. Invitations sent by the signature service don't report reading; in that case the status changes when the person opens, signs, approves or refuses.",
     },
     title: "Documents",
     subtitle: "Track everything that was sent and signed.",
@@ -1214,6 +1217,12 @@ const en: AppMessages = {
       "participant.refused": "{name} refused",
       "participant.delegated": "Approval routed to {name} by delegation",
       "notification.sent": "{name}: signing link sent via WhatsApp",
+      "notification.sent.email": "{name}: invitation sent by email",
+      "notification.sent.whatsapp": "{name}: signing link sent by WhatsApp",
+      "notification.delivered": "{name}: email delivered",
+      "notification.failed": "{name}: email not delivered (address refused it)",
+      "participant.email_opened": "{name} opened the invitation email",
+      "participant.viewed": "{name} opened the document",
       "participant.link_opened": "{name} opened the signing link",
       "participant.reminded": "Reminder sent to {name}",
       "document.concluded": "Document completed",
@@ -1335,8 +1344,7 @@ const en: AppMessages = {
     flowEnd: "Completion",
     flowStep: "Stage {n}",
     flowApproverParallel:
-      "Order is off: the approver receives it together with the signers. Turn order on so signatures only start after approval.",
-    flowTurnOn: "Turn order on",
+      "No order with an approver: approvers receive it first and, after approval, everyone who signs receives it at the same time.",
     quorumLabel: "Who in the group signs",
     quorumAll: "Everyone in the group signs",
     quorumAny: "Any {n} of the group",

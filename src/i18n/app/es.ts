@@ -1021,6 +1021,7 @@ const es: AppMessages = {
       blocked: "WhatsApp bloqueado: {reason}",
       skipped: "WhatsApp no enviado: {reason}",
     } as Record<string, string>,
+    emailOpened: "abierto el {date}",
     emailStatus: {
       pending: "Correo en cola ({date})",
       sent: "Correo enviado el {date}",
@@ -1030,6 +1031,8 @@ const es: AppMessages = {
       skipped: "Correo no enviado: {reason}",
     } as Record<string, string>,
     reasons: {
+      bounced: "la dirección rechazó el correo",
+      complained: "la persona marcó el correo como spam",
       provider_not_configured: "proveedor no configurado",
       invalid_phone: "celular inválido",
       opted_out: "la persona pidió no recibir mensajes",
@@ -1132,7 +1135,7 @@ const es: AppMessages = {
       concluded: "Todos ya firmaron. Documento concluido el {date}.",
       refused: "Rechazado por {name}.",
       noViewInfo:
-        "El servicio de firma no informa si la persona abrió su correo. Registramos la apertura solo cuando la persona usa el enlace enviado por MDSign (WhatsApp); la situación cambia cuando firma, aprueba o rechaza.",
+        "Cuando la invitación sale por MDSign (correo propio o WhatsApp), mostramos si se entregó, si se abrió el correo y cuándo la persona abrió el enlace. Las invitaciones enviadas por el servicio de firma no informan la lectura; en ese caso la situación cambia cuando la persona abre, firma, aprueba o rechaza.",
     },
     title: "Documentos",
     subtitle: "Sigue todo lo que se envió y firmó.",
@@ -1229,6 +1232,12 @@ const es: AppMessages = {
       "participant.refused": "{name} rechazó",
       "participant.delegated": "Aprobación encaminada a {name} por delegación",
       "notification.sent": "{name}: enlace de firma enviado por WhatsApp",
+      "notification.sent.email": "{name}: invitación enviada por correo",
+      "notification.sent.whatsapp": "{name}: enlace de firma enviado por WhatsApp",
+      "notification.delivered": "{name}: correo entregado",
+      "notification.failed": "{name}: correo no entregado (la dirección lo rechazó)",
+      "participant.email_opened": "{name} abrió el correo de la invitación",
+      "participant.viewed": "{name} abrió el documento",
       "participant.link_opened": "{name} abrió el enlace de firma",
       "participant.reminded": "Recordatorio enviado a {name}",
       "document.concluded": "Documento concluido",
@@ -1353,8 +1362,7 @@ const es: AppMessages = {
     flowEnd: "Conclusión",
     flowStep: "Etapa {n}",
     flowApproverParallel:
-      "El orden está desactivado: el aprobador lo recibe junto con quienes firman. Active el orden para que las firmas empiecen solo después de la aprobación.",
-    flowTurnOn: "Activar el orden",
+      "Sin orden con aprobador: los aprobadores lo reciben primero y, después de la aprobación, todos los que firman lo reciben al mismo tiempo.",
     quorumLabel: "Quién del grupo firma",
     quorumAll: "Todos del grupo firman",
     quorumAny: "Basta {n} del grupo",

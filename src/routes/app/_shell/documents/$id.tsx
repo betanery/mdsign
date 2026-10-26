@@ -63,8 +63,13 @@ type EventRow = {
   type: string;
   actor_name: string | null;
   occurred_at: string;
-  data?: { reason?: unknown; version?: unknown } | null;
+  data?: { reason?: unknown; version?: unknown; channel?: unknown } | null;
 };
+/** Texto do evento; avisos de envio têm um texto por canal (e-mail, WhatsApp). */
+const eventKey = (e: EventRow) =>
+  e.type === "notification.sent" && typeof e.data?.channel === "string"
+    ? `${e.type}.${e.data.channel}`
+    : e.type;
 type VersionRow = {
   number: number;
   file_name: string | null;
@@ -102,6 +107,8 @@ function DocumentDetail() {
       status: string;
       error: string | null;
       sent_at: string | null;
+      delivered_at?: string | null;
+      opened_at?: string | null;
       created_at: string;
     }[]
   >([]);
@@ -150,7 +157,9 @@ function DocumentDetail() {
     setReminders((rem.data as ReminderInfo[] | null) ?? []);
     const nt = await supabase
       .from("notifications")
-      .select("participant_id, channel, status, error, sent_at, created_at")
+      .select(
+        "participant_id, channel, status, error, sent_at, delivered_at, opened_at, created_at",
+      )
       .eq("document_id", id)
       .order("created_at", { ascending: false });
     setNotes((nt.data as typeof notes | null) ?? []);
@@ -570,9 +579,16 @@ function DocumentDetail() {
                         )}
                       >
                         {f(labels[n.status] ?? n.status, {
-                          date: formatDate(n.sent_at ?? n.created_at, locale),
+                          date: formatDate(
+                            (n.status === "delivered" ? n.delivered_at : null) ??
+                              n.sent_at ??
+                              n.created_at,
+                            locale,
+                          ),
                           reason: t.notify.reasons[n.error ?? ""] ?? n.error ?? "",
                         })}
+                        {n.opened_at &&
+                          ` · ${f(t.notify.emailOpened, { date: formatDate(n.opened_at, locale) })}`}
                       </p>
                     );
                   })}
@@ -647,7 +663,9 @@ function DocumentDetail() {
                   aria-hidden
                 />
                 <p className="text-sm font-medium">
-                  {f(t.documents.events[e.type] ?? e.type, { name: e.actor_name ?? "" })}
+                  {f(t.documents.events[eventKey(e)] ?? t.documents.events[e.type] ?? e.type, {
+                    name: e.actor_name ?? "",
+                  })}
                 </p>
                 {typeof e.data?.version === "number" && (
                   <span className="mt-0.5 inline-block rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
