@@ -7,7 +7,7 @@ const pt = {
   meta: {
     title: "MDSign — Assinatura digital para empresas",
     description:
-      "Envie, assine, gerencie e armazene seus documentos de forma simples, segura e 100% digital. Assinatura eletrônica e com certificado digital ICP-Brasil.",
+      "Envie, assine, gerencie e armazene seus documentos de forma simples, segura e 100% digital. Assinatura eletrônica com evidências e validade jurídica.",
     slogan: "Não use papel, plante uma árvore!",
   },
   a11y: {
@@ -39,8 +39,8 @@ const pt = {
   trust: {
     label: "Diferenciais",
     items: [
-      "Validade jurídica (ICP-Brasil)",
-      "Assinatura eletrônica e com certificado digital",
+      "Validade jurídica (MP 2.200-2 e Lei 14.063)",
+      "Assinatura eletrônica com trilha de evidências",
       "Acesse de qualquer dispositivo",
       "Atendimento à LGPD",
       "Alertas em tempo real",
@@ -223,12 +223,12 @@ const pt = {
         text: "A assinatura eletrônica tem validade jurídica no Brasil, conforme a MP 2.200-2/2001 e a Lei 14.063/2020, nos níveis simples, avançado e qualificado.",
       },
       {
-        title: "Certificado digital ICP-Brasil",
-        text: "Quando o documento exige assinatura qualificada, o signatário assina com certificado digital ICP-Brasil, inclusive e-CNPJ para assinar pela empresa.",
+        title: "Certificado digital ICP-Brasil (em breve)",
+        text: "A assinatura com certificado ICP-Brasil (e-CPF e e-CNPJ) está em homologação e ainda não está disponível.",
       },
       {
         title: "Eletrônica ou com certificado",
-        text: "Na assinatura eletrônica, o signatário é identificado pelos fatores de autenticação do processo. Na assinatura com certificado digital, pelo certificado emitido por autoridade credenciada.",
+        text: "Na assinatura eletrônica, o signatário é identificado pelos fatores de autenticação do processo. A assinatura com certificado digital chegará em breve, após homologação.",
       },
       {
         title: "Autenticação do signatário",
@@ -256,7 +256,7 @@ const pt = {
     items: [
       {
         q: "A assinatura eletrônica tem validade jurídica?",
-        a: "Sim. A MP 2.200-2/2001 e a Lei 14.063/2020 reconhecem a assinatura eletrônica como válida para comprovar a autoria e a integridade de documentos. Para os casos em que a lei exige assinatura qualificada, use o certificado digital ICP-Brasil.",
+        a: "Sim. A MP 2.200-2/2001 e a Lei 14.063/2020 reconhecem a assinatura eletrônica como válida para comprovar a autoria e a integridade de documentos. Quando a lei exigir assinatura qualificada (ICP-Brasil), esse recurso ainda está em homologação no MDSign.",
       },
       {
         q: "O signatário precisa criar uma conta?",
@@ -264,7 +264,7 @@ const pt = {
       },
       {
         q: "Posso assinar com certificado digital?",
-        a: "Sim. Além da assinatura eletrônica, o MDSign aceita assinatura com certificado digital ICP-Brasil, de pessoa física (e-CPF) ou jurídica (e-CNPJ). Confira na seção de planos o tipo de assinatura incluído em cada um.",
+        a: "Ainda não. A assinatura com certificado digital ICP-Brasil (e-CPF e e-CNPJ) está em homologação e aparece como \"Em breve\" nos planos. Hoje o MDSign oferece assinatura eletrônica com evidências.",
       },
       {
         q: "Posso ter vários usuários na empresa?",

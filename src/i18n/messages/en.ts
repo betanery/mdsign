@@ -8,7 +8,7 @@ const en: Messages = {
   meta: {
     title: "MDSign — Digital signatures for business",
     description:
-      "Send, sign, manage and store your documents in a simple, secure and 100% digital way. Electronic signatures and ICP-Brasil digital certificate signatures.",
+      "Send, sign, manage and store your documents in a simple, secure and 100% digital way. Electronic signatures with evidence and legal validity.",
     slogan: "Go paperless, plant a tree!",
   },
   a11y: {
@@ -40,8 +40,8 @@ const en: Messages = {
   trust: {
     label: "Highlights",
     items: [
-      "Legally valid (ICP-Brasil)",
-      "Electronic and digital certificate signatures",
+      "Legally valid (MP 2.200-2 and Law 14.063)",
+      "Electronic signatures with an evidence trail",
       "Access from any device",
       "LGPD compliant",
       "Real-time alerts",
@@ -221,12 +221,12 @@ const en: Messages = {
         text: "Electronic signatures are legally valid in Brazil under Provisional Measure 2.200-2/2001 and Law 14.063/2020, at the simple, advanced and qualified levels.",
       },
       {
-        title: "ICP-Brasil digital certificate",
-        text: "When a document requires a qualified signature, the signer uses an ICP-Brasil digital certificate, including e-CNPJ to sign on behalf of a company.",
+        title: "ICP-Brasil digital certificate (coming soon)",
+        text: "Signing with an ICP-Brasil certificate (e-CPF and e-CNPJ) is under certification and not available yet.",
       },
       {
         title: "Electronic or certificate-based",
-        text: "With an electronic signature, the signer is identified by the authentication factors of the process. With a digital certificate signature, by a certificate issued by an accredited authority.",
+        text: "With an electronic signature, the signer is identified by the authentication factors of the process. Digital certificate signatures are coming soon, after certification.",
       },
       {
         title: "Signer authentication",
@@ -253,7 +253,7 @@ const en: Messages = {
     items: [
       {
         q: "Is an electronic signature legally valid?",
-        a: "Yes. Brazilian Provisional Measure 2.200-2/2001 and Law 14.063/2020 recognize electronic signatures as valid proof of a document's authorship and integrity. Where the law requires a qualified signature, use an ICP-Brasil digital certificate.",
+        a: "Yes. Brazilian Provisional Measure 2.200-2/2001 and Law 14.063/2020 recognize electronic signatures as valid proof of a document's authorship and integrity. Qualified (ICP-Brasil) signatures are still under certification in MDSign.",
       },
       {
         q: "Does the signer need to create an account?",
@@ -261,7 +261,7 @@ const en: Messages = {
       },
       {
         q: "Can I sign with a digital certificate?",
-        a: "Yes. In addition to electronic signatures, MDSign accepts ICP-Brasil digital certificate signatures, for individuals (e-CPF) or companies (e-CNPJ). Check the plans section for the type of signature included in each plan.",
+        a: "Not yet. ICP-Brasil certificate signatures (e-CPF and e-CNPJ) are under certification and shown as \"Coming soon\" in the plans. Today MDSign offers electronic signatures with evidence.",
       },
       {
         q: "Can I have several users in my company?",
