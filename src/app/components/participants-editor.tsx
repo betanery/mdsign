@@ -684,7 +684,11 @@ export function FlowPreview({
           {t.participants.flowTitle}
         </h3>
         <p className="text-xs text-muted-foreground">
-          {sequential ? t.participants.flowSequential : t.participants.flowParallel}
+          {sequential
+            ? t.participants.flowSequential
+            : hasApprover
+              ? t.participants.flowApproverParallel
+              : t.participants.flowParallel}
         </p>
       </div>
       <ol className="flex flex-wrap items-stretch gap-2">
@@ -727,11 +731,6 @@ export function FlowPreview({
           </span>
         </li>
       </ol>
-      {hasApprover && !sequential && (
-        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
-          {t.participants.flowApproverParallel}
-        </p>
-      )}
     </section>
   );
 }
