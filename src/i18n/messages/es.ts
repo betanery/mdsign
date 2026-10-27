@@ -8,7 +8,7 @@ const es: Messages = {
   meta: {
     title: "MDSign — Firma digital para empresas",
     description:
-      "Envía, firma, gestiona y almacena tus documentos de forma simple, segura y 100% digital. Firma electrónica y con certificado digital ICP-Brasil.",
+      "Envía, firma, gestiona y almacena tus documentos de forma simple, segura y 100% digital. Firma electrónica con evidencias y validez jurídica.",
     slogan: "¡No uses papel, planta un árbol!",
   },
   a11y: {
@@ -41,8 +41,8 @@ const es: Messages = {
   trust: {
     label: "Ventajas",
     items: [
-      "Validez jurídica (ICP-Brasil)",
-      "Firma electrónica y con certificado digital",
+      "Validez jurídica (MP 2.200-2 y Ley 14.063)",
+      "Firma electrónica con registro de evidencias",
       "Accede desde cualquier dispositivo",
       "Cumplimiento de la LGPD",
       "Alertas en tiempo real",
@@ -230,12 +230,12 @@ const es: Messages = {
         text: "La firma electrónica tiene validez jurídica en Brasil, según la Medida Provisional 2.200-2/2001 y la Ley 14.063/2020, en los niveles simple, avanzado y cualificado.",
       },
       {
-        title: "Certificado digital ICP-Brasil",
-        text: "Cuando el documento exige una firma cualificada, el firmante usa un certificado digital ICP-Brasil, incluido el e-CNPJ para firmar en nombre de la empresa.",
+        title: "Certificado digital ICP-Brasil (próximamente)",
+        text: "La firma con certificado ICP-Brasil (e-CPF y e-CNPJ) está en homologación y aún no está disponible.",
       },
       {
         title: "Electrónica o con certificado",
-        text: "En la firma electrónica, el firmante se identifica mediante los factores de autenticación del proceso. En la firma con certificado digital, mediante un certificado emitido por una autoridad acreditada.",
+        text: "En la firma electrónica, el firmante se identifica mediante los factores de autenticación del proceso. La firma con certificado digital llegará pronto, tras la homologación.",
       },
       {
         title: "Autenticación del firmante",
@@ -263,7 +263,7 @@ const es: Messages = {
     items: [
       {
         q: "¿La firma electrónica tiene validez jurídica?",
-        a: "Sí. La Medida Provisional 2.200-2/2001 y la Ley 14.063/2020 de Brasil reconocen la firma electrónica como válida para acreditar la autoría y la integridad de los documentos. Cuando la ley exige una firma cualificada, usa el certificado digital ICP-Brasil.",
+        a: "Sí. La Medida Provisional 2.200-2/2001 y la Ley 14.063/2020 de Brasil reconocen la firma electrónica como válida para acreditar la autoría y la integridad de los documentos. La firma cualificada (ICP-Brasil) aún está en homologación en MDSign.",
       },
       {
         q: "¿El firmante necesita crear una cuenta?",
@@ -271,7 +271,7 @@ const es: Messages = {
       },
       {
         q: "¿Puedo firmar con certificado digital?",
-        a: "Sí. Además de la firma electrónica, MDSign acepta la firma con certificado digital ICP-Brasil, de persona física (e-CPF) o jurídica (e-CNPJ). Consulta en la sección de planes el tipo de firma incluido en cada uno.",
+        a: "Todavía no. La firma con certificado ICP-Brasil (e-CPF y e-CNPJ) está en homologación y aparece como \"Próximamente\" en los planes. Hoy MDSign ofrece firma electrónica con evidencias.",
       },
       {
         q: "¿Puedo tener varios usuarios en la empresa?",
