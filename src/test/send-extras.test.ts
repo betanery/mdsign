@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { oneSignature } from "@/app/components/template-fields";
 import { addAttachments, MAX_ATTACHMENT_BYTES } from "@/app/components/attachments-picker";
 import {
   flowStages,
@@ -133,5 +134,19 @@ describe("fluxo salvo e cópia do documento", () => {
       "b@y.com",
       "c@z.com",
     ]);
+  });
+});
+
+describe("oneSignature", () => {
+  const box = { page: 1, x: 0, y: 0, w: 0.1, h: 0.1 };
+  it("a nova assinatura substitui a anterior da mesma pessoa; rubrica repete", () => {
+    const old = { ...box, slot: 1, type: "signature" as const };
+    const other = { ...box, slot: 2, type: "signature" as const };
+    const ini = { ...box, slot: 1, type: "initials" as const };
+    const added = { ...box, page: 2, slot: 1, type: "signature" as const };
+    const same = (a: { slot: number }, b: { slot: number }) => a.slot === b.slot;
+    expect(oneSignature([old, other, ini, added], added, same)).toEqual([other, ini, added]);
+    const ini2 = { ...ini, page: 2 };
+    expect(oneSignature([ini, ini2], ini2, same)).toEqual([ini, ini2]);
   });
 });

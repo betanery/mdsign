@@ -1333,6 +1333,8 @@ const en: AppMessages = {
     quorum_disabled: "Quorum groups are not enabled for this account yet.",
     quorum_edit_unsupported:
       "People in a quorum group cannot be replaced or removed after sending. Cancel and send again if needed.",
+    signature_mark_repeated:
+      "Each person can have only one signature position in the PDF. To mark every page, use initials.",
     pdf_unreadable:
       "We couldn't open this PDF. It may be password-protected, corrupted or have too many pages.",
     template_in_use: "This template is used by a form. Deactivate or delete the form first.",
@@ -2142,6 +2144,7 @@ const en: AppMessages = {
   marks: {
     title: "Signature positions",
     hint: "Choose the participant and the type, then click or drag on the PDF.",
+    oneSignature: "One signature per person. To mark every page, use initials.",
     auto: "Without a position, the signature goes automatically to the signatures page.",
     me: "You",
     optional: "Place signatures (optional)",

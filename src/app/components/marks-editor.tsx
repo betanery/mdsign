@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAppI18n } from "../i18n";
 import { formatCpf, isValidCpf, onlyDigits } from "../validation";
 import { PdfPlacer, type PlacedBox, type PlacerTool } from "./pdf-placer";
-import type { MarkType, RelBox } from "./template-fields";
+import { oneSignature, type MarkType, type RelBox } from "./template-fields";
 
 export type Mark = RelBox & { type: MarkType };
 /** Posições por participante (chave = id do participante no formulário). */
@@ -110,7 +110,7 @@ export function MarksEditor({
             <p className="font-medium">
               {t.pdf.markTypes[selMark.type]} · {people.find((p) => p.key === selKey)?.label}
             </p>
-            {pages > 1 && (
+            {pages > 1 && selMark.type !== "signature" && (
               <Button
                 size="sm"
                 variant="outline"
@@ -141,6 +141,7 @@ export function MarksEditor({
             </Button>
           </div>
         )}
+        <p className="text-xs text-muted-foreground">{t.marks.oneSignature}</p>
         <p className="text-xs text-muted-foreground">{t.marks.auto}</p>
       </aside>
       <div className="max-h-[75svh] overflow-y-auto rounded-2xl border bg-muted/30 p-3">
@@ -156,9 +157,10 @@ export function MarksEditor({
           tool={tool}
           onCreate={(box, used) => {
             const [type, key] = used.key.split(":") as [MarkType, string];
-            const list = value[key] ?? [];
-            onChange({ ...value, [key]: [...list, { ...box, type }] });
-            setSelected(`${key}|${list.length}`);
+            const mark: Mark = { ...box, type };
+            const list = oneSignature([...(value[key] ?? []), mark], mark);
+            onChange({ ...value, [key]: list });
+            setSelected(`${key}|${list.length - 1}`);
           }}
           selected={selected}
           onSelect={setSelected}

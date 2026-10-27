@@ -1360,6 +1360,8 @@ const pt = {
     quorum_disabled: "Grupos com quórum ainda não estão liberados nesta conta.",
     quorum_edit_unsupported:
       "Pessoas de um grupo com quórum não podem ser trocadas ou removidas depois do envio. Cancele e envie de novo, se precisar.",
+    signature_mark_repeated:
+      "Cada pessoa pode ter só uma posição de assinatura no PDF. Para marcar todas as páginas, use a rubrica.",
     pdf_unreadable:
       "Não conseguimos abrir este PDF. Ele pode estar protegido por senha, corrompido ou ter páginas demais.",
     template_in_use:
@@ -2172,6 +2174,7 @@ const pt = {
   marks: {
     title: "Posição das assinaturas",
     hint: "Escolha o participante e o tipo, depois clique ou arraste no PDF.",
+    oneSignature: "Uma assinatura por pessoa. Para marcar todas as páginas, use a rubrica.",
     auto: "Sem posição, a assinatura vai automaticamente para a página de assinaturas.",
     me: "Você",
     optional: "Posicionar assinaturas (opcional)",

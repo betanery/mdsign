@@ -12,6 +12,7 @@ import {
   type ObserverInput,
 } from "./participants.ts";
 import {
+  assertOneSignature,
   assertSafePdf,
   loadPdf,
   pageSizes,
@@ -314,6 +315,7 @@ export async function createDocument(input: CreateInput): Promise<Created> {
     (await ownEmailFor(input.organizationId, input.createdBy).catch(() => false));
 
   try {
+    for (const m of input.marks ?? []) if (m) assertOneSignature(m);
     const sizes = input.marks?.some((m) => m?.length) ? pageSizes(await loadPdf(input.pdf)) : [];
     const upload = await signdoc.uploadBytes(toBase64(input.pdf));
     const attachmentUploads = [];

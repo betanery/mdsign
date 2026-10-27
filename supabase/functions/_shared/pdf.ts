@@ -176,7 +176,14 @@ export function boxToPdfRect(page: PDFPage, b: RelBox) {
 }
 
 /** Marcas no formato do SignDoc (topLeftX/Y em pontos, a partir do canto superior esquerdo). */
+/** O motor recusa mais de uma posição de assinatura por pessoa (rubrica e carimbo podem repetir). */
+export function assertOneSignature(marks: { type: MarkType }[]) {
+  if (marks.filter((m) => m.type === "signature").length > 1)
+    throw new AppError("signature_mark_repeated", 422);
+}
+
 export function toEngineMarks(marks: RelMark[], sizes: PageSize[]) {
+  assertOneSignature(marks);
   return marks
     .map((m) => (m.page === 0 ? { ...m, page: sizes.length } : m))
     .filter((m) => sizes[m.page - 1])

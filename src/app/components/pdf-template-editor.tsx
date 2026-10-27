@@ -28,6 +28,7 @@ import {
   fieldSources,
   fieldTypes,
   fillableFields,
+  oneSignature,
   type FieldSource,
   type FieldType,
   type MarkType,
@@ -287,9 +288,10 @@ export function PdfTemplateEditor({
   function onCreate(box: RelBox, used: PlacerTool) {
     const [kind, a, b] = used.key.split(":");
     if (kind === "mark") {
-      const slot = Number(b);
-      setMarks((list) => [...list, { ...box, slot, type: a as MarkType }]);
-      setSelected(`m:${marks.length}`);
+      const mark: TemplateMark = { ...box, slot: Number(b), type: a as MarkType };
+      const list = oneSignature([...marks, mark], mark, sameSlot);
+      setMarks(list);
+      setSelected(`m:${list.length - 1}`);
       return;
     }
     if (kind === "field") {
@@ -357,6 +359,20 @@ export function PdfTemplateEditor({
     updateField(oldKey, { key: next });
     if (selected?.startsWith(`f:${oldKey}:`))
       setSelected(selected.replace(`f:${oldKey}:`, `f:${next}:`));
+  }
+
+  const sameSlot = (a: TemplateMark, b: TemplateMark) => a.slot === b.slot;
+
+  /** Troca papel ou tipo da marca; uma assinatura nova substitui a anterior da mesma pessoa. */
+  function changeMark(target: TemplateMark, patch: Partial<TemplateMark>) {
+    const next = { ...target, ...patch };
+    const list = oneSignature(
+      marks.map((m) => (m === target ? next : m)),
+      next,
+      sameSlot,
+    );
+    setMarks(list);
+    setSelected(`m:${list.indexOf(next)}`);
   }
 
   function repeatOnAllPages(i: number) {
@@ -901,13 +917,7 @@ export function PdfTemplateEditor({
                   <span className="font-medium">{t.pdf.roleOf}</span>
                   <select
                     value={selectedMark.slot}
-                    onChange={(e) =>
-                      setMarks(
-                        marks.map((m) =>
-                          m === selectedMark ? { ...m, slot: Number(e.target.value) } : m,
-                        ),
-                      )
-                    }
+                    onChange={(e) => changeMark(selectedMark, { slot: Number(e.target.value) })}
                     className={selectClass}
                   >
                     {roles
@@ -923,13 +933,7 @@ export function PdfTemplateEditor({
                   <span className="font-medium">{t.templates.editor.fieldType}</span>
                   <select
                     value={selectedMark.type}
-                    onChange={(e) =>
-                      setMarks(
-                        marks.map((m) =>
-                          m === selectedMark ? { ...m, type: e.target.value as MarkType } : m,
-                        ),
-                      )
-                    }
+                    onChange={(e) => changeMark(selectedMark, { type: e.target.value as MarkType })}
                     className={selectClass}
                   >
                     {markTypes.map((type) => (
@@ -939,7 +943,7 @@ export function PdfTemplateEditor({
                     ))}
                   </select>
                 </label>
-                {pageCount > 1 && (
+                {pageCount > 1 && selectedMark.type !== "signature" && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -961,6 +965,7 @@ export function PdfTemplateEditor({
                 </Button>
               </div>
             )}
+            <p className="text-xs text-muted-foreground">{t.marks.oneSignature}</p>
             {missingSignature.map((r) => (
               <p
                 key={r.slot}

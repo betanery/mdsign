@@ -65,6 +65,19 @@ export type TemplateRole = {
 };
 export type MarkType = "signature" | "initials" | "stamp";
 export type TemplateMark = RelBox & { slot: number; type: MarkType };
+
+/**
+ * O SignDoc aceita uma única posição de assinatura por pessoa (rubrica e carimbo podem
+ * repetir): a assinatura `keep` substitui as outras assinaturas da mesma pessoa.
+ */
+export function oneSignature<T extends { type: MarkType }>(
+  list: T[],
+  keep: T,
+  samePerson: (a: T, b: T) => boolean = () => true,
+): T[] {
+  if (keep.type !== "signature") return list;
+  return list.filter((m) => m === keep || m.type !== "signature" || !samePerson(m, keep));
+}
 export type TemplateFlow = {
   sequential?: boolean;
   message?: string;

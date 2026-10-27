@@ -1352,6 +1352,8 @@ const es: AppMessages = {
     quorum_disabled: "Los grupos con quórum aún no están habilitados en esta cuenta.",
     quorum_edit_unsupported:
       "Las personas de un grupo con quórum no se pueden cambiar ni quitar después del envío. Cancele y envíe de nuevo si es necesario.",
+    signature_mark_repeated:
+      "Cada persona puede tener solo una posición de firma en el PDF. Para marcar todas las páginas, usa la rúbrica.",
     pdf_unreadable:
       "No pudimos abrir este PDF. Puede estar protegido con contraseña, dañado o tener demasiadas páginas.",
     template_in_use:
@@ -2178,6 +2180,7 @@ const es: AppMessages = {
   marks: {
     title: "Posición de las firmas",
     hint: "Elige el participante y el tipo, luego haz clic o arrastra en el PDF.",
+    oneSignature: "Una firma por persona. Para marcar todas las páginas, usa la rúbrica.",
     auto: "Sin posición, la firma va automáticamente a la página de firmas.",
     me: "Tú",
     optional: "Posicionar firmas (opcional)",
