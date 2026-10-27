@@ -110,3 +110,28 @@ describe("aprovador no fluxo", () => {
     expect(flowStages([person("Ana"), person("Bruno")], false)).toHaveLength(1);
   });
 });
+
+describe("fluxo salvo e cópia do documento", () => {
+  it("salva só quem tem nome ou e-mail, sem a chave da tela, e reaplica com chaves novas", async () => {
+    const { flowToSave, flowFromSaved } = await import("@/app/components/saved-flows");
+    const list = [
+      { ...newParticipant("approver"), name: "Jurídico", email: "j@ex.com" },
+      newParticipant(),
+    ];
+    const saved = flowToSave(list);
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).not.toHaveProperty("key");
+    const back = flowFromSaved(saved);
+    expect(back[0]!.role).toBe("approver");
+    expect(back[0]!.key).not.toBe(list[0]!.key);
+  });
+
+  it("aceita e-mails separados por vírgula, ponto e vírgula ou linha, sem repetir", async () => {
+    const { parseEmails } = await import("@/app/components/share-dialog");
+    expect(parseEmails("A@x.com, b@y.com;\nb@y.com  c@z.com")).toEqual([
+      "a@x.com",
+      "b@y.com",
+      "c@z.com",
+    ]);
+  });
+});

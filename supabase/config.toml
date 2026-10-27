@@ -433,6 +433,12 @@ verify_jwt = false
 [functions.documents-action]
 verify_jwt = false
 
+[functions.documents-zip]
+verify_jwt = false
+
+[functions.document-share]
+verify_jwt = false
+
 [functions.documents-send]
 verify_jwt = false
 

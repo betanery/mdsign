@@ -37,6 +37,7 @@ import { Route as AppForgotPasswordRouteImport } from './routes/app/forgot-passw
 import { Route as AppLoginRouteImport } from './routes/app/login'
 import { Route as AppResetPasswordRouteImport } from './routes/app/reset-password'
 import { Route as AppSignupRouteImport } from './routes/app/signup'
+import { Route as DTokenRouteImport } from './routes/d.$token'
 import { Route as FTokenRouteImport } from './routes/f.$token'
 import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as LangLpSlugRouteImport } from './routes/$lang/lp.$slug'
@@ -202,6 +203,11 @@ const AppSignupRoute = AppSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const DTokenRoute = DTokenRouteImport.update({
+  id: '/d/$token',
+  path: '/d/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FTokenRoute = FTokenRouteImport.update({
   id: '/f/$token',
   path: '/f/$token',
@@ -355,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
+  '/d/$token': typeof DTokenRoute
   '/f/$token': typeof FTokenRoute
   '/s/$token': typeof STokenRoute
   '/$lang/': typeof LangIndexRoute
@@ -408,6 +415,7 @@ export interface FileRoutesByTo {
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
+  '/d/$token': typeof DTokenRoute
   '/f/$token': typeof FTokenRoute
   '/s/$token': typeof STokenRoute
   '/$lang': typeof LangIndexRoute
@@ -463,6 +471,7 @@ export interface FileRoutesById {
   '/app/login': typeof AppLoginRoute
   '/app/reset-password': typeof AppResetPasswordRoute
   '/app/signup': typeof AppSignupRoute
+  '/d/$token': typeof DTokenRoute
   '/f/$token': typeof FTokenRoute
   '/s/$token': typeof STokenRoute
   '/$lang/': typeof LangIndexRoute
@@ -519,6 +528,7 @@ export interface FileRouteTypes {
     | '/app/login'
     | '/app/reset-password'
     | '/app/signup'
+    | '/d/$token'
     | '/f/$token'
     | '/s/$token'
     | '/$lang/'
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
     | '/app/login'
     | '/app/reset-password'
     | '/app/signup'
+    | '/d/$token'
     | '/f/$token'
     | '/s/$token'
     | '/$lang'
@@ -626,6 +637,7 @@ export interface FileRouteTypes {
     | '/app/login'
     | '/app/reset-password'
     | '/app/signup'
+    | '/d/$token'
     | '/f/$token'
     | '/s/$token'
     | '/$lang/'
@@ -669,6 +681,7 @@ export interface RootRouteChildren {
   TermosRoute: typeof TermosRoute
   TitularRoute: typeof TitularRoute
   ValidarRoute: typeof ValidarRoute
+  DTokenRoute: typeof DTokenRoute
   FTokenRoute: typeof FTokenRoute
   STokenRoute: typeof STokenRoute
 }
@@ -870,6 +883,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/signup'
       preLoaderRoute: typeof AppSignupRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/d/$token': {
+      id: '/d/$token'
+      path: '/d/$token'
+      fullPath: '/d/$token'
+      preLoaderRoute: typeof DTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/f/$token': {
       id: '/f/$token'
@@ -1168,6 +1188,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermosRoute: TermosRoute,
   TitularRoute: TitularRoute,
   ValidarRoute: ValidarRoute,
+  DTokenRoute: DTokenRoute,
   FTokenRoute: FTokenRoute,
   STokenRoute: STokenRoute,
 }

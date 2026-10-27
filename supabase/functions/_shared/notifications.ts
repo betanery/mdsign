@@ -27,7 +27,7 @@ const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
-const siteUrl = () =>
+export const siteUrl = () =>
   (Deno.env.get("SITE_URL") ?? allowedOrigins.find((o) => o.startsWith("https://")) ?? "").replace(
     /\/$/,
     "",

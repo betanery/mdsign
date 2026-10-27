@@ -198,3 +198,82 @@ ${
   ].join("\n");
   return { subject, html: htmlBody, text };
 }
+
+/** Cópia do documento concluído para alguém de fora do fluxo (link com prazo para baixar). */
+export function shareEmail(p: {
+  locale: string;
+  senderName: string;
+  orgName: string;
+  docName: string;
+  message?: string | null;
+  link: string;
+  days: number;
+  /** Página pública de validação (o destinatário confere a autenticidade). */
+  validateUrl: string;
+}) {
+  const L = {
+    pt: {
+      subject: "{sender} compartilhou o documento assinado “{doc}”",
+      lead: "<b>{sender}</b> ({org}) compartilhou com você o documento assinado <b>{doc}</b>.",
+      message: "Mensagem:",
+      button: "Baixar documento assinado",
+      note: "O link vale por {days} dias. A autenticidade pode ser conferida em {validate}.",
+      footer: "Enviado pelo MDSign. Se não esperava este e-mail, pode ignorá-lo.",
+    },
+    en: {
+      subject: "{sender} shared the signed document “{doc}”",
+      lead: "<b>{sender}</b> ({org}) shared the signed document <b>{doc}</b> with you.",
+      message: "Message:",
+      button: "Download signed document",
+      note: "The link is valid for {days} days. Authenticity can be checked at {validate}.",
+      footer: "Sent by MDSign. If you weren't expecting this email, you can ignore it.",
+    },
+    es: {
+      subject: "{sender} compartió el documento firmado “{doc}”",
+      lead: "<b>{sender}</b> ({org}) compartió con usted el documento firmado <b>{doc}</b>.",
+      message: "Mensaje:",
+      button: "Descargar documento firmado",
+      note: "El enlace vale {days} días. La autenticidad puede verificarse en {validate}.",
+      footer: "Enviado por MDSign. Si no esperaba este correo, puede ignorarlo.",
+    },
+  } as const;
+  const t = L[(p.locale as Locale) in L ? (p.locale as Locale) : "pt"];
+  const sender = p.senderName.trim() || p.orgName;
+  const vals = {
+    sender,
+    org: p.orgName,
+    doc: p.docName,
+    days: String(p.days),
+    validate: p.validateUrl,
+  };
+  const esc = Object.fromEntries(Object.entries(vals).map(([k, v]) => [k, escapeHtml(v)]));
+  const message = p.message?.trim() ?? "";
+  const subject = fill(t.subject, vals).slice(0, 200);
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f2f8;font-family:Arial,Helvetica,sans-serif;color:#1f1a2e">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f2f8;padding:24px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:12px;overflow:hidden">
+<tr><td style="background:#9724C2;padding:18px 24px;color:#ffffff;font-size:20px;font-weight:bold">MDSign</td></tr>
+<tr><td style="padding:24px;font-size:16px;line-height:1.5">
+<p style="margin:0 0 16px">${fill(t.lead, esc)}</p>
+${
+  message
+    ? `<p style="margin:0 0 4px;color:#5b5570;font-size:14px">${escapeHtml(t.message)}</p><p style="margin:0 0 16px;padding:12px;background:#f4f2f8;border-radius:8px;white-space:pre-line">${escapeHtml(message)}</p>`
+    : ""
+}
+<p style="margin:24px 0" align="center"><a href="${escapeHtml(p.link)}" style="display:inline-block;background:#9724C2;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 24px;border-radius:8px">${escapeHtml(t.button)}</a></p>
+<p style="margin:0;color:#5b5570;font-size:13px">${escapeHtml(fill(t.note, vals))}</p>
+</td></tr>
+<tr><td style="padding:16px 24px;border-top:1px solid #ece8f3;color:#8a84a0;font-size:12px">${escapeHtml(t.footer)}</td></tr>
+</table></td></tr></table></body></html>`;
+  const text = [
+    fill(t.lead, vals).replace(/<\/?b>/g, ""),
+    ...(message ? ["", t.message, message] : []),
+    "",
+    `${t.button}: ${p.link}`,
+    "",
+    fill(t.note, vals),
+    "",
+    t.footer,
+  ].join("\n");
+  return { subject, html, text };
+}

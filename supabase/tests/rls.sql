@@ -434,15 +434,15 @@ insert into public.documents (organization_id, kind, name, engine_document_id)
   values ((select v from t_ids where k = 'orgA'), 'send', 'Doc webhook', '00000000-0000-0000-0000-0000000000f1');
 -- Fora do Mogno (Empresa A está no Ipê): Integrações desligadas, nada entra na fila.
 insert into public.document_events (document_id, organization_id, type, actor_name)
-  values ((select id from public.documents where name = 'Doc webhook'), (select v from t_ids where k = 'orgA'), 'participant.approved', 'Fulano');
+  values ((select id from public.documents where name = 'Doc webhook' and organization_id = (select v from t_ids where k = 'orgA')), (select v from t_ids where k = 'orgA'), 'participant.approved', 'Fulano');
 do $$ begin
   assert (select count(*) from public.webhook_deliveries) = 0, 'sem Integrações no plano, eventos não viram webhook';
 end $$;
 update public.subscriptions set plan_id = 'mogno' where organization_id = (select v from t_ids where k = 'orgA');
 insert into public.document_events (document_id, organization_id, type, actor_name)
-  values ((select id from public.documents where name = 'Doc webhook'), (select v from t_ids where k = 'orgA'), 'participant.signed', 'Fulano');
+  values ((select id from public.documents where name = 'Doc webhook' and organization_id = (select v from t_ids where k = 'orgA')), (select v from t_ids where k = 'orgA'), 'participant.signed', 'Fulano');
 insert into public.document_events (document_id, organization_id, type)
-  values ((select id from public.documents where name = 'Doc webhook'), (select v from t_ids where k = 'orgA'), 'participant.reminded');
+  values ((select id from public.documents where name = 'Doc webhook' and organization_id = (select v from t_ids where k = 'orgA')), (select v from t_ids where k = 'orgA'), 'participant.reminded');
 do $$ begin
   assert (select count(*) from public.webhook_deliveries where organization_id = (select v from t_ids where k = 'orgA') and event_type = 'participant.signed') = 1, 'evento vira webhook';
   assert (select count(*) from public.webhook_deliveries where organization_id = (select v from t_ids where k = 'orgA')) = 1, 'eventos internos (lembrete) não viram webhook';
@@ -750,7 +750,7 @@ reset role;
 do $$ begin
   assert public.document_available_until((select id from public.documents where name = 'Doc observado'))
     between now() + interval '5 months' and now() + interval '7 months', 'documento do Cedro disponível por 6 meses';
-  assert public.document_available_until((select id from public.documents where name = 'Doc webhook')) is null, 'plano pago sem prazo';
+  assert public.document_available_until((select id from public.documents where name = 'Doc webhook' and organization_id = (select v from t_ids where k = 'orgA'))) is null, 'plano pago sem prazo';
   assert public.cedro_availability_months() = 6, 'prazo padrão de 6 meses';
 end $$;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000d","role":"authenticated"}', true);
@@ -1551,11 +1551,12 @@ set local role authenticated;
 insert into public.document_folders (organization_id, name, created_by)
   values ((select v from t_ids where k = 'orgB'), 'Contratos', '00000000-0000-0000-0000-00000000000b');
 reset role;
-insert into t_ids values ('fldB', (select id from public.document_folders where name = 'Contratos'));
+insert into t_ids values ('fldB', (select id from public.document_folders where name = 'Contratos'
+  and organization_id = (select v from t_ids where k = 'orgB')));
 set local role authenticated;
 do $$ declare fld uuid := (select v from t_ids where k = 'fldB'); begin
   assert public.move_documents((select v from t_ids where k = 'orgB'),
-    array[(select v from t_ids where k = 'docObs'), (select id from public.documents where name = 'Doc webhook')], fld) = 1,
+    array[(select v from t_ids where k = 'docObs'), (select id from public.documents where name = 'Doc webhook' and organization_id = (select v from t_ids where k = 'orgA'))], fld) = 1,
     'move só o documento da própria organização';
   assert (select folder_id from public.documents where id = (select v from t_ids where k = 'docObs')) = fld, 'documento na pasta';
 end $$;
@@ -1573,7 +1574,7 @@ do $$ begin
 end $$;
 do $$ begin
   perform public.move_documents((select v from t_ids where k = 'orgA'),
-    array[(select id from public.documents where name = 'Doc webhook')],
+    array[(select id from public.documents where name = 'Doc webhook' and organization_id = (select v from t_ids where k = 'orgA'))],
     (select v from t_ids where k = 'fldB'));
   assert false, 'pasta de outra organização';
 exception when others then assert sqlerrm in ('folder_not_found', 'forbidden'), 'pasta alheia recusada: ' || sqlerrm;
@@ -1585,7 +1586,7 @@ do $$ begin
 exception when insufficient_privilege then null;
 end $$;
 reset role;
-delete from public.document_folders where name = 'Contratos';
+delete from public.document_folders where name = 'Contratos' and organization_id = (select v from t_ids where k = 'orgB');
 do $$ begin
   assert (select folder_id from public.documents where id = (select v from t_ids where k = 'docObs')) is null,
     'apagar a pasta deixa o documento sem pasta';
@@ -1701,6 +1702,37 @@ declare p jsonb := public.invitation_preview('00000000-0000-0000-0000-0000000000
 begin
   assert p->>'status' = 'used', 'convite já usado';
   assert (p->>'already_member')::boolean, 'quem já é membro vê "você já faz parte"';
+end $$;
+reset role;
+
+-- Fluxos salvos: só quem envia documentos na organização vê e cria; outra organização não vê.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}', true);
+set local role authenticated;
+insert into public.saved_flows (organization_id, name, participants, created_by)
+values ((select v from t_ids where k = 'orgB'), 'Contrato padrão', '[{"name":"Jurídico","role":"approver"}]', auth.uid());
+do $$ begin
+  assert (select count(*) from public.saved_flows where name = 'Contrato padrão') = 1, 'Bruno vê o fluxo salvo';
+end $$;
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}', true);
+set local role authenticated;
+do $$
+begin
+  assert not exists (select 1 from public.saved_flows where name = 'Contrato padrão'), 'Ana não vê fluxo de outra organização';
+  begin
+    insert into public.saved_flows (organization_id, name, participants, created_by)
+      values ((select v from t_ids where k = 'orgB'), 'Invasão', '[{}]', auth.uid());
+    raise exception 'FALHOU: Ana criou fluxo na Empresa B';
+  exception when insufficient_privilege then null;
+  end;
+  -- Cópias enviadas: ninguém grava pelo navegador.
+  begin
+    insert into public.document_shares (document_id, organization_id, email, token_hash, expires_at)
+      values ((select v from t_ids where k = 'docObs'), (select v from t_ids where k = 'orgB'),
+              'x@exemplo.com', repeat('e', 64), now() + interval '1 day');
+    raise exception 'FALHOU: usuário gravou cópia';
+  exception when insufficient_privilege then null;
+  end;
 end $$;
 reset role;
 

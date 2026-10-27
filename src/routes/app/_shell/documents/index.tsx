@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Ban,
   CheckCheck,
+  Download,
   ClipboardCheck,
   FilePlus2,
   FileText,
@@ -16,7 +17,8 @@ import {
 import { toast } from "sonner";
 
 import { useAuth } from "@/app/auth";
-import { documentAction } from "@/app/api";
+import { callFunctionBlob, documentAction } from "@/app/api";
+import { downloadBlob } from "@/app/report-export";
 import { useCedroAvailability } from "@/app/availability";
 import { PageHeader } from "@/app/components/app-shell";
 import { useConfirm } from "@/app/components/confirm-dialog";
@@ -72,6 +74,7 @@ function DocumentsPage() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [queue, setQueue] = useState<DocumentRow[] | null>(null);
+  const [zipping, setZipping] = useState(false);
   const [reasoning, setReasoning] = useState<{
     mode: "refuse" | "cancel";
     docs: DocumentRow[];
@@ -172,6 +175,22 @@ function DocumentsPage() {
       setMoving(false);
     }
     after();
+  }
+
+  // Baixar em lote: o servidor monta um ZIP (o navegador não baixa direto do motor).
+  async function downloadSelected() {
+    setZipping(true);
+    try {
+      const blob = await callFunctionBlob("documents-zip", {
+        documentIds: chosen.map((d) => d.id),
+      });
+      downloadBlob("mdsign-documentos.zip", blob);
+      toast.success(f(t.documents.batch.zipped, { n: String(chosen.length) }));
+    } catch (e) {
+      toast.error(errorText(t, e));
+    } finally {
+      setZipping(false);
+    }
   }
 
   async function removeSelected() {
@@ -441,6 +460,20 @@ function DocumentsPage() {
                   {t.documents.batch.refuse} ({toRefuse.length})
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={zipping || chosen.length > 30}
+                title={chosen.length > 30 ? t.documents.batch.zipMax : undefined}
+                onClick={() => void downloadSelected()}
+              >
+                {zipping ? (
+                  <Loader2 className="animate-spin" aria-hidden />
+                ) : (
+                  <Download aria-hidden />
+                )}
+                {t.documents.batch.download} ({chosen.length})
+              </Button>
               {toCancel.length > 0 && (
                 <Button
                   size="sm"

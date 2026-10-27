@@ -33,6 +33,7 @@ import {
   type MarksByPerson,
 } from "@/app/components/marks-editor";
 import { AttachmentsPicker } from "@/app/components/attachments-picker";
+import { SavedFlows } from "@/app/components/saved-flows";
 import { useFolders } from "@/app/folders";
 import { PdfDrop, Stepper } from "@/app/components/pdf-drop";
 import {
@@ -368,6 +369,15 @@ function SendPage() {
               onChange={setParticipants}
               config={config}
               problems={problems}
+            />
+            <SavedFlows
+              participants={participants}
+              sequential={sequential}
+              onApply={(list, seq) => {
+                setParticipants(list);
+                setSequential(seq);
+                setProblems({});
+              }}
             />
             {/* A ordem fica aqui, junto do desenho do fluxo (também em Revisar → Ajustes). */}
             <label className="flex items-start gap-3 rounded-xl border bg-white p-4">

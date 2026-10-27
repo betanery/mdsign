@@ -64,8 +64,12 @@ export function contentSecurityPolicy(dev = false) {
     .join("; ");
 }
 
+/**
+ * Câmera (selfie/prova de vida) e localização (registro da assinatura) só para o próprio site e
+ * para a tela de assinatura do SignDoc, que roda num quadro dentro do MDSign.
+ */
 export const PERMISSIONS_POLICY =
-  'camera=(self "https://sign.signdocmd.com.br"), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()';
+  'camera=(self "https://sign.signdocmd.com.br"), geolocation=(self "https://sign.signdocmd.com.br"), microphone=(), payment=(), usb=(), interest-cohort=()';
 
 /** Acrescenta os cabeçalhos sem alterar o corpo nem o status da resposta. */
 export function withSecurityHeaders(response: Response, dev = false): Response {

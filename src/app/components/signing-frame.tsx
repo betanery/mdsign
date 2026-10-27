@@ -25,10 +25,24 @@ export function SigningFrame({
 
   useEffect(() => {
     let cancelled = false;
+    let stop = () => {};
     loadSignerWidget()
       .then((Widget) => {
         if (cancelled || !container.current) return;
         container.current.innerHTML = "";
+        // O quadro da assinatura precisa de permissão para localização e câmera (o SignDoc
+        // registra a localização e pode pedir selfie). O componente cria o quadro sem isso:
+        // acrescenta a permissão assim que ele aparece e recarrega o quadro uma vez.
+        const watch = new MutationObserver(() => {
+          const frame = container.current?.querySelector("iframe");
+          if (!frame || frame.getAttribute("allow")?.includes("geolocation")) return;
+          frame.setAttribute("allow", "geolocation; camera");
+          const url = frame.getAttribute("src");
+          if (url) frame.setAttribute("src", url);
+          watch.disconnect();
+        });
+        watch.observe(container.current, { childList: true, subtree: true });
+        stop = () => watch.disconnect();
         const widget = new Widget({ culture: locale, enableRefusal: true });
         widget.on(widget.events.documentSigned, () => signed.current());
         widget.on(widget.events.documentApproved, () => signed.current());
@@ -38,6 +52,7 @@ export function SigningFrame({
       .catch(() => !cancelled && onError());
     return () => {
       cancelled = true;
+      stop();
     };
     // Recria só quando muda o documento ou o idioma.
     // eslint-disable-next-line react-hooks/exhaustive-deps

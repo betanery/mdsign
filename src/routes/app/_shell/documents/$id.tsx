@@ -12,8 +12,10 @@ import {
   MessageCircle,
   Paperclip,
   PenLine,
+  Printer,
   RefreshCw,
   RotateCcw,
+  Send,
   ShieldCheck,
   Users,
   XCircle,
@@ -36,6 +38,7 @@ import {
 } from "@/app/components/document-edit";
 import { useConfirm } from "@/app/components/confirm-dialog";
 import { DecisionDialog, type Decision } from "@/app/components/decision-dialog";
+import { ShareDialog } from "@/app/components/share-dialog";
 import { SigningFrame } from "@/app/components/signing-frame";
 import {
   documentSelect,
@@ -63,7 +66,7 @@ type EventRow = {
   type: string;
   actor_name: string | null;
   occurred_at: string;
-  data?: { reason?: unknown; version?: unknown; channel?: unknown } | null;
+  data?: { reason?: unknown; version?: unknown; channel?: unknown; to?: unknown } | null;
 };
 /** Texto do evento; avisos de envio têm um texto por canal (e-mail, WhatsApp). */
 const eventKey = (e: EventRow) =>
@@ -116,6 +119,7 @@ function DocumentDetail() {
   const availability = useCedroAvailability();
   const [editing, setEditing] = useState<"flow" | "replace" | null>(null);
   const [deciding, setDeciding] = useState<Decision | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [confirm, confirmDialog] = useConfirm();
   const [versions, setVersions] = useState<VersionRow[]>([]);
 
@@ -336,11 +340,18 @@ function DocumentDetail() {
         )}
         {doc.status === "concluded" && !avail?.expired && (
           <Button
-            variant="ghost"
+            variant="outline"
             disabled={busy !== null}
             onClick={() => void download("printable")}
           >
+            <Printer aria-hidden />
             {t.documents.actions.downloadPrintable}
+          </Button>
+        )}
+        {doc.status === "concluded" && manage && (
+          <Button variant="outline" disabled={busy !== null} onClick={() => setSharing(true)}>
+            <Send aria-hidden />
+            {t.share.button}
           </Button>
         )}
         <Button
@@ -672,6 +683,11 @@ function DocumentDetail() {
                     {f(t.documents.versionN, { n: String(e.data.version) })}
                   </span>
                 )}
+                {Array.isArray(e.data?.to) && e.data.to.length > 0 && (
+                  <p className="mt-0.5 text-sm break-words text-muted-foreground">
+                    {t.share.to}: {e.data.to.join(", ")}
+                  </p>
+                )}
                 {typeof e.data?.reason === "string" && e.data.reason.trim() && (
                   <p className="mt-0.5 text-sm break-words text-muted-foreground">
                     {t.documents.reasonLabel}: “{e.data.reason.trim()}”
@@ -732,6 +748,16 @@ function DocumentDetail() {
           )}
         </TabsContent>
       </Tabs>
+      {sharing && (
+        <ShareDialog
+          documentId={id}
+          onClose={() => setSharing(false)}
+          onSent={() => {
+            setSharing(false);
+            void load();
+          }}
+        />
+      )}
       {deciding && (
         <DecisionDialog
           documentId={id}
