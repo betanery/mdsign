@@ -1016,6 +1016,9 @@ const en: AppMessages = {
       skipped: "Email not sent: {reason}",
     } as Record<string, string>,
     reasons: {
+      test_sender:
+        "Resend's test sender only delivers to the account owner (domain not verified yet)",
+      provider_rejected: "the email provider refused the message",
       bounced: "the address refused the email",
       complained: "the person marked the email as spam",
       provider_not_configured: "provider not configured",

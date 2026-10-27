@@ -50,6 +50,7 @@ import { useOrg } from "@/app/org";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { selectClass } from "@/app/ui";
 
@@ -368,6 +369,16 @@ function SendPage() {
               config={config}
               problems={problems}
             />
+            {/* A ordem fica aqui, junto do desenho do fluxo (também em Revisar → Ajustes). */}
+            <label className="flex items-start gap-3 rounded-xl border bg-white p-4">
+              <Switch checked={sequential} onCheckedChange={setSequential} className="mt-0.5" />
+              <span>
+                <span className="block font-medium">{t.participants.sequential}</span>
+                <span className="text-sm text-muted-foreground">
+                  {sequential ? t.participants.sequentialHint : t.participants.parallelHint}
+                </span>
+              </span>
+            </label>
             <FlowPreview participants={participants} sequential={sequential} />
           </>
         )}

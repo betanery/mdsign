@@ -400,6 +400,13 @@ export async function processNotifications(limit = 30) {
           data: { channel: "email", kind: n.kind, notification: n.id },
         });
       } catch (e) {
+        // Recusa definitiva do provedor (403/422: remetente de teste, endereço inválido): tentar
+        // de novo não adianta; registra o motivo na hora para aparecer na lista de participantes.
+        const permanent = /resend_(403|422)/.test(String(e));
+        if (permanent) {
+          await finish("failed", emailTestMode() ? "test_sender" : "provider_rejected");
+          continue;
+        }
         const attempts = n.attempts + 1;
         const retry = RETRY_MIN[attempts - 1];
         if (retry)

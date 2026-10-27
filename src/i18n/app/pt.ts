@@ -1041,6 +1041,9 @@ const pt = {
       skipped: "E-mail não enviado: {reason}",
     } as Record<string, string>,
     reasons: {
+      test_sender:
+        "o remetente de teste do Resend só entrega para o dono da conta (falta verificar o domínio)",
+      provider_rejected: "o provedor de e-mail recusou o envio",
       bounced: "o endereço recusou o e-mail",
       complained: "a pessoa marcou o e-mail como spam",
       provider_not_configured: "provedor não configurado",
